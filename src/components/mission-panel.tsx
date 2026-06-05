@@ -1,43 +1,59 @@
 import Link from "next/link";
 
-import { dashboardStats } from "@/lib/mock-data";
+type MissionPanelProps = {
+  dueCount: number;
+  weakCount: number;
+  masteredCount: number;
+  reviewedToday: number;
+  startReviewHref: "/review" | "/review/due";
+  hasAnyLocalData: boolean;
+};
 
-export function MissionPanel() {
+export function MissionPanel({
+  dueCount,
+  weakCount,
+  masteredCount,
+  reviewedToday,
+  startReviewHref,
+  hasAnyLocalData
+}: MissionPanelProps) {
   return (
     <section className="mission-panel" aria-labelledby="mission-title">
       <div>
         <span className="eyebrow">Today</span>
-        <h2 id="mission-title">Today&apos;s Memory Mission</h2>
+        <h1 id="mission-title">Today&rsquo;s Memory Mission</h1>
         <p className="mission-metric">
-          {dashboardStats.dueCount} words due | {dashboardStats.weakCount} weak
-          | 3 minutes
+          {dueCount} words due &middot; {weakCount} weak &middot; 3 minutes
         </p>
+        {!hasAnyLocalData ? (
+          <p className="mission-note">
+            Start a short starter session to create real review state.
+          </p>
+        ) : null}
         <div className="actions">
-          <Link className="button button--primary" href="/review/due">
+          <Link className="button button--primary" href={startReviewHref}>
             Start Review
           </Link>
           <Link className="button" href="/review/weak">
             Practice Weak Words
           </Link>
           <Link className="button button--quiet" href="/review">
-            Continue Deck
+            Continue Starter Deck
           </Link>
         </div>
       </div>
-      <div className="metric-grid" aria-label="Memory state">
-        <div className="metric-card">
-          <span className="metric-card__value">{dashboardStats.dueCount}</span>
-          <span className="metric-card__label">Due today</span>
+      <div className="mission-panel__summary" aria-label="Memory state">
+        <div>
+          <span className="mission-panel__value">{reviewedToday}</span>
+          <span className="mission-panel__label">Reviewed today</span>
         </div>
-        <div className="metric-card">
-          <span className="metric-card__value">{dashboardStats.weakCount}</span>
-          <span className="metric-card__label">Weak words</span>
+        <div>
+          <span className="mission-panel__value">{weakCount}</span>
+          <span className="mission-panel__label">Weak words</span>
         </div>
-        <div className="metric-card">
-          <span className="metric-card__value">
-            {dashboardStats.masteredCount}
-          </span>
-          <span className="metric-card__label">Mastered</span>
+        <div>
+          <span className="mission-panel__value">{masteredCount}</span>
+          <span className="mission-panel__label">Mastered</span>
         </div>
       </div>
     </section>
