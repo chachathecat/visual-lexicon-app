@@ -210,6 +210,7 @@ select {
   box-shadow: var(--shadow);
 }
 
+.mission-panel h1,
 .mission-panel h2,
 .section-title {
   margin: 0;
@@ -221,6 +222,37 @@ select {
   margin: 12px 0 0;
   color: var(--muted);
   font-size: 1rem;
+}
+
+.mission-note {
+  max-width: 520px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.mission-panel__summary {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.mission-panel__summary div {
+  display: grid;
+  gap: 2px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mission-panel__value {
+  font-size: 2rem;
+  font-weight: 780;
+}
+
+.mission-panel__label {
+  color: var(--muted);
+  font-size: 0.83rem;
 }
 
 .metric-grid {
@@ -273,6 +305,175 @@ select {
 
 .card-grid--two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-card {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-height: 280px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.dashboard-card h2,
+.hub-progress-row h3,
+.dashboard-word h3 {
+  margin: 0;
+}
+
+.dashboard-card p,
+.hub-progress-row p,
+.dashboard-word p,
+.dashboard-card__empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.dashboard-card__topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.dashboard-card__topline div {
+  display: grid;
+  gap: 6px;
+}
+
+.dashboard-card__count,
+.dashboard-card__metric {
+  color: var(--ink);
+  font-size: 2.2rem;
+  font-weight: 780;
+  line-height: 1;
+}
+
+.dashboard-card__metric {
+  display: block;
+  margin-top: 12px;
+}
+
+.dashboard-card__label {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.83rem;
+}
+
+.dashboard-card--metric {
+  min-height: 190px;
+}
+
+.dashboard-word-list {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.dashboard-card .dashboard-word-list {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-word {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.dashboard-word-list > .dashboard-word:first-child,
+.dashboard-card .dashboard-word:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.dashboard-word-list > .dashboard-word:last-child {
+  padding-bottom: 0;
+}
+
+.dashboard-word__visual {
+  min-height: 88px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.dashboard-word__visual--image::before,
+.dashboard-word__visual--image::after {
+  display: none;
+}
+
+.dashboard-word__visual--image {
+  background-position: center;
+  background-size: cover;
+}
+
+.dashboard-word__body {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-width: 0;
+}
+
+.dashboard-word__topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hub-progress-list {
+  display: grid;
+  gap: 10px;
+}
+
+.hub-progress-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(260px, 1.2fr);
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.hub-progress-row__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.hub-progress-bar {
+  grid-column: 1 / -1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eee2d3;
+}
+
+.hub-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--sage);
 }
 
 .word-card,
@@ -717,6 +918,7 @@ select {
 
   .card-grid,
   .card-grid--two,
+  .dashboard-grid,
   .pricing-grid,
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -737,7 +939,7 @@ select {
   .review-session__topline,
   .review-feedback,
   .review-result-row {
-    align-items: start;
+    align-items: flex-start;
     flex-direction: column;
   }
 
@@ -748,10 +950,24 @@ select {
   .metric-grid,
   .card-grid,
   .card-grid--two,
+  .dashboard-grid,
   .pricing-grid,
   .summary-grid,
   .review-options {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-word,
+  .hub-progress-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-word__visual {
+    min-height: 120px;
+  }
+
+  .hub-progress-row__stats {
+    justify-content: flex-start;
   }
 
   .detail-row {
