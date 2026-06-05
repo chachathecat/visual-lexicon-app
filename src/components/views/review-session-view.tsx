@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import { mockQuizWords } from "@/lib/packs/mock-data";
 import type { VlxQuizWord } from "@/lib/packs/types";
+import type { VlxReviewRouteMode } from "@/lib/review/route-contract";
 import { getDueToday, getNewSaved, getWeakWords } from "@/lib/srs/selectors";
 import {
   applyReviewAnswer,
@@ -33,9 +34,16 @@ const visualCueSlugs = new Set([
   "lucid"
 ]);
 
-type ReviewMode = "mixed" | "due" | "weak";
-type ReviewSource = "due" | "weak" | "saved" | "starter";
+type ReviewMode = VlxReviewRouteMode;
+type ReviewSource = "due" | "weak" | "saved" | "starter" | "word" | "hub";
 type SessionStatus = "loading" | "empty" | "active" | "summary";
+
+export type ReviewRouteSession = {
+  label: string;
+  words: VlxQuizWord[];
+  emptyTitle: string;
+  emptyBody: string;
+};
 
 type ReviewableWord = {
   slug: string;
@@ -90,9 +98,19 @@ const modeCopy = {
       "The review loop starts after a word is saved or a starter deck is opened.",
     sourceLabel: "Saved, due, and weak queues"
   },
+  saved: {
+    eyebrow: "Saved review",
+    title: "Review words from your saved library.",
+    description:
+      "Saved sessions use local saved words and continue to update memory state after each answer.",
+    emptyTitle: "No saved words yet",
+    emptyBody:
+      "Saved words appear here after a word is added to the local review loop.",
+    sourceLabel: "Saved words"
+  },
   due: {
     eyebrow: "Due review",
-    title: "Review words scheduled for today.",
+    title: "Review words due right now.",
     description:
       "Due cards use the existing SRS schedule and update memory state after each answer.",
     emptyTitle: "No words due right now",
@@ -109,6 +127,26 @@ const modeCopy = {
     emptyBody:
       "Weak words appear after missed answers. The starter deck can create real review state.",
     sourceLabel: "Weak queue"
+  },
+  word: {
+    eyebrow: "Focused review",
+    title: "Review one word in focus.",
+    description:
+      "Focused sessions start from pack data and still write review events and memory state locally.",
+    emptyTitle: "No focused word available",
+    emptyBody:
+      "This focused review link did not resolve to a pack word.",
+    sourceLabel: "Focused word"
+  },
+  hub: {
+    eyebrow: "Hub review",
+    title: "Review a vocabulary hub.",
+    description:
+      "Hub sessions use pack data for a deterministic short review set.",
+    emptyTitle: "No hub cards available",
+    emptyBody:
+      "This hub review link did not resolve to any pack cards.",
+    sourceLabel: "Hub pack"
   }
 } satisfies Record<ReviewMode, Record<string, string>>;
 
@@ -201,6 +239,10 @@ function getQuestionType(
     return "due_review";
   }
 
+  if (word.source === "weak" || mode === "weak") {
+    return "weak_review";
+  }
+
   if (word.source === "saved") {
     return "saved_review";
   }
@@ -218,6 +260,8 @@ function getQuestionTypeLabel(questionType: VlxQuestionType) {
       return "Saved Review";
     case "due_review":
       return "Due Review";
+    case "weak_review":
+      return "Weak Review";
     default:
       return "Review";
   }
@@ -233,6 +277,8 @@ function getPrompt(questionType: VlxQuestionType) {
       return "Recall the saved word from its memory clue.";
     case "due_review":
       return "This card is due. Choose the word that matches the clue.";
+    case "weak_review":
+      return "This card needs reinforcement. Choose the word that matches the clue.";
     default:
       return "Choose the word that matches the clue.";
   }
@@ -256,7 +302,7 @@ function mergePackWord(slug: string) {
 
 function fromStateItem(
   item: VlxReviewStateItem,
-  source: Exclude<ReviewSource, "saved" | "starter">
+  source: "due" | "weak"
 ): ReviewableWord {
   const packWord = mergePackWord(item.slug);
 
@@ -276,24 +322,32 @@ function fromStateItem(
   };
 }
 
-function fromSavedWord(savedWord: VlxSavedWord): ReviewableWord {
+function fromSavedWord(
+  savedWord: VlxSavedWord,
+  stateItem?: VlxReviewStateItem
+): ReviewableWord {
   const packWord = mergePackWord(savedWord.slug);
 
   return {
     slug: savedWord.slug,
     word: savedWord.word || packWord?.word || savedWord.slug,
-    image: savedWord.image ?? packWord?.image,
-    definition: savedWord.definition ?? packWord?.definition,
+    image: stateItem?.image ?? savedWord.image ?? packWord?.image,
+    definition: stateItem?.definition ?? savedWord.definition ?? packWord?.definition,
     memoryHook: packWord?.memoryHook,
-    hub: savedWord.hub ?? packWord?.hub,
+    hub: stateItem?.hub ?? savedWord.hub ?? packWord?.hub,
     confusableWords: packWord?.confusableWords,
     distractors: packWord?.distractors,
-    mastery: "New",
+    box: stateItem?.box,
+    mastery: stateItem?.mastery ?? "New",
+    weakScore: stateItem?.weakScore,
     source: "saved"
   };
 }
 
-function fromPackWord(packWord: VlxQuizWord): ReviewableWord {
+function fromPackWord(
+  packWord: VlxQuizWord,
+  source: Extract<ReviewSource, "starter" | "word" | "hub"> = "starter"
+): ReviewableWord {
   return {
     slug: packWord.slug,
     word: packWord.word,
@@ -304,7 +358,7 @@ function fromPackWord(packWord: VlxQuizWord): ReviewableWord {
     confusableWords: packWord.confusableWords,
     distractors: packWord.distractors,
     mastery: "New",
-    source: "starter"
+    source
   };
 }
 
@@ -319,6 +373,73 @@ function dedupeBySlug(words: ReviewableWord[]) {
     seen.add(word.slug);
     return true;
   });
+}
+
+function toDate(value: string | Date) {
+  return value instanceof Date ? new Date(value.getTime()) : new Date(value);
+}
+
+function isValidDate(date: Date) {
+  return !Number.isNaN(date.getTime());
+}
+
+function isDueNow(item: VlxReviewStateItem, now: Date) {
+  if (!item.nextDueAt) {
+    return true;
+  }
+
+  const nextDueAt = toDate(item.nextDueAt);
+
+  return isValidDate(nextDueAt) && nextDueAt.getTime() <= now.getTime();
+}
+
+function sortByDueNowPriority(
+  first: VlxReviewStateItem,
+  second: VlxReviewStateItem
+) {
+  const firstDue = first.nextDueAt ? Date.parse(first.nextDueAt) : 0;
+  const secondDue = second.nextDueAt ? Date.parse(second.nextDueAt) : 0;
+
+  if (firstDue !== secondDue) {
+    return firstDue - secondDue;
+  }
+
+  if (first.weakScore !== second.weakScore) {
+    return second.weakScore - first.weakScore;
+  }
+
+  return first.slug.localeCompare(second.slug);
+}
+
+function getDueNow(reviewState: VlxReviewStateStore, now: Date = new Date()) {
+  return Object.values(reviewState)
+    .filter((item) => item.mastery !== "Mastered" && isDueNow(item, now))
+    .sort(sortByDueNowPriority);
+}
+
+function getRouteWeakWords(reviewState: VlxReviewStateStore) {
+  return Object.values(reviewState)
+    .filter((item) => item.mastery === "Weak" || item.weakScore > 0)
+    .sort((first, second) => {
+      if (first.weakScore !== second.weakScore) {
+        return second.weakScore - first.weakScore;
+      }
+
+      if (first.wrong !== second.wrong) {
+        return second.wrong - first.wrong;
+      }
+
+      return first.slug.localeCompare(second.slug);
+    });
+}
+
+function getSavedReviewWords(
+  savedWords: VlxSavedWordsStore,
+  reviewState: VlxReviewStateStore
+) {
+  return Object.values(savedWords)
+    .sort((first, second) => Date.parse(second.savedAt) - Date.parse(first.savedAt))
+    .map((savedWord) => fromSavedWord(savedWord, reviewState[savedWord.slug]));
 }
 
 function getAvailability(
@@ -336,7 +457,9 @@ function getAvailability(
     localCandidateCount: dedupeBySlug([
       ...getDueToday(reviewState).map((item) => fromStateItem(item, "due")),
       ...getWeakWords(reviewState).map((item) => fromStateItem(item, "weak")),
-      ...getNewSaved(savedWords, reviewState).map(fromSavedWord)
+      ...getNewSaved(savedWords, reviewState).map((savedWord) =>
+        fromSavedWord(savedWord)
+      )
     ]).length
   };
 }
@@ -344,7 +467,8 @@ function getAvailability(
 function buildLocalWords(
   mode: ReviewMode,
   savedWords: VlxSavedWordsStore,
-  reviewState: VlxReviewStateStore
+  reviewState: VlxReviewStateStore,
+  limit: number
 ) {
   const dueWords = getDueToday(reviewState).map((item) =>
     fromStateItem(item, "due")
@@ -352,14 +476,27 @@ function buildLocalWords(
   const weakWords = getWeakWords(reviewState).map((item) =>
     fromStateItem(item, "weak")
   );
-  const savedReviewWords = getNewSaved(savedWords, reviewState).map(fromSavedWord);
+  const savedReviewWords = getNewSaved(savedWords, reviewState).map((savedWord) =>
+    fromSavedWord(savedWord)
+  );
+
+  if (mode === "saved") {
+    return dedupeBySlug(getSavedReviewWords(savedWords, reviewState)).slice(
+      0,
+      limit
+    );
+  }
 
   if (mode === "due") {
-    return dedupeBySlug(dueWords).slice(0, SESSION_SIZE);
+    return dedupeBySlug(
+      getDueNow(reviewState).map((item) => fromStateItem(item, "due"))
+    ).slice(0, limit);
   }
 
   if (mode === "weak") {
-    return dedupeBySlug(weakWords).slice(0, SESSION_SIZE);
+    return dedupeBySlug(
+      getRouteWeakWords(reviewState).map((item) => fromStateItem(item, "weak"))
+    ).slice(0, limit);
   }
 
   return dedupeBySlug([
@@ -385,8 +522,21 @@ function getVisualClass(slug: string) {
   return visualCueSlugs.has(slug) ? ` word-card__visual--${slug}` : "";
 }
 
-export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
+export function ReviewSessionView({
+  limit = SESSION_SIZE,
+  mode,
+  routeSession
+}: {
+  limit?: number;
+  mode: ReviewMode;
+  routeSession?: ReviewRouteSession;
+}) {
   const copy = modeCopy[mode];
+  const sessionLimit = Number.isFinite(limit)
+    ? Math.max(1, Math.floor(limit))
+    : SESSION_SIZE;
+  const emptyTitle = routeSession?.emptyTitle ?? copy.emptyTitle;
+  const emptyBody = routeSession?.emptyBody ?? copy.emptyBody;
   const cardStartedAt = useRef(getNowMs());
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [questions, setQuestions] = useState<ReviewQuestion[]>([]);
@@ -413,7 +563,7 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
       label: string,
       stats?: AvailabilityStats
     ) => {
-      const nextQuestions = buildQuestions(words.slice(0, SESSION_SIZE), mode);
+      const nextQuestions = buildQuestions(words.slice(0, sessionLimit), mode);
 
       if (!nextQuestions.length) {
         setStatus("empty");
@@ -472,16 +622,36 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
         });
       }
     },
-    [mode, resetCardTimer]
+    [mode, resetCardTimer, sessionLimit]
   );
 
   const loadLocalSession = useCallback(() => {
     const savedWords = readSavedWords();
     const reviewState = readReviewState();
     const nextAvailability = getAvailability(savedWords, reviewState);
-    const localWords = buildLocalWords(mode, savedWords, reviewState);
 
     setAvailability(nextAvailability);
+
+    if (routeSession) {
+      const source = mode === "hub" ? "hub" : "word";
+      const routeWords = routeSession.words.map((word) =>
+        fromPackWord(word, source)
+      );
+
+      if (!routeWords.length) {
+        setStatus("empty");
+        setQuestions([]);
+        setAnswers([]);
+        setCurrentAnswer(null);
+        setSelectedAnswer(null);
+        return;
+      }
+
+      startSession(routeWords, routeSession.label, nextAvailability);
+      return;
+    }
+
+    const localWords = buildLocalWords(mode, savedWords, reviewState, sessionLimit);
 
     if (!localWords.length) {
       setStatus("empty");
@@ -493,7 +663,7 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
     }
 
     startSession(localWords, copy.sourceLabel, nextAvailability);
-  }, [copy.sourceLabel, mode, startSession]);
+  }, [copy.sourceLabel, mode, routeSession, sessionLimit, startSession]);
 
   useEffect(() => {
     loadLocalSession();
@@ -513,7 +683,7 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
 
   function startStarterDeck() {
     startSession(
-      mockQuizWords.slice(0, SESSION_SIZE).map(fromPackWord),
+      mockQuizWords.slice(0, SESSION_SIZE).map((word) => fromPackWord(word)),
       "Mock starter deck",
       availability
     );
@@ -696,8 +866,8 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
 
       {status === "empty" ? (
         <section className="empty-state" aria-live="polite">
-          <h3>{copy.emptyTitle}</h3>
-          <p>{copy.emptyBody}</p>
+          <h3>{emptyTitle}</h3>
+          <p>{emptyBody}</p>
           <div className="actions">
             <button className="button button--primary" onClick={startStarterDeck} type="button">
               Start starter deck
