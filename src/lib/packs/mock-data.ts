@@ -101,6 +101,10 @@ export const mockQuizWords = [
   }
 ] satisfies VlxQuizWord[];
 
+export function getMockQuizWordBySlug(slug: string) {
+  return mockQuizWords.find((word) => word.slug === slug);
+}
+
 export const mockQuizPackManifest = {
   version: "v1",
   buildId: "20260605_mock_pack_contract",
