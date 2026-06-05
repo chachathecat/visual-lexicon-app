@@ -5,6 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
+import type {
+  VlxSaveWordFoundSource,
+  VlxSaveWordResult
+} from "@/lib/analytics";
 import { getMockQuizWordBySlug } from "@/lib/packs/mock-data";
 import type { VlxQuizWord } from "@/lib/packs/types";
 import {
@@ -22,6 +27,8 @@ import type {
 type SaveLandingViewProps = {
   slug?: string;
   source?: string;
+  word?: VlxQuizWord | null;
+  wordFoundSource?: VlxSaveWordFoundSource;
 };
 
 type SaveStatus =
@@ -38,6 +45,11 @@ type SaveOutcome = {
   reviewItem?: VlxReviewStateItem;
   alreadySaved?: boolean;
   alreadyQueued?: boolean;
+};
+
+type SaveAnalyticsWord = {
+  word?: string;
+  hub?: string;
 };
 
 const validSources = new Set<string>([
@@ -72,6 +84,12 @@ function normalizeSource(value?: string): VlxSavedWordSource | undefined {
   }
 
   return source as VlxSavedWordSource;
+}
+
+function normalizeAnalyticsSource(value?: string) {
+  const source = value?.trim();
+
+  return source || undefined;
 }
 
 function formatHubLabel(hub?: string) {
@@ -141,14 +159,44 @@ function getInitialOutcome(slug?: string, word?: VlxQuizWord): SaveOutcome {
   return { status: "checking" };
 }
 
-export function SaveLandingView({ slug, source }: SaveLandingViewProps) {
+function emitSaveWordAnalytics(input: {
+  slug?: string;
+  source?: string;
+  result: VlxSaveWordResult;
+  word?: SaveAnalyticsWord;
+  wordFoundSource: VlxSaveWordFoundSource;
+}) {
+  emitVlxEvent(VLX_ANALYTICS_EVENTS.saveWordClick, {
+    slug: input.slug ?? "",
+    source: normalizeAnalyticsSource(input.source),
+    result: input.result,
+    word: input.word?.word,
+    hub: input.word?.hub,
+    word_found_source: input.wordFoundSource
+  });
+}
+
+export function SaveLandingView({
+  slug,
+  source,
+  word: packWord,
+  wordFoundSource = "missing"
+}: SaveLandingViewProps) {
   const normalizedSlug = useMemo(() => normalizeSlug(slug), [slug]);
   const normalizedSource = useMemo(() => normalizeSource(source), [source]);
-  const word = useMemo(
+  const fallbackWord = useMemo(
     () =>
-      normalizedSlug ? getMockQuizWordBySlug(normalizedSlug) : undefined,
-    [normalizedSlug]
+      normalizedSlug && !packWord
+        ? getMockQuizWordBySlug(normalizedSlug)
+        : undefined,
+    [normalizedSlug, packWord]
   );
+  const word = packWord ?? fallbackWord;
+  const resolvedWordFoundSource: VlxSaveWordFoundSource = word
+    ? packWord
+      ? wordFoundSource
+      : "mock_fallback"
+    : "missing";
   const [outcome, setOutcome] = useState<SaveOutcome>(() =>
     getInitialOutcome(normalizedSlug, word)
   );
@@ -156,16 +204,35 @@ export function SaveLandingView({ slug, source }: SaveLandingViewProps) {
   useEffect(() => {
     if (!normalizedSlug) {
       setOutcome({ status: "missing_slug" });
+      emitSaveWordAnalytics({
+        slug: normalizedSlug,
+        source,
+        result: "missing",
+        wordFoundSource: "missing"
+      });
       return;
     }
 
     if (!word) {
       setOutcome({ status: "unknown_word" });
+      emitSaveWordAnalytics({
+        slug: normalizedSlug,
+        source,
+        result: "missing",
+        wordFoundSource: "missing"
+      });
       return;
     }
 
     if (!canUseLocalStorage()) {
       setOutcome({ status: "storage_unavailable" });
+      emitSaveWordAnalytics({
+        slug: normalizedSlug,
+        source,
+        result: "storage_error",
+        word,
+        wordFoundSource: resolvedWordFoundSource
+      });
       return;
     }
 
@@ -193,10 +260,24 @@ export function SaveLandingView({ slug, source }: SaveLandingViewProps) {
         alreadySaved: Boolean(existingSavedWord),
         alreadyQueued: Boolean(reviewState[word.slug])
       });
+      emitSaveWordAnalytics({
+        slug: word.slug,
+        source,
+        result: existingSavedWord ? "duplicate" : "saved",
+        word: savedWord,
+        wordFoundSource: resolvedWordFoundSource
+      });
     } catch {
       setOutcome({ status: "storage_error" });
+      emitSaveWordAnalytics({
+        slug: normalizedSlug,
+        source,
+        result: "storage_error",
+        word,
+        wordFoundSource: resolvedWordFoundSource
+      });
     }
-  }, [normalizedSlug, normalizedSource, word]);
+  }, [normalizedSlug, normalizedSource, resolvedWordFoundSource, source, word]);
 
   if (outcome.status === "checking") {
     return (
@@ -238,7 +319,7 @@ export function SaveLandingView({ slug, source }: SaveLandingViewProps) {
         <PageHeader
           eyebrow="Save"
           title="Word not found."
-          description={`The app could not find "${normalizedSlug}" in the current mock pack data.`}
+          description={`The app could not find "${normalizedSlug}" in the current pack data.`}
         />
         <EmptyState
           actionHref="/dashboard"

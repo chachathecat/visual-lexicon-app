@@ -19,6 +19,17 @@ export type VlxAnalyticsUserState = "guest" | "free" | "lite" | "pro";
 
 export type VlxAnalyticsReviewMode = "mixed" | "due" | "weak";
 
+export type VlxSaveWordResult =
+  | "saved"
+  | "duplicate"
+  | "missing"
+  | "storage_error";
+
+export type VlxSaveWordFoundSource =
+  | "r2_pack"
+  | "mock_fallback"
+  | "missing";
+
 export type VlxAnalyticsBasePayload = {
   event: VlxAnalyticsEventName;
   eventId: string;
@@ -99,8 +110,10 @@ export type VlxWeakReviewStartEventPayload = VlxAnalyticsBasePayload & {
 export type VlxSaveWordClickEventPayload = VlxAnalyticsBasePayload & {
   event: "vlx_save_word_click";
   slug: string;
-  word: string;
+  word?: string;
   hub?: string;
+  result: VlxSaveWordResult;
+  word_found_source?: VlxSaveWordFoundSource;
 };
 
 export type VlxPaywallViewEventPayload = VlxAnalyticsBasePayload & {

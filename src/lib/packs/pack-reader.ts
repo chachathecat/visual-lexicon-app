@@ -43,6 +43,13 @@ export type VlxPackReaderOptions = {
   onIssue?: (issue: VlxPackReaderIssue) => void;
 };
 
+export type VlxWordFoundSource = "r2_pack" | "mock_fallback" | "missing";
+
+export type VlxWordPackResolution = {
+  word: VlxQuizWord | null;
+  wordFoundSource: VlxWordFoundSource;
+};
+
 function getBaseUrl(options?: VlxPackReaderOptions) {
   return options?.baseUrl === undefined
     ? getConfiguredPackBaseUrl()
@@ -224,27 +231,81 @@ async function readPackFile<T>(
   validator: PackValidator<T>,
   options?: VlxPackReaderOptions
 ) {
-  const remotePayload = await fetchRemoteJson(path, options);
+  const remoteValue = await readRemotePackFile(path, validator, options);
 
-  if (remotePayload !== null) {
-    const result = validator(remotePayload);
-
-    if (result.ok) {
-      return result.value;
-    }
-
-    reportIssue(
-      {
-        path,
-        url: resolvePackFileUrl(path, getBaseUrl(options)) ?? undefined,
-        message: "Remote pack payload failed validation.",
-        validationErrors: result.errors
-      },
-      options
-    );
+  if (remoteValue !== null) {
+    return remoteValue;
   }
 
   return readMockPackFile(path, validator, options);
+}
+
+async function readRemotePackFile<T>(
+  path: VlxStaticPackPath,
+  validator: PackValidator<T>,
+  options?: VlxPackReaderOptions
+) {
+  const remotePayload = await fetchRemoteJson(path, options);
+
+  if (remotePayload === null) {
+    return null;
+  }
+
+  const result = validator(remotePayload);
+
+  if (result.ok) {
+    return result.value;
+  }
+
+  reportIssue(
+    {
+      path,
+      url: resolvePackFileUrl(path, getBaseUrl(options)) ?? undefined,
+      message: "Remote pack payload failed validation.",
+      validationErrors: result.errors
+    },
+    options
+  );
+
+  return null;
+}
+
+async function getWordPackPath(
+  slug: string,
+  options?: VlxPackReaderOptions
+) {
+  const manifest = await getQuizManifest(options);
+  const fallbackPath = buildPackPath(`/quiz-pack/words/${slug}.json`, options);
+
+  return manifest?.packs.words?.[slug] ?? fallbackPath;
+}
+
+async function readWordPackWithSource(
+  path: VlxStaticPackPath,
+  options?: VlxPackReaderOptions
+): Promise<VlxWordPackResolution> {
+  const remoteWord = await readRemotePackFile(path, validateQuizWord, options);
+
+  if (remoteWord) {
+    return {
+      word: remoteWord,
+      wordFoundSource: "r2_pack"
+    };
+  }
+
+  const mockWord = readMockPackFile(path, validateQuizWord, options);
+
+  if (mockWord) {
+    return {
+      word: mockWord,
+      wordFoundSource: "mock_fallback"
+    };
+  }
+
+  return {
+    word: null,
+    wordFoundSource: "missing"
+  };
 }
 
 async function getQuizManifestPath<K extends keyof VlxQuizPackManifest["packs"]>(
@@ -300,11 +361,23 @@ export async function getWordPack(
   slug: string,
   options?: VlxPackReaderOptions
 ) {
-  const manifest = await getQuizManifest(options);
-  const fallbackPath = buildPackPath(`/quiz-pack/words/${slug}.json`, options);
-  const path = manifest?.packs.words?.[slug] ?? fallbackPath;
+  const path = await getWordPackPath(slug, options);
 
   return path ? readPackFile<VlxQuizWord>(path, validateQuizWord, options) : null;
+}
+
+export async function resolveWordPack(
+  slug: string,
+  options?: VlxPackReaderOptions
+): Promise<VlxWordPackResolution> {
+  const path = await getWordPackPath(slug, options);
+
+  return path
+    ? readWordPackWithSource(path, options)
+    : {
+        word: null,
+        wordFoundSource: "missing"
+      };
 }
 
 export async function getExamPackManifest(options?: VlxPackReaderOptions) {
