@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import { mockQuizWords } from "@/lib/packs/mock-data";
 import type { VlxQuizWord } from "@/lib/packs/types";
 import { getDueToday, getNewSaved, getWeakWords } from "@/lib/srs/selectors";
@@ -407,7 +408,11 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
   }, []);
 
   const startSession = useCallback(
-    (words: ReviewableWord[], label: string) => {
+    (
+      words: ReviewableWord[],
+      label: string,
+      stats?: AvailabilityStats
+    ) => {
       const nextQuestions = buildQuestions(words.slice(0, SESSION_SIZE), mode);
 
       if (!nextQuestions.length) {
@@ -415,15 +420,57 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
         return;
       }
 
+      const nextSessionId = createSessionId(mode);
+      const hasDueCards = nextQuestions.some((question) => question.source === "due");
+      const hasWeakCards = nextQuestions.some(
+        (question) => question.source === "weak"
+      );
+
       setQuestions(nextQuestions);
       setCurrentIndex(0);
-      setSessionId(createSessionId(mode));
+      setSessionId(nextSessionId);
       setSelectedAnswer(null);
       setCurrentAnswer(null);
       setAnswers([]);
       setQueueLabel(label);
       setStatus("active");
       resetCardTimer();
+
+      emitVlxEvent(VLX_ANALYTICS_EVENTS.quizStart, {
+        sessionId: nextSessionId,
+        userState: "guest",
+        source: label,
+        mode,
+        cardsSeen: nextQuestions.length,
+        dueCount: stats?.dueCount,
+        weakWordsCount: stats?.weakCount,
+        savedWordsCount: stats?.savedCount,
+        localCandidateCount: stats?.localCandidateCount
+      });
+
+      if (mode === "due" && hasDueCards) {
+        emitVlxEvent(VLX_ANALYTICS_EVENTS.dueReviewStart, {
+          sessionId: nextSessionId,
+          userState: "guest",
+          source: label,
+          mode,
+          cardsSeen: nextQuestions.length,
+          dueCount: stats?.dueCount,
+          weakWordsCount: stats?.weakCount
+        });
+      }
+
+      if (mode === "weak" && hasWeakCards) {
+        emitVlxEvent(VLX_ANALYTICS_EVENTS.weakReviewStart, {
+          sessionId: nextSessionId,
+          userState: "guest",
+          source: label,
+          mode,
+          cardsSeen: nextQuestions.length,
+          dueCount: stats?.dueCount,
+          weakWordsCount: stats?.weakCount
+        });
+      }
     },
     [mode, resetCardTimer]
   );
@@ -445,7 +492,7 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
       return;
     }
 
-    startSession(localWords, copy.sourceLabel);
+    startSession(localWords, copy.sourceLabel, nextAvailability);
   }, [copy.sourceLabel, mode, startSession]);
 
   useEffect(() => {
@@ -467,7 +514,8 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
   function startStarterDeck() {
     startSession(
       mockQuizWords.slice(0, SESSION_SIZE).map(fromPackWord),
-      "Mock starter deck"
+      "Mock starter deck",
+      availability
     );
   }
 
@@ -522,10 +570,51 @@ export function ReviewSessionView({ mode }: { mode: ReviewMode }) {
     setSelectedAnswer(option);
     setCurrentAnswer(answer);
     setAnswers((previousAnswers) => [...previousAnswers, answer]);
+
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.quizAnswer, {
+      sessionId: output.event.sessionId,
+      userState: "guest",
+      source: currentQuestion.source,
+      slug: output.event.slug,
+      word: output.event.word,
+      hub: output.event.hub,
+      mode,
+      questionType: output.event.questionType,
+      result: output.event.result,
+      correct: output.event.result === "correct",
+      responseMs: output.event.responseMs
+    });
+
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewStateUpdate, {
+      sessionId: output.event.sessionId,
+      userState: "guest",
+      source: currentQuestion.source,
+      slug: output.state.slug,
+      word: output.state.word,
+      hub: output.state.hub,
+      mode,
+      questionType: output.event.questionType,
+      result: output.event.result,
+      boxBefore: output.event.boxBefore,
+      boxAfter: output.event.boxAfter,
+      weakScoreBefore: output.event.weakScoreBefore,
+      weakScoreAfter: output.event.weakScoreAfter,
+      masteryAfter: output.state.mastery
+    });
   }
 
   function handleNext() {
     if (currentIndex + 1 >= questions.length) {
+      emitVlxEvent(VLX_ANALYTICS_EVENTS.quizComplete, {
+        sessionId,
+        userState: "guest",
+        source: queueLabel,
+        mode,
+        cardsSeen: summary.reviewed,
+        correctCount: summary.correct,
+        wrongCount: summary.wrong,
+        weakWordsCount: summary.weakAdded
+      });
       setStatus("summary");
       return;
     }
