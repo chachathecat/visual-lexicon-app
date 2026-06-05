@@ -17,7 +17,13 @@ export type VlxAnalyticsEventName =
 
 export type VlxAnalyticsUserState = "guest" | "free" | "lite" | "pro";
 
-export type VlxAnalyticsReviewMode = "mixed" | "due" | "weak";
+export type VlxAnalyticsReviewMode =
+  | "mixed"
+  | "saved"
+  | "due"
+  | "weak"
+  | "word"
+  | "hub";
 
 export type VlxSaveWordResult =
   | "saved"
