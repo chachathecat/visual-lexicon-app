@@ -88,10 +88,32 @@ async function getReviewEventCount(page: Page): Promise<number> {
   });
 }
 
+async function getSaveAnalyticsEvents(page: Page): Promise<
+  Record<string, unknown>[]
+> {
+  return await page.evaluate(() => {
+    const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
+
+    if (!Array.isArray(dataLayer)) return [];
+
+    return dataLayer.filter((item): item is Record<string, unknown> => {
+      return Boolean(
+        item &&
+          typeof item === 'object' &&
+          !Array.isArray(item) &&
+          (item as Record<string, unknown>).event === 'vlx_save_word_click',
+      );
+    });
+  });
+}
+
 test.describe('Visual Lexicon local MVP smoke', () => {
   test('save route creates local review item and review session writes events/stats', async ({
     page,
   }) => {
+    await page.addInitScript(() => {
+      (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
+    });
     await clearVlxLocalStorage(page);
 
     const saveUrl = `${baseUrl}/save?slug=${testSlug}&source=word_page`;
@@ -132,6 +154,42 @@ test.describe('Visual Lexicon local MVP smoke', () => {
       },
       testSlug,
       { timeout: 15000 },
+    );
+
+    await page.waitForFunction(
+      (slug) => {
+        const dataLayer = (window as Window & { dataLayer?: unknown[] })
+          .dataLayer;
+
+        if (!Array.isArray(dataLayer)) return false;
+
+        return dataLayer.some((item) => {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            return false;
+          }
+
+          const event = item as Record<string, unknown>;
+
+          return (
+            event.event === 'vlx_save_word_click' &&
+            event.slug === slug &&
+            event.result === 'saved'
+          );
+        });
+      },
+      testSlug,
+      { timeout: 15000 },
+    );
+
+    const saveAnalyticsEvents = await getSaveAnalyticsEvents(page);
+    const firstSaveAnalytics = saveAnalyticsEvents.find(
+      (event) => event.slug === testSlug && event.result === 'saved',
+    );
+
+    expect(firstSaveAnalytics).toBeTruthy();
+    expect(firstSaveAnalytics?.source).toBe('word_page');
+    expect(['r2_pack', 'mock_fallback']).toContain(
+      firstSaveAnalytics?.word_found_source,
     );
 
     const savedWords = await readLocalJson(page, 'vlx_saved_words_v1');
@@ -227,5 +285,40 @@ test.describe('Visual Lexicon local MVP smoke', () => {
     if (isRecord(dissonanceState)) {
       expect(typeof dissonanceState.nextDueAt).toBe('string');
     }
+
+    await page.goto(saveUrl, { waitUntil: 'networkidle' });
+
+    await page.waitForFunction(
+      (slug) => {
+        const dataLayer = (window as Window & { dataLayer?: unknown[] })
+          .dataLayer;
+
+        if (!Array.isArray(dataLayer)) return false;
+
+        return dataLayer.some((item) => {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            return false;
+          }
+
+          const event = item as Record<string, unknown>;
+
+          return (
+            event.event === 'vlx_save_word_click' &&
+            event.slug === slug &&
+            event.result === 'duplicate'
+          );
+        });
+      },
+      testSlug,
+      { timeout: 15000 },
+    );
+
+    const duplicateReviewState =
+      await readLocalJson<Record<string, unknown>>(
+        page,
+        'vlx_review_state_v1',
+      );
+
+    expect(duplicateReviewState?.[testSlug]).toEqual(dissonanceState);
   });
 });
