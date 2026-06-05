@@ -24,6 +24,16 @@ Open:
 http://localhost:3000
 ```
 
+Optional static pack source:
+
+```txt
+NEXT_PUBLIC_VLX_PACK_BASE_URL=https://static.example.com
+```
+
+When no static pack base URL is configured, the app uses local mock pack
+data. The pack reader expects public JSON files only; do not put API tokens in
+pack URLs or browser-exposed environment variables.
+
 ## Verification
 
 Run type checking:
