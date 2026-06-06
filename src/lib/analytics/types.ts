@@ -12,6 +12,8 @@ export type VlxAnalyticsEventName =
   | "vlx_due_review_start"
   | "vlx_weak_review_start"
   | "vlx_save_word_click"
+  | "vlx_exam_pack_preview_view"
+  | "vlx_exam_pack_preview_start"
   | "vlx_paywall_view"
   | "vlx_upgrade_click";
 
@@ -35,6 +37,11 @@ export type VlxSaveWordFoundSource =
   | "r2_pack"
   | "mock_fallback"
   | "missing";
+
+export type VlxExamPackPreviewStatus =
+  | "available"
+  | "empty"
+  | "placeholder";
 
 export type VlxAnalyticsBasePayload = {
   event: VlxAnalyticsEventName;
@@ -122,6 +129,27 @@ export type VlxSaveWordClickEventPayload = VlxAnalyticsBasePayload & {
   word_found_source?: VlxSaveWordFoundSource;
 };
 
+export type VlxExamPackPreviewViewEventPayload = VlxAnalyticsBasePayload & {
+  event: "vlx_exam_pack_preview_view";
+  packId: string;
+  title: string;
+  targetLabel?: string;
+  wordCount?: number;
+  previewCount?: number;
+  status: VlxExamPackPreviewStatus;
+};
+
+export type VlxExamPackPreviewStartEventPayload = VlxAnalyticsBasePayload & {
+  event: "vlx_exam_pack_preview_start";
+  packId: string;
+  title: string;
+  targetLabel?: string;
+  wordCount?: number;
+  previewCount?: number;
+  status: VlxExamPackPreviewStatus;
+  reviewHref: string;
+};
+
 export type VlxPaywallViewEventPayload = VlxAnalyticsBasePayload & {
   event: "vlx_paywall_view";
   source: string;
@@ -142,6 +170,8 @@ export type VlxAnalyticsEventMap = {
   vlx_due_review_start: VlxDueReviewStartEventPayload;
   vlx_weak_review_start: VlxWeakReviewStartEventPayload;
   vlx_save_word_click: VlxSaveWordClickEventPayload;
+  vlx_exam_pack_preview_view: VlxExamPackPreviewViewEventPayload;
+  vlx_exam_pack_preview_start: VlxExamPackPreviewStartEventPayload;
   vlx_paywall_view: VlxPaywallViewEventPayload;
   vlx_upgrade_click: VlxUpgradeClickEventPayload;
 };
