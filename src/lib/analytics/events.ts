@@ -13,6 +13,8 @@ export const VLX_ANALYTICS_EVENTS = {
   dueReviewStart: "vlx_due_review_start",
   weakReviewStart: "vlx_weak_review_start",
   saveWordClick: "vlx_save_word_click",
+  examPackPreviewView: "vlx_exam_pack_preview_view",
+  examPackPreviewStart: "vlx_exam_pack_preview_start",
   paywallView: "vlx_paywall_view",
   upgradeClick: "vlx_upgrade_click"
 } as const satisfies Record<string, VlxAnalyticsEventName>;

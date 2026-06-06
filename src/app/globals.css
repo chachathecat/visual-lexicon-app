@@ -478,6 +478,7 @@ select {
 
 .word-card,
 .pack-card,
+.pack-preview-word,
 .empty-state,
 .settings-panel,
 .plan-card {
@@ -488,6 +489,7 @@ select {
 
 .word-card,
 .pack-card,
+.pack-preview-word,
 .plan-card {
   overflow: hidden;
 }
@@ -611,6 +613,38 @@ select {
   display: grid;
   gap: 12px;
   padding: 17px;
+}
+
+.pack-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.pack-preview-actions__note {
+  max-width: 420px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.pack-detail-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pack-preview-word__visual--image {
+  background-position: center;
+  background-size: cover;
+}
+
+.pack-preview-word__visual--image::before,
+.pack-preview-word__visual--image::after {
+  display: none;
 }
 
 .word-card__topline,
