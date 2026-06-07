@@ -34,6 +34,22 @@ function hasSavedSlug(saved: unknown, slug: string): boolean {
   return false;
 }
 
+function countSavedSlug(saved: unknown, slug: string): number {
+  if (Array.isArray(saved)) {
+    return saved.filter((item) => {
+      if (typeof item === 'string') return item === slug;
+      if (!isRecord(item)) return false;
+      return item.slug === slug;
+    }).length;
+  }
+
+  if (isRecord(saved)) {
+    return saved[slug] ? 1 : 0;
+  }
+
+  return 0;
+}
+
 function getReviewedCount(dailyStats: unknown): number {
   if (!isRecord(dailyStats)) return 0;
 
@@ -188,8 +204,9 @@ test.describe('Visual Lexicon local MVP smoke', () => {
 
     expect(firstSaveAnalytics).toBeTruthy();
     expect(firstSaveAnalytics?.source).toBe('word_page');
-    expect(['r2_pack', 'mock_fallback']).toContain(
-      firstSaveAnalytics?.word_found_source,
+    expect(firstSaveAnalytics?.user_state).toBe('guest');
+    expect(['r2', 'mock', 'fallback']).toContain(
+      firstSaveAnalytics?.pack_source,
     );
 
     const savedWords = await readLocalJson(page, 'vlx_saved_words_v1');
@@ -318,7 +335,12 @@ test.describe('Visual Lexicon local MVP smoke', () => {
         page,
         'vlx_review_state_v1',
       );
+    const duplicateSavedWords = await readLocalJson(
+      page,
+      'vlx_saved_words_v1',
+    );
 
     expect(duplicateReviewState?.[testSlug]).toEqual(dissonanceState);
+    expect(countSavedSlug(duplicateSavedWords, testSlug)).toBe(1);
   });
 });
