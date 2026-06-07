@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { EmptyState } from "@/components/empty-state";
+import { LocalPlanStatePanel } from "@/components/local-plan-state-panel";
 import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = {
@@ -16,14 +16,17 @@ export default function SettingsPage() {
         description="A quiet placeholder for app preferences without account, auth, or billing settings."
       />
 
+      <LocalPlanStatePanel />
+
       <section className="settings-panel" aria-labelledby="settings-shell">
         <h2 className="section-title" id="settings-shell">
           Preferences
         </h2>
-        <EmptyState
-          body="Review length, reminder cadence, and display preferences can be added after the memory loop is working."
-          title="No settings configured"
-        />
+        <p className="settings-panel__body">
+          Review length, reminder cadence, and display preferences can be added
+          after the memory loop is working. No auth, billing, or payment setting
+          is configured here.
+        </p>
       </section>
     </div>
   );
