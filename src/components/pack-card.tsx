@@ -1,6 +1,16 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { PackProgressSummary } from "@/components/pack-progress-summary";
+import {
+  hasVisiblePackProgress,
+  readPackProgress,
+  recordPackPreviewStarted
+} from "@/lib/packs/progress";
 import type { VlxPackPreview } from "@/lib/packs/preview";
+import type { VlxPackProgressItem } from "@/lib/packs/progress";
 
 function formatCount(value: number | undefined, label: string) {
   return typeof value === "number" ? `${value} ${label}` : undefined;
@@ -19,8 +29,19 @@ function getStatusLabel(status: VlxPackPreview["status"]) {
 }
 
 export function PackCard({ pack }: { pack: VlxPackPreview }) {
+  const [progress, setProgress] = useState<VlxPackProgressItem | undefined>();
   const wordCount = formatCount(pack.wordCount, "words");
   const previewCount = formatCount(pack.previewCount, "preview words");
+  const hasProgress = hasVisiblePackProgress(progress);
+  const canStartPreview = pack.status === "available";
+
+  useEffect(() => {
+    setProgress(readPackProgress(pack.packId));
+  }, [pack.packId]);
+
+  function handleStartPreview() {
+    setProgress(recordPackPreviewStarted(pack.packId, "packs_page"));
+  }
 
   return (
     <article className="pack-card">
@@ -42,7 +63,17 @@ export function PackCard({ pack }: { pack: VlxPackPreview }) {
         ) : null}
         {!wordCount ? <span className="tag">Word count pending</span> : null}
       </div>
+      <PackProgressSummary packId={pack.packId} title={pack.title} />
       <div className="actions">
+        {canStartPreview ? (
+          <Link
+            className="button button--primary"
+            href={pack.reviewHref}
+            onClick={handleStartPreview}
+          >
+            {hasProgress ? "Continue preview" : "Start preview review"}
+          </Link>
+        ) : null}
         <Link className="button button--quiet" href={`/packs/${pack.packId}`}>
           View pack
         </Link>

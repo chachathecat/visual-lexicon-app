@@ -630,6 +630,23 @@ select {
   line-height: 1.45;
 }
 
+.pack-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pack-progress--detail {
+  padding-top: 2px;
+}
+
+.pack-progress__meta {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
 .pack-detail-heading {
   display: flex;
   align-items: flex-start;

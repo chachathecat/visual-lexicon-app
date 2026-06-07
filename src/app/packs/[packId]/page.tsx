@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { EmptyState } from "@/components/empty-state";
+import { PackProgressSummary } from "@/components/pack-progress-summary";
 import { PackPreviewActions } from "@/components/pack-preview-actions";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -186,6 +187,12 @@ export default async function PackDetailPage({ params }: PackPageProps) {
               <DetailRow label="Source" value={pack.sourceLabel} />
               <DetailRow label="Updated" value={pack.updatedAt} />
             </dl>
+            <PackProgressSummary
+              packId={pack.packId}
+              recordOpen
+              title={pack.title}
+              variant="detail"
+            />
           </div>
 
           <div className="section">

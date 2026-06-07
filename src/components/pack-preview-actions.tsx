@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
+import {
+  hasVisiblePackProgress,
+  readPackProgress,
+  recordPackPreviewStarted
+} from "@/lib/packs/progress";
 import type { VlxPackPreviewStatus } from "@/lib/packs/preview";
 
 type PackPreviewActionsProps = {
@@ -27,6 +32,8 @@ export function PackPreviewActions({
   reviewHref,
   reviewFallbackNote
 }: PackPreviewActionsProps) {
+  const [hasProgress, setHasProgress] = useState(false);
+
   useEffect(() => {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.examPackPreviewView, {
       packId,
@@ -38,9 +45,14 @@ export function PackPreviewActions({
       userState: "guest",
       source: "pack_preview"
     });
+
+    setHasProgress(hasVisiblePackProgress(readPackProgress(packId)));
   }, [packId, previewCount, status, targetLabel, title, wordCount]);
 
   function handleStartPreview() {
+    const progress = recordPackPreviewStarted(packId, "pack_detail");
+
+    setHasProgress(hasVisiblePackProgress(progress));
     emitVlxEvent(VLX_ANALYTICS_EVENTS.examPackPreviewStart, {
       packId,
       title,
@@ -61,7 +73,7 @@ export function PackPreviewActions({
         href={reviewHref}
         onClick={handleStartPreview}
       >
-        Start preview review
+        {hasProgress ? "Continue preview" : "Start preview review"}
       </Link>
       {reviewFallbackNote ? (
         <p className="pack-preview-actions__note">{reviewFallbackNote}</p>
