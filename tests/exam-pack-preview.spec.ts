@@ -1,9 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const baseUrl =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
   'http://127.0.0.1:3006';
+
+const packProgressStorageKey = 'vlx_pack_progress_v1';
 
 const requiredPackRoutes = [
   {
@@ -19,6 +21,43 @@ const requiredPackRoutes = [
     heading: 'Core Visual Vocabulary',
   },
 ] as const;
+
+const plannedPlaceholderRoutes = [
+  {
+    path: '/packs/ielts-writing-vocabulary',
+    heading: 'IELTS Writing Vocabulary',
+    emptyHeading: 'IELTS pack data is not available yet',
+  },
+  {
+    path: '/packs/gre-visual-verbal',
+    heading: 'GRE Visual Verbal',
+    emptyHeading: 'GRE pack data is not available yet',
+  },
+] as const;
+
+async function readLocalJson<T = unknown>(
+  page: Page,
+  key: string,
+): Promise<T | null> {
+  return await page.evaluate((storageKey) => {
+    const raw = localStorage.getItem(storageKey);
+
+    if (!raw) return null;
+
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }, key);
+}
+
+async function clearPackProgress(page: Page) {
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.evaluate((storageKey) => {
+    localStorage.removeItem(storageKey);
+  }, packProgressStorageKey);
+}
 
 test.describe('Visual Lexicon exam pack preview MVP', () => {
   test('/packs renders starter pack cards or a safe fallback', async ({ page }) => {
@@ -93,6 +132,7 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
   test('Start preview review CTA navigates to a supported review route', async ({
     page,
   }) => {
+    await clearPackProgress(page);
     await page.goto(`${baseUrl}/packs/academic-vocabulary`, {
       waitUntil: 'networkidle',
     });
@@ -112,6 +152,70 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
     await expect(
       page.getByRole('heading', { name: /Review a vocabulary hub/i }),
     ).toBeVisible();
+
+    const progressStore = await readLocalJson<Record<string, Record<string, unknown>>>(
+      page,
+      packProgressStorageKey,
+    );
+    const academicProgress = progressStore?.['academic-vocabulary'];
+
+    expect(academicProgress?.source).toBe('pack_detail');
+    expect(typeof academicProgress?.previewStartedAt).toBe('string');
+  });
+
+  test('starting Academic preview records local pack progress and exposes a continue state', async ({
+    page,
+  }) => {
+    await clearPackProgress(page);
+    await page.goto(`${baseUrl}/packs`, {
+      waitUntil: 'networkidle',
+    });
+
+    const academicCard = page
+      .locator('article.pack-card')
+      .filter({ hasText: 'Academic Vocabulary' });
+
+    await academicCard
+      .getByRole('link', { name: 'Start preview review' })
+      .click();
+    await expect(page).toHaveURL(
+      /\/review\?mode=hub&hub=academic-vocabulary&limit=10$/,
+    );
+
+    await expect
+      .poll(async () => {
+        const progressStore = await readLocalJson<Record<string, unknown>>(
+          page,
+          packProgressStorageKey,
+        );
+
+        return Boolean(progressStore?.['academic-vocabulary']);
+      })
+      .toBe(true);
+
+    const progressStore = await readLocalJson<Record<string, Record<string, unknown>>>(
+      page,
+      packProgressStorageKey,
+    );
+    const academicProgress = progressStore?.['academic-vocabulary'];
+
+    expect(academicProgress?.packId).toBe('academic-vocabulary');
+    expect(typeof academicProgress?.startedAt).toBe('string');
+    expect(typeof academicProgress?.previewStartedAt).toBe('string');
+    expect(academicProgress?.reviewedCount).toBe(0);
+    expect(academicProgress?.correctCount).toBe(0);
+    expect(academicProgress?.source).toBe('packs_page');
+
+    await page.goto(`${baseUrl}/packs`, { waitUntil: 'networkidle' });
+
+    const updatedAcademicCard = page
+      .locator('article.pack-card')
+      .filter({ hasText: 'Academic Vocabulary' });
+
+    await expect(
+      updatedAcademicCard.getByRole('link', { name: 'Continue preview' }),
+    ).toBeVisible();
+    await expect(updatedAcademicCard.getByText('Preview started')).toBeVisible();
   });
 
   test('missing planned exam pack data uses a clear empty state', async ({
@@ -131,5 +235,55 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
       }),
     ).toBeVisible();
     await expect(page.getByText(/safest existing mixed review route/i)).toBeVisible();
+  });
+
+  test('planned IELTS and GRE placeholders remain honest without fake progress', async ({
+    page,
+  }) => {
+    await clearPackProgress(page);
+    await page.goto(`${baseUrl}/packs`, { waitUntil: 'networkidle' });
+
+    for (const route of plannedPlaceholderRoutes) {
+      const card = page
+        .locator('article.pack-card')
+        .filter({ hasText: route.heading });
+
+      await expect(card.getByText('Data pending')).toBeVisible();
+      await expect(card.getByText('Word count pending')).toBeVisible();
+      await expect(card.getByText(/preview words/i)).toHaveCount(0);
+      await expect(
+        card.getByRole('link', { name: 'Start preview review' }),
+      ).toHaveCount(0);
+      await expect(
+        card.getByText(/Continue preview|Preview started|Preview completed|\d+ reviewed/i),
+      ).toHaveCount(0);
+    }
+
+    for (const route of plannedPlaceholderRoutes) {
+      await page.goto(`${baseUrl}${route.path}`, { waitUntil: 'networkidle' });
+
+      await expect(
+        page.getByRole('heading', { level: 1, name: route.heading }),
+      ).toBeVisible();
+      await expect(page.getByText('Data pending')).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: route.emptyHeading }),
+      ).toBeVisible();
+      await expect(
+        page
+          .locator('.detail-row')
+          .filter({ hasText: 'Words' })
+          .getByText('Not available yet'),
+      ).toBeVisible();
+      await expect(
+        page
+          .locator('.detail-row')
+          .filter({ hasText: 'Preview' })
+          .getByText('Not available yet'),
+      ).toBeVisible();
+      await expect(
+        page.getByText(/Continue preview|Preview started|Preview completed|\d+ reviewed/i),
+      ).toHaveCount(0);
+    }
   });
 });
