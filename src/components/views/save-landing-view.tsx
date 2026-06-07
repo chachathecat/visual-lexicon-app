@@ -7,9 +7,10 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import type {
-  VlxSaveWordFoundSource,
+  VlxSavePackSource,
   VlxSaveWordResult
 } from "@/lib/analytics";
+import type { VlxWordFoundSource } from "@/lib/packs";
 import { getMockQuizWordBySlug } from "@/lib/packs/mock-data";
 import type { VlxQuizWord } from "@/lib/packs/types";
 import {
@@ -28,7 +29,7 @@ type SaveLandingViewProps = {
   slug?: string;
   source?: string;
   word?: VlxQuizWord | null;
-  wordFoundSource?: VlxSaveWordFoundSource;
+  wordFoundSource?: VlxWordFoundSource;
 };
 
 type SaveStatus =
@@ -164,16 +165,41 @@ function emitSaveWordAnalytics(input: {
   source?: string;
   result: VlxSaveWordResult;
   word?: SaveAnalyticsWord;
-  wordFoundSource: VlxSaveWordFoundSource;
+  packSource: VlxSavePackSource;
 }) {
   emitVlxEvent(VLX_ANALYTICS_EVENTS.saveWordClick, {
     slug: input.slug ?? "",
     source: normalizeAnalyticsSource(input.source),
+    user_state: "guest",
     result: input.result,
     word: input.word?.word,
     hub: input.word?.hub,
-    word_found_source: input.wordFoundSource
+    pack_source: input.packSource
   });
+}
+
+function getAnalyticsPackSource(input: {
+  packWord?: VlxQuizWord | null;
+  word?: VlxQuizWord;
+  wordFoundSource: VlxWordFoundSource;
+}): VlxSavePackSource {
+  if (!input.word) {
+    return "unavailable";
+  }
+
+  if (!input.packWord) {
+    return "mock";
+  }
+
+  if (input.wordFoundSource === "r2_pack") {
+    return "r2";
+  }
+
+  if (input.wordFoundSource === "mock_fallback") {
+    return "fallback";
+  }
+
+  return "unavailable";
 }
 
 export function SaveLandingView({
@@ -192,11 +218,16 @@ export function SaveLandingView({
     [normalizedSlug, packWord]
   );
   const word = packWord ?? fallbackWord;
-  const resolvedWordFoundSource: VlxSaveWordFoundSource = word
+  const resolvedWordFoundSource: VlxWordFoundSource = word
     ? packWord
       ? wordFoundSource
       : "mock_fallback"
     : "missing";
+  const packSource = getAnalyticsPackSource({
+    packWord,
+    word,
+    wordFoundSource: resolvedWordFoundSource
+  });
   const [outcome, setOutcome] = useState<SaveOutcome>(() =>
     getInitialOutcome(normalizedSlug, word)
   );
@@ -208,7 +239,7 @@ export function SaveLandingView({
         slug: normalizedSlug,
         source,
         result: "missing",
-        wordFoundSource: "missing"
+        packSource: "unavailable"
       });
       return;
     }
@@ -219,7 +250,7 @@ export function SaveLandingView({
         slug: normalizedSlug,
         source,
         result: "missing",
-        wordFoundSource: "missing"
+        packSource
       });
       return;
     }
@@ -231,7 +262,7 @@ export function SaveLandingView({
         source,
         result: "storage_error",
         word,
-        wordFoundSource: resolvedWordFoundSource
+        packSource
       });
       return;
     }
@@ -265,7 +296,7 @@ export function SaveLandingView({
         source,
         result: existingSavedWord ? "duplicate" : "saved",
         word: savedWord,
-        wordFoundSource: resolvedWordFoundSource
+        packSource
       });
     } catch {
       setOutcome({ status: "storage_error" });
@@ -274,10 +305,10 @@ export function SaveLandingView({
         source,
         result: "storage_error",
         word,
-        wordFoundSource: resolvedWordFoundSource
+        packSource
       });
     }
-  }, [normalizedSlug, normalizedSource, resolvedWordFoundSource, source, word]);
+  }, [normalizedSlug, normalizedSource, packSource, source, word]);
 
   if (outcome.status === "checking") {
     return (

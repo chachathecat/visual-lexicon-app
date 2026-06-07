@@ -33,10 +33,11 @@ export type VlxSaveWordResult =
   | "missing"
   | "storage_error";
 
-export type VlxSaveWordFoundSource =
-  | "r2_pack"
-  | "mock_fallback"
-  | "missing";
+export type VlxSavePackSource =
+  | "r2"
+  | "mock"
+  | "fallback"
+  | "unavailable";
 
 export type VlxExamPackPreviewStatus =
   | "available"
@@ -125,8 +126,9 @@ export type VlxSaveWordClickEventPayload = VlxAnalyticsBasePayload & {
   slug: string;
   word?: string;
   hub?: string;
+  user_state: VlxAnalyticsUserState;
   result: VlxSaveWordResult;
-  word_found_source?: VlxSaveWordFoundSource;
+  pack_source: VlxSavePackSource;
 };
 
 export type VlxExamPackPreviewViewEventPayload = VlxAnalyticsBasePayload & {
