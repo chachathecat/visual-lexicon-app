@@ -8,6 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
+    "test": "playwright test",
+    "test:paywall": "playwright test tests/paywall-triggers.spec.ts tests/paywall-surfaces.spec.ts",
     "test:e2e": "playwright test",
     "test:mvp": "playwright test tests/mvp-smoke.spec.ts",
     "test:review": "playwright test tests/review-state-regression.spec.ts tests/review-mode-routes.spec.ts",

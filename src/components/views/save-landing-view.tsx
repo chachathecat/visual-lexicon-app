@@ -5,14 +5,20 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PaywallPrompt } from "@/components/paywall-prompt";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import type {
   VlxSavePackSource,
   VlxSaveWordResult
 } from "@/lib/analytics";
+import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import type { VlxWordFoundSource } from "@/lib/packs";
 import { getMockQuizWordBySlug } from "@/lib/packs/mock-data";
 import type { VlxQuizWord } from "@/lib/packs/types";
+import {
+  evaluateSaveLimitPaywall,
+  type VlxPaywallPrompt
+} from "@/lib/paywall";
 import {
   createReviewItemFromSavedWord,
   readReviewState,
@@ -51,6 +57,11 @@ type SaveOutcome = {
 type SaveAnalyticsWord = {
   word?: string;
   hub?: string;
+};
+
+type SavePaywallSurface = {
+  prompt: VlxPaywallPrompt;
+  userState: VlxPlanId;
 };
 
 const validSources = new Set<string>([
@@ -231,10 +242,13 @@ export function SaveLandingView({
   const [outcome, setOutcome] = useState<SaveOutcome>(() =>
     getInitialOutcome(normalizedSlug, word)
   );
+  const [paywallSurface, setPaywallSurface] =
+    useState<SavePaywallSurface | null>(null);
 
   useEffect(() => {
     if (!normalizedSlug) {
       setOutcome({ status: "missing_slug" });
+      setPaywallSurface(null);
       emitSaveWordAnalytics({
         slug: normalizedSlug,
         source,
@@ -246,6 +260,7 @@ export function SaveLandingView({
 
     if (!word) {
       setOutcome({ status: "unknown_word" });
+      setPaywallSurface(null);
       emitSaveWordAnalytics({
         slug: normalizedSlug,
         source,
@@ -257,6 +272,7 @@ export function SaveLandingView({
 
     if (!canUseLocalStorage()) {
       setOutcome({ status: "storage_unavailable" });
+      setPaywallSurface(null);
       emitSaveWordAnalytics({
         slug: normalizedSlug,
         source,
@@ -274,15 +290,25 @@ export function SaveLandingView({
       const existingSavedWord = savedWords[word.slug];
       const savedWord =
         existingSavedWord ?? toSavedWord(word, normalizedSource, savedAt);
+      const nextSavedWords = existingSavedWord
+        ? savedWords
+        : {
+            ...savedWords,
+            [savedWord.slug]: savedWord
+          };
 
       if (!existingSavedWord) {
-        writeSavedWords({
-          ...savedWords,
-          [savedWord.slug]: savedWord
-        });
+        writeSavedWords(nextSavedWords);
       }
 
       const reviewItem = createReviewItemFromSavedWord(savedWord, savedAt);
+      const userState = readLocalPlanState().plan;
+      const savedCount = Object.keys(readSavedWords()).length;
+      const paywallPrompt = evaluateSaveLimitPaywall({
+        plan: userState,
+        savedCount,
+        source: "save_confirmation"
+      });
 
       setOutcome({
         status: "saved",
@@ -291,6 +317,9 @@ export function SaveLandingView({
         alreadySaved: Boolean(existingSavedWord),
         alreadyQueued: Boolean(reviewState[word.slug])
       });
+      setPaywallSurface(
+        paywallPrompt ? { prompt: paywallPrompt, userState } : null
+      );
       emitSaveWordAnalytics({
         slug: word.slug,
         source,
@@ -300,6 +329,7 @@ export function SaveLandingView({
       });
     } catch {
       setOutcome({ status: "storage_error" });
+      setPaywallSurface(null);
       emitSaveWordAnalytics({
         slug: normalizedSlug,
         source,
@@ -450,6 +480,13 @@ export function SaveLandingView({
           <p className="save-panel__note">Preparing save confirmation.</p>
         )}
       </section>
+
+      {paywallSurface ? (
+        <PaywallPrompt
+          prompt={paywallSurface.prompt}
+          userState={paywallSurface.userState}
+        />
+      ) : null}
     </div>
   );
 }

@@ -4,14 +4,29 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { PaywallPrompt } from "@/components/paywall-prompt";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
+import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import { mockQuizWords } from "@/lib/packs/mock-data";
 import { recordPackReviewCompleted } from "@/lib/packs/progress";
 import type { VlxQuizWord } from "@/lib/packs/types";
+import {
+  evaluateExamPackPreviewEndPaywall,
+  evaluateMistakeExplanationLockedPaywall,
+  evaluateReviewLimitPaywall,
+  type VlxPaywallPrompt
+} from "@/lib/paywall";
 import type { VlxReviewRouteMode } from "@/lib/review/route-contract";
-import { getDueToday, getNewSaved, getWeakWords } from "@/lib/srs/selectors";
+import {
+  getDueToday,
+  getNewSaved,
+  getReviewedToday,
+  getWeakWords
+} from "@/lib/srs/selectors";
 import {
   applyReviewAnswer,
+  readDailyStats,
+  readReviewEvents,
   readReviewState,
   readSavedWords
 } from "@/lib/srs/storage";
@@ -106,6 +121,11 @@ type SessionSummary = {
   weakSpotlight?: SessionSummarySpotlight;
   nextDueAt?: string;
   nextDueWord?: string;
+};
+
+type ReviewPaywallSurface = {
+  prompt: VlxPaywallPrompt;
+  userState: VlxPlanId;
 };
 
 const modeCopy = {
@@ -652,6 +672,60 @@ function getNextReviewMessage(nextDueAt?: string, word?: string) {
   return word ? `${word} is next due ${label}.` : `Next review is due ${label}.`;
 }
 
+function getReviewSummaryPaywallSurface({
+  packId,
+  routeSource,
+  sessionId
+}: {
+  packId?: string;
+  routeSource?: string;
+  sessionId: string;
+}): ReviewPaywallSurface | null {
+  const userState = readLocalPlanState().plan;
+
+  if (packId && routeSource === "pack_preview") {
+    const prompt = evaluateExamPackPreviewEndPaywall({
+      plan: userState,
+      packId,
+      previewCompleted: true,
+      source: "review_exam_pack_preview_end"
+    });
+
+    if (prompt) {
+      return { prompt, userState };
+    }
+  }
+
+  const dailyReviewedCount = getReviewedToday(readDailyStats());
+  const reviewLimitPrompt = evaluateReviewLimitPaywall({
+    plan: userState,
+    dailyReviewedCount,
+    source: "review_limit"
+  });
+
+  if (reviewLimitPrompt) {
+    return { prompt: reviewLimitPrompt, userState };
+  }
+
+  const sessionWrongEvents = readReviewEvents().filter(
+    (event) => event.sessionId === sessionId && event.result === "wrong"
+  );
+  const lastWrongEvent = sessionWrongEvents.at(-1);
+
+  if (!lastWrongEvent) {
+    return null;
+  }
+
+  const mistakePrompt = evaluateMistakeExplanationLockedPaywall({
+    plan: userState,
+    wrongCount: sessionWrongEvents.length,
+    slug: lastWrongEvent.slug,
+    source: "review_mistake_explanation"
+  });
+
+  return mistakePrompt ? { prompt: mistakePrompt, userState } : null;
+}
+
 export function ReviewSessionView({
   limit = SESSION_SIZE,
   mode,
@@ -683,6 +757,8 @@ export function ReviewSessionView({
   const [completedSummary, setCompletedSummary] = useState<SessionSummary | null>(
     null
   );
+  const [summaryPaywallSurface, setSummaryPaywallSurface] =
+    useState<ReviewPaywallSurface | null>(null);
   const [queueLabel, setQueueLabel] = useState(copy.sourceLabel);
   const [availability, setAvailability] = useState<AvailabilityStats>({
     dueCount: 0,
@@ -706,6 +782,7 @@ export function ReviewSessionView({
       if (!nextQuestions.length) {
         setStatus("empty");
         setCompletedSummary(null);
+        setSummaryPaywallSurface(null);
         completionRecordedSessionId.current = null;
         return;
       }
@@ -723,6 +800,7 @@ export function ReviewSessionView({
       setCurrentAnswer(null);
       setAnswers([]);
       setCompletedSummary(null);
+      setSummaryPaywallSurface(null);
       setQueueLabel(label);
       setStatus("active");
       completionRecordedSessionId.current = null;
@@ -785,6 +863,7 @@ export function ReviewSessionView({
         setQuestions([]);
         setAnswers([]);
         setCompletedSummary(null);
+        setSummaryPaywallSurface(null);
         setCurrentAnswer(null);
         setSelectedAnswer(null);
         completionRecordedSessionId.current = null;
@@ -802,6 +881,7 @@ export function ReviewSessionView({
       setQuestions([]);
       setAnswers([]);
       setCompletedSummary(null);
+      setSummaryPaywallSurface(null);
       setCurrentAnswer(null);
       setSelectedAnswer(null);
       completionRecordedSessionId.current = null;
@@ -943,6 +1023,13 @@ export function ReviewSessionView({
         wrongCount: nextSummary.wrong,
         weakWordsCount: nextSummary.weakAdded
       });
+      setSummaryPaywallSurface(
+        getReviewSummaryPaywallSurface({
+          packId,
+          routeSource,
+          sessionId
+        })
+      );
       setStatus("summary");
       return;
     }
@@ -1169,6 +1256,13 @@ export function ReviewSessionView({
                 </div>
               ) : null}
             </div>
+          ) : null}
+
+          {summaryPaywallSurface ? (
+            <PaywallPrompt
+              prompt={summaryPaywallSurface.prompt}
+              userState={summaryPaywallSurface.userState}
+            />
           ) : null}
 
           <div className="review-results" aria-label="Reviewed cards">
