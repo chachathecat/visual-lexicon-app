@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  quality:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  smoke-e2e:
+    name: Smoke E2E
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Start app on port 3006
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 3006 > next-server.log 2>&1 &
+          echo $! > next-server.pid
+
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3006 >/dev/null; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          cat next-server.log
+          exit 1
+
+      - name: MVP smoke
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
+        run: npm run test:mvp
+
+      - name: Review regressions
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
+        run: npm run test:review
+
+      - name: Pack preview
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
+        run: npm run test:packs
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [ -f next-server.pid ]; then
+            kill "$(cat next-server.pid)" || true
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+
+      - name: Upload server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-server-log
+          path: next-server.log
+          if-no-files-found: ignore
