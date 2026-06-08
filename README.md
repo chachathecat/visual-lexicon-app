@@ -36,23 +36,30 @@ pack URLs or browser-exposed environment variables.
 
 ## Verification
 
-Run type checking:
+Run the static health checks:
 
 ```bash
 npm run typecheck
-```
-
-Run linting:
-
-```bash
 npm run lint
-```
-
-Create a production build:
-
-```bash
 npm run build
 ```
+
+Start the app for browser checks:
+
+```bash
+npm run dev -- --hostname 127.0.0.1 --port 3006
+```
+
+Then run the focused MVP checks in another terminal:
+
+```bash
+npm run test:mvp
+npm run test:review
+npm run test:packs
+```
+
+The Playwright checks expect the app to be running on `http://127.0.0.1:3006`
+unless `PLAYWRIGHT_BASE_URL` is set.
 
 ## Current Scope
 
