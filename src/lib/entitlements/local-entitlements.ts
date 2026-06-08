@@ -44,13 +44,13 @@ export const VLX_PLAN_DEFINITIONS = {
     label: "Free",
     priceLabel: "$0",
     summary:
-      "A starter habit for saving a focused set of visual words and reviewing them daily.",
-    outcome: "Build a real review habit with basic starter decks.",
-    availabilityNote: "Local MVP only. No billing or subscription is active.",
+      "Save a focused starter set, review a basic daily queue, and keep progress in this browser while the MVP stays local.",
+    outcome: "Start remembering your first 50 words.",
+    availabilityNote: "Local MVP. No billing or active subscription is connected.",
     featureBullets: [
-      "Save up to 50 words",
-      "Review up to 10 words per day",
-      "Use basic starter decks"
+      "Save up to 50 visual words",
+      "Basic daily review for the first habit loop",
+      "Browser local state with no account sync"
     ],
     limits: {
       localOnlyState: true,
@@ -72,13 +72,13 @@ export const VLX_PLAN_DEFINITIONS = {
     label: "Lite",
     priceLabel: "Planned",
     summary:
-      "For learners who want the full review queue without exam or AI surfaces.",
-    outcome: "Turn every saved word into unlimited due and weak-word review.",
-    availabilityNote: "Placeholder only. Billing is not connected.",
+      "For learners who want every saved word to keep moving through due review and weak-word practice.",
+    outcome: "Build a daily visual memory habit.",
+    availabilityNote: "Paid beta placeholder. Billing is not connected.",
     featureBullets: [
-      "Unlimited saved words",
-      "Unlimited review with the full due queue",
-      "Weak words and no-ads marker"
+      "Unlimited save and review placeholder",
+      "Full due queue and weak-word practice",
+      "No-ads marker for paid beta positioning"
     ],
     limits: {
       localOnlyState: true,
@@ -100,12 +100,12 @@ export const VLX_PLAN_DEFINITIONS = {
     label: "Pro",
     priceLabel: "Planned",
     summary:
-      "For exam-focused learners who need targeted practice and richer memory diagnostics.",
-    outcome: "Add exam packs, weak sprints, and future mistake explanations.",
-    availabilityNote: "Placeholder only. Billing is not connected.",
+      "For learners using memory state to repair repeated misses and follow an exam pack path as it becomes available.",
+    outcome: "Fix weak words and prepare for exams.",
+    availabilityNote: "Paid beta placeholder. No real subscription is created.",
     featureBullets: [
       "Everything in Lite",
-      "Exam packs and weak sprint placeholder",
+      "Exam pack path and focused weak sprint placeholders",
       "Mistake explanation and progress history placeholders"
     ],
     limits: {

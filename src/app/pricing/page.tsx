@@ -14,14 +14,53 @@ export const metadata: Metadata = {
 
 const pricingPlanIds = ["free", "lite", "pro"] as const satisfies readonly VlxPlanId[];
 
+const outcomeSteps = [
+  {
+    title: "Save words you meet",
+    body: "A saved visual word becomes a review item, not a static bookmark."
+  },
+  {
+    title: "Review before forgetting",
+    body: "The due queue keeps words coming back while recall still needs work."
+  },
+  {
+    title: "Repair weak words",
+    body: "Repeated misses stay visible so practice can focus on the fragile memories."
+  },
+  {
+    title: "Continue exam packs",
+    body: "Exam paths can build on saved words, review state, and mistake history."
+  }
+] as const;
+
 export default function PricingPage() {
   return (
     <div className="page">
       <PageHeader
         eyebrow="Pricing"
-        title="Choose the memory loop you need."
-        description="Free, Lite, and Pro are shown as entitlement shells only. No billing provider, checkout, or active subscription is connected in this local MVP."
+        title="Turn visual words into remembered words."
+        description="This local MVP pricing surface is for paid beta positioning around a visual memory habit, weak-word repair, and an exam pack path. Billing is not connected, and upgrade actions are placeholders."
       />
+
+      <section className="section" aria-labelledby="pricing-outcomes">
+        <div className="section-heading">
+          <h2 className="section-title" id="pricing-outcomes">
+            Outcomes before features
+          </h2>
+          <span className="section-note">
+            The paid beta should prove memory behavior before checkout.
+          </span>
+        </div>
+        <div className="card-grid card-grid--two">
+          {outcomeSteps.map((step, index) => (
+            <article className="empty-state" key={step.title}>
+              <span className="eyebrow">{String(index + 1).padStart(2, "0")}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="pricing-grid" aria-label="Plan previews">
         {pricingPlanIds.map((planId) => {
@@ -61,12 +100,12 @@ export default function PricingPage() {
 
       <section className="settings-panel" aria-labelledby="guest-plan-note">
         <h2 className="section-title" id="guest-plan-note">
-          Guest access remains local
+          Local MVP billing disclaimer
         </h2>
         <p className="settings-panel__body">
-          Guest mode keeps browser-only state, a five-card sample, and no account
-          sync. Upgrades are placeholders until real billing and account
-          entitlements are added deliberately.
+          Billing is not connected. Upgrade clicks only record local interest and
+          placeholder analytics through vlx_upgrade_click. No real subscription
+          is created.
         </p>
       </section>
     </div>
