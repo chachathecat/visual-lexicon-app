@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LocalPlanStatePanel } from "@/components/local-plan-state-panel";
+import { LocalPaywallTriggerPanel } from "@/components/local-paywall-trigger-panel";
 import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = {
@@ -17,6 +18,8 @@ export default function SettingsPage() {
       />
 
       <LocalPlanStatePanel />
+
+      <LocalPaywallTriggerPanel />
 
       <section className="settings-panel" aria-labelledby="settings-shell">
         <h2 className="section-title" id="settings-shell">
