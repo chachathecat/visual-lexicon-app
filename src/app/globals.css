@@ -859,6 +859,69 @@ select {
   gap: 9px;
 }
 
+.paywall-prompt-list {
+  display: grid;
+  gap: 12px;
+}
+
+.paywall-prompt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.paywall-prompt__body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.paywall-prompt__body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.paywall-prompt__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.paywall-prompt__metrics div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.paywall-prompt__metrics dt {
+  font-weight: 720;
+}
+
+.paywall-prompt__metrics dd {
+  margin: 0;
+}
+
+.paywall-prompt__action {
+  display: grid;
+  gap: 9px;
+  justify-items: end;
+  max-width: 230px;
+}
+
 .review-session {
   display: grid;
   gap: 16px;
@@ -1091,9 +1154,19 @@ select {
   .section-heading,
   .review-session__topline,
   .review-feedback,
-  .review-result-row {
+  .review-result-row,
+  .paywall-prompt {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .paywall-prompt {
+    grid-template-columns: 1fr;
+  }
+
+  .paywall-prompt__action {
+    justify-items: start;
+    max-width: none;
   }
 
   .page-title {
