@@ -15,6 +15,7 @@ const storageKeys = [
   'vlx_daily_stats_v1',
   'vlx_pack_progress_v1',
   'vlx_plan_state_v1',
+  'vlx_upgrade_interest_v1',
 ] as const;
 
 function oneHourAgo() {
@@ -281,7 +282,36 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
       })
       .toBe(true);
 
+    const pageUrlBeforeClick = page.url();
+
     await prompt.getByRole('button', { name: 'Preview Lite' }).click();
+
+    await expect(page).toHaveURL(pageUrlBeforeClick);
+    await expect(
+      prompt.getByText('Paid beta interest noted locally. Billing is not connected.'),
+    ).toBeVisible();
+    const interestRecords = await readLocalJson<Record<string, unknown>[]>(
+      page,
+      'vlx_upgrade_interest_v1',
+    );
+
+    expect(interestRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          plan: 'lite',
+          source: 'save_confirmation',
+          trigger: 'save_limit',
+        }),
+      ]),
+    );
+    expect(
+      interestRecords?.some(
+        (record) =>
+          typeof record.createdAt === 'string' &&
+          typeof record.pagePath === 'string' &&
+          record.pagePath.startsWith('/save?slug=dissonance'),
+      ),
+    ).toBe(true);
 
     await expect
       .poll(async () => {
@@ -293,6 +323,74 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
         );
       })
       .toBe(true);
+  });
+
+  test('pricing page Lite and Pro placeholders record local paid beta interest', async ({
+    page,
+  }) => {
+    await clearVlxLocalStorage(page);
+    await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
+
+    const pricingUrl = page.url();
+
+    await page.getByRole('button', { name: 'Preview Lite' }).click();
+    await page.getByRole('button', { name: 'Preview Pro' }).click();
+
+    await expect(page).toHaveURL(pricingUrl);
+    await expect(
+      page.getByText('Paid beta interest noted locally. Billing is not connected.'),
+    ).toHaveCount(2);
+
+    const interestRecords = await readLocalJson<Record<string, unknown>[]>(
+      page,
+      'vlx_upgrade_interest_v1',
+    );
+
+    expect(interestRecords).toHaveLength(2);
+    expect(interestRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          plan: 'lite',
+          source: 'pricing_page',
+          pagePath: '/pricing',
+        }),
+        expect.objectContaining({
+          plan: 'pro',
+          source: 'pricing_page',
+          pagePath: '/pricing',
+        }),
+      ]),
+    );
+    expect(
+      interestRecords?.every((record) => typeof record.createdAt === 'string'),
+    ).toBe(true);
+  });
+
+  test('configured pricing CTA exposes an external paid beta href when available', async ({
+    page,
+  }) => {
+    await clearVlxLocalStorage(page);
+    await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
+
+    const liteLink = page.getByRole('link', { name: 'Preview Lite' });
+
+    test.skip(
+      (await liteLink.count()) === 0,
+      'No paid beta upgrade URL is configured for the running app.',
+    );
+
+    await expect(liteLink).toHaveAttribute('target', '_blank');
+    await expect(liteLink).toHaveAttribute('rel', /noopener noreferrer/);
+
+    const href = await liteLink.getAttribute('href');
+
+    expect(href).toBeTruthy();
+
+    const url = new URL(href as string);
+
+    expect(url.protocol).toMatch(/^https?:$/);
+    expect(url.searchParams.get('plan')).toBe('lite');
+    expect(url.searchParams.get('source')).toBe('pricing_page');
   });
 
   test('no prompt appears for Lite or Pro local plan when access already exists', async ({

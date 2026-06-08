@@ -34,6 +34,21 @@ When no static pack base URL is configured, the app uses local mock pack
 data. The pack reader expects public JSON files only; do not put API tokens in
 pack URLs or browser-exposed environment variables.
 
+Optional paid beta upgrade placeholders:
+
+```txt
+NEXT_PUBLIC_LITE_PAYMENT_URL=https://example.com/lite-beta
+NEXT_PUBLIC_PRO_PAYMENT_URL=https://example.com/pro-beta
+NEXT_PUBLIC_PAID_BETA_FORM_URL=https://example.com/paid-beta-interest
+```
+
+These URLs are placeholders only. When a Lite or Pro URL is configured, upgrade
+CTAs render as external links and append `plan` and `source` query parameters.
+When no URL is configured, the app stays local, records interest in
+`vlx_upgrade_interest_v1`, and shows: `Paid beta interest noted locally. Billing
+is not connected.` No checkout route, payment SDK, billing setting, or real
+subscription is created by this app.
+
 ## Verification
 
 Run the static health checks:

@@ -8,6 +8,8 @@ import {
   type VlxAnalyticsUserState
 } from "@/lib/analytics";
 import type { VlxPaywallPrompt } from "@/lib/paywall";
+import { appendUpgradeInterest } from "@/lib/upgrade/upgrade-interest";
+import { getUpgradeTarget } from "@/lib/upgrade/upgrade-targets";
 
 function formatMetricLabel(key: string) {
   return key
@@ -27,6 +29,7 @@ export function PaywallPrompt({
   const titleId = useId();
   const [clicked, setClicked] = useState(false);
   const metrics = Object.entries(prompt.reasonMetrics ?? {});
+  const upgradeTarget = getUpgradeTarget(prompt.recommendedPlan, prompt.source);
 
   useEffect(() => {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.paywallView, {
@@ -36,12 +39,22 @@ export function PaywallPrompt({
     });
   }, [prompt.id, prompt.recommendedPlan, prompt.source, userState]);
 
-  function handleUpgradeClick() {
+  function recordUpgradeClick() {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.upgradeClick, {
       plan: prompt.recommendedPlan,
       source: prompt.source,
       userState
     });
+
+    appendUpgradeInterest({
+      plan: prompt.recommendedPlan,
+      source: prompt.source,
+      trigger: prompt.id
+    });
+  }
+
+  function handleUpgradeClick() {
+    recordUpgradeClick();
     setClicked(true);
   }
 
@@ -69,16 +82,28 @@ export function PaywallPrompt({
         ) : null}
       </div>
       <div className="paywall-prompt__action">
-        <button
-          className="button button--primary"
-          onClick={handleUpgradeClick}
-          type="button"
-        >
-          {prompt.primaryCtaLabel}
-        </button>
+        {upgradeTarget ? (
+          <a
+            className="button button--primary"
+            href={upgradeTarget}
+            onClick={recordUpgradeClick}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {prompt.primaryCtaLabel}
+          </a>
+        ) : (
+          <button
+            className="button button--primary"
+            onClick={handleUpgradeClick}
+            type="button"
+          >
+            {prompt.primaryCtaLabel}
+          </button>
+        )}
         {clicked ? (
           <p className="upgrade-placeholder__note" role="status">
-            Upgrade interest noted locally. Billing is not connected.
+            Paid beta interest noted locally. Billing is not connected.
           </p>
         ) : null}
       </div>
