@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import {
   evaluateExamPackPreviewEndPaywall,
@@ -8,6 +10,46 @@ import {
   evaluateSaveLimitPaywall,
   evaluateWeakWordsSprintLockedPaywall,
 } from '../src/lib/paywall';
+import {
+  getUpgradeTarget,
+  hasConfiguredUpgradeUrl,
+  normalizeUpgradeSource,
+} from '../src/lib/upgrade/upgrade-targets';
+
+const upgradeEnvKeys = [
+  'NEXT_PUBLIC_LITE_PAYMENT_URL',
+  'NEXT_PUBLIC_PRO_PAYMENT_URL',
+  'NEXT_PUBLIC_PAID_BETA_FORM_URL',
+] as const;
+
+const originalUpgradeEnv = upgradeEnvKeys.reduce<
+  Partial<Record<(typeof upgradeEnvKeys)[number], string>>
+>((store, key) => {
+  store[key] = process.env[key];
+  return store;
+}, {});
+
+function clearUpgradeEnv() {
+  for (const key of upgradeEnvKeys) {
+    delete process.env[key];
+  }
+}
+
+function restoreUpgradeEnv() {
+  for (const key of upgradeEnvKeys) {
+    const originalValue = originalUpgradeEnv[key];
+
+    if (originalValue === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = originalValue;
+    }
+  }
+}
+
+test.afterEach(() => {
+  restoreUpgradeEnv();
+});
 
 test.describe('Visual Lexicon paywall trigger evaluator', () => {
   test('save_limit recommends Lite at the free saved-word limit', () => {
@@ -188,5 +230,88 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
         source: 'review_feedback',
       }),
     ).toBeNull();
+  });
+
+  test('upgrade target helper stays local without configured paid beta URLs', () => {
+    clearUpgradeEnv();
+
+    expect(hasConfiguredUpgradeUrl('lite')).toBe(false);
+    expect(hasConfiguredUpgradeUrl('pro')).toBe(false);
+    expect(getUpgradeTarget('lite', 'Pricing Page')).toBeNull();
+    expect(normalizeUpgradeSource('Pricing Page')).toBe('pricing_page');
+  });
+
+  test('upgrade target helper exposes configured external placeholder URLs', () => {
+    clearUpgradeEnv();
+    process.env.NEXT_PUBLIC_LITE_PAYMENT_URL =
+      'https://paid-beta.example.test/lite';
+    process.env.NEXT_PUBLIC_PAID_BETA_FORM_URL =
+      'https://paid-beta.example.test/form';
+
+    const liteTarget = getUpgradeTarget('lite', 'pricing page');
+    const proTarget = getUpgradeTarget('pro', 'Weak Words Sprint');
+
+    expect(hasConfiguredUpgradeUrl('lite')).toBe(true);
+    expect(hasConfiguredUpgradeUrl('pro')).toBe(true);
+    expect(liteTarget).toBeTruthy();
+    expect(proTarget).toBeTruthy();
+
+    const liteUrl = new URL(liteTarget as string);
+    const proUrl = new URL(proTarget as string);
+
+    expect(`${liteUrl.origin}${liteUrl.pathname}`).toBe(
+      'https://paid-beta.example.test/lite',
+    );
+    expect(liteUrl.searchParams.get('plan')).toBe('lite');
+    expect(liteUrl.searchParams.get('source')).toBe('pricing_page');
+    expect(`${proUrl.origin}${proUrl.pathname}`).toBe(
+      'https://paid-beta.example.test/form',
+    );
+    expect(proUrl.searchParams.get('plan')).toBe('pro');
+    expect(proUrl.searchParams.get('source')).toBe('weak_words_sprint');
+  });
+
+  test('no payment SDK or checkout route is added', () => {
+    const packageJson = JSON.parse(
+      readFileSync(join(process.cwd(), 'package.json'), 'utf8'),
+    ) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const dependencyNames = Object.keys({
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    });
+    const disallowedPackageFragments = [
+      'stripe',
+      'lemonsqueezy',
+      'lemon-squeezy',
+      'paddle',
+    ];
+
+    for (const dependencyName of dependencyNames) {
+      const normalizedName = dependencyName.toLowerCase();
+
+      expect(
+        disallowedPackageFragments.some((fragment) =>
+          normalizedName.includes(fragment),
+        ),
+      ).toBe(false);
+    }
+
+    const disallowedRoutePaths = [
+      'src/app/payment',
+      'src/app/payments',
+      'src/app/billing',
+      'src/app/checkout',
+      'src/app/api/payment',
+      'src/app/api/payments',
+      'src/app/api/billing',
+      'src/app/api/checkout',
+    ];
+
+    for (const routePath of disallowedRoutePaths) {
+      expect(existsSync(join(process.cwd(), routePath))).toBe(false);
+    }
   });
 });

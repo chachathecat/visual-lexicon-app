@@ -162,7 +162,7 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
 
     await page.getByRole('button', { name: 'Preview Pro' }).click();
     await expect(
-      page.getByText('Upgrade interest noted locally. Billing is not connected.'),
+      page.getByText('Paid beta interest noted locally. Billing is not connected.'),
     ).toBeVisible();
     await expect
       .poll(async () => {
