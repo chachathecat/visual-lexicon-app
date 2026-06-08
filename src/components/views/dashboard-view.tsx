@@ -5,6 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { MissionPanel } from "@/components/mission-panel";
+import { PaywallPrompt } from "@/components/paywall-prompt";
+import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
+import {
+  evaluateMasteryExportLockedPaywall,
+  evaluateWeakWordsSprintLockedPaywall,
+  type VlxPaywallPrompt
+} from "@/lib/paywall";
 import {
   getDueToday,
   getHubProgress,
@@ -34,6 +41,7 @@ import type {
 } from "@/lib/srs/types";
 
 type DashboardSnapshot = {
+  plan: VlxPlanId;
   savedWords: VlxSavedWordsStore;
   reviewState: VlxReviewStateStore;
   reviewEvents: VlxReviewEventsStore;
@@ -47,6 +55,8 @@ type DashboardSnapshot = {
   reviewedToday: number;
   reviewStreak: number;
   weeklyReviewedWords: number;
+  weakWordsPaywallPrompt: VlxPaywallPrompt | null;
+  masteryExportPaywallPrompt: VlxPaywallPrompt | null;
   hasAnyLocalData: boolean;
 };
 
@@ -77,6 +87,7 @@ function hasKeys(value: Record<string, unknown>) {
 
 function readDashboardSnapshot(): DashboardSnapshot {
   const now = new Date();
+  const plan = readLocalPlanState().plan;
   const savedWords = readSavedWords();
   const reviewState = readReviewState();
   const reviewEvents = readReviewEvents();
@@ -85,8 +96,22 @@ function readDashboardSnapshot(): DashboardSnapshot {
   const weakWords = getWeakWords(reviewState);
   const newSaved = getNewSaved(savedWords, reviewState);
   const mastered = getMastered(reviewState);
+  const weakWordsPaywallPrompt = evaluateWeakWordsSprintLockedPaywall({
+    plan,
+    weakCount: weakWords.length,
+    source: "dashboard_weak_words"
+  });
+  const masteryExportPaywallPrompt =
+    mastered.length > 0
+      ? evaluateMasteryExportLockedPaywall({
+          plan,
+          masteredCount: mastered.length,
+          source: "dashboard_mastery_export"
+        })
+      : null;
 
   return {
+    plan,
     savedWords,
     reviewState,
     reviewEvents,
@@ -100,6 +125,8 @@ function readDashboardSnapshot(): DashboardSnapshot {
     reviewedToday: getReviewedToday(dailyStats, now),
     reviewStreak: getReviewStreak(dailyStats, now),
     weeklyReviewedWords: getWeeklyReviewedWords(reviewEvents, now),
+    weakWordsPaywallPrompt,
+    masteryExportPaywallPrompt,
     hasAnyLocalData:
       hasKeys(savedWords) ||
       hasKeys(reviewState) ||
@@ -448,6 +475,12 @@ export function DashboardView() {
             title="Weak Words"
             words={dashboardWords.weakWords}
           />
+          {snapshot.weakWordsPaywallPrompt ? (
+            <PaywallPrompt
+              prompt={snapshot.weakWordsPaywallPrompt}
+              userState={snapshot.plan}
+            />
+          ) : null}
           <QueueModule
             actionHref="/review"
             actionLabel="Start learning"
@@ -468,6 +501,12 @@ export function DashboardView() {
             title="Mastered"
             words={dashboardWords.mastered}
           />
+          {snapshot.masteryExportPaywallPrompt ? (
+            <PaywallPrompt
+              prompt={snapshot.masteryExportPaywallPrompt}
+              userState={snapshot.plan}
+            />
+          ) : null}
           <MetricModule
             body={
               snapshot.reviewStreak

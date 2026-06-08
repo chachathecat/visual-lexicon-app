@@ -2,7 +2,11 @@
 
 import { useEffect, useId, useState } from "react";
 
-import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
+import {
+  emitVlxEvent,
+  VLX_ANALYTICS_EVENTS,
+  type VlxAnalyticsUserState
+} from "@/lib/analytics";
 import type { VlxPaywallPrompt } from "@/lib/paywall";
 
 function formatMetricLabel(key: string) {
@@ -13,9 +17,13 @@ function formatMetricLabel(key: string) {
 
 type PaywallPromptProps = {
   prompt: VlxPaywallPrompt;
+  userState?: VlxAnalyticsUserState;
 };
 
-export function PaywallPrompt({ prompt }: PaywallPromptProps) {
+export function PaywallPrompt({
+  prompt,
+  userState = "guest"
+}: PaywallPromptProps) {
   const titleId = useId();
   const [clicked, setClicked] = useState(false);
   const metrics = Object.entries(prompt.reasonMetrics ?? {});
@@ -24,15 +32,15 @@ export function PaywallPrompt({ prompt }: PaywallPromptProps) {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.paywallView, {
       plan: prompt.recommendedPlan,
       source: prompt.source,
-      userState: "guest"
+      userState
     });
-  }, [prompt.id, prompt.recommendedPlan, prompt.source]);
+  }, [prompt.id, prompt.recommendedPlan, prompt.source, userState]);
 
   function handleUpgradeClick() {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.upgradeClick, {
       plan: prompt.recommendedPlan,
       source: prompt.source,
-      userState: "guest"
+      userState
     });
     setClicked(true);
   }
