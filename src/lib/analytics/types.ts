@@ -11,6 +11,7 @@ export type VlxAnalyticsEventName =
   | "vlx_review_state_update"
   | "vlx_due_review_start"
   | "vlx_weak_review_start"
+  | "vlx_alias_search"
   | "vlx_save_word_click"
   | "vlx_extension_open_app"
   | "vlx_extension_save_click"
@@ -47,6 +48,10 @@ export type VlxExamPackPreviewStatus =
   | "available"
   | "empty"
   | "placeholder";
+
+export type VlxAliasSearchResult = "matched" | "no_match";
+
+export type VlxAliasSearchQueryLanguage = "ko" | "ja" | "en";
 
 export type VlxAnalyticsBasePayload = {
   event: VlxAnalyticsEventName;
@@ -135,6 +140,14 @@ export type VlxSaveWordClickEventPayload = VlxAnalyticsBasePayload & {
   pack_source: VlxSavePackSource;
 };
 
+export type VlxAliasSearchEventPayload = VlxAnalyticsBasePayload & {
+  event: "vlx_alias_search";
+  source: "alias_search";
+  query_language?: VlxAliasSearchQueryLanguage;
+  matched_slug?: string;
+  result: VlxAliasSearchResult;
+};
+
 type VlxExtensionBridgeEventName =
   | "vlx_extension_open_app"
   | "vlx_extension_save_click"
@@ -200,6 +213,7 @@ export type VlxAnalyticsEventMap = {
   vlx_review_state_update: VlxReviewStateUpdateEventPayload;
   vlx_due_review_start: VlxDueReviewStartEventPayload;
   vlx_weak_review_start: VlxWeakReviewStartEventPayload;
+  vlx_alias_search: VlxAliasSearchEventPayload;
   vlx_save_word_click: VlxSaveWordClickEventPayload;
   vlx_extension_open_app: VlxExtensionOpenAppEventPayload;
   vlx_extension_save_click: VlxExtensionSaveClickEventPayload;

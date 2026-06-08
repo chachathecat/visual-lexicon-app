@@ -12,6 +12,7 @@ export const VLX_ANALYTICS_EVENTS = {
   reviewStateUpdate: "vlx_review_state_update",
   dueReviewStart: "vlx_due_review_start",
   weakReviewStart: "vlx_weak_review_start",
+  aliasSearch: "vlx_alias_search",
   saveWordClick: "vlx_save_word_click",
   extensionOpenApp: "vlx_extension_open_app",
   extensionSaveClick: "vlx_extension_save_click",

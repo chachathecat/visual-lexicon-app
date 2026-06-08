@@ -36,6 +36,7 @@ A saved word is a lightweight item that may come from:
 - Webflow word page
 - Webflow hub page
 - extension lookup
+- alias search
 - app search
 - review session
 - exam pack preview
@@ -49,7 +50,7 @@ export type VlxSavedWord = {
   image?: string;
   definition?: string;
   hub?: string;
-  source?: "word_page" | "hub_page" | "extension" | "app" | "exam_pack" | "manual";
+  source?: "word_page" | "hub_page" | "extension" | "alias_search" | "app" | "exam_pack" | "manual";
   savedAt: string;
 };
 ```
@@ -527,6 +528,13 @@ Seed aliases:
 English reverse aliases may expose the Korean or Japanese equivalent for a known
 English card, but the card target remains the existing English visual card.
 
+The app may expose a small alias search entry point on existing app surfaces.
+That entry point is UI-only: it resolves Korean or Japanese aliases into the
+existing English card slug, links to `/word/{slug}`, and saves through
+`/save?slug={slug}&source=alias_search`. It must not generate multilingual
+pages, translated word pages, translated cards, or a separate multilingual
+learning flow.
+
 Full multilingual learning cards come later, after the paid beta upgrade path
 and extension bridge are stable.
 
@@ -724,6 +732,7 @@ vlx_quiz_complete
 vlx_review_state_update
 vlx_due_review_start
 vlx_weak_review_start
+vlx_alias_search
 vlx_extension_open_app
 vlx_extension_save_click
 vlx_extension_review_start
