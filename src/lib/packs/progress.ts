@@ -8,6 +8,7 @@ export type VlxPackProgress = {
   lastOpenedAt?: string;
   previewStartedAt?: string;
   previewCompletedAt?: string;
+  lastReviewedAt?: string;
   reviewedCount: number;
   correctCount: number;
   source: VlxPackProgressSource;
@@ -65,6 +66,7 @@ function normalizePackProgress(
     lastOpenedAt: readString(value.lastOpenedAt),
     previewStartedAt: readString(value.previewStartedAt),
     previewCompletedAt: readString(value.previewCompletedAt),
+    lastReviewedAt: readString(value.lastReviewedAt),
     reviewedCount: readCount(value.reviewedCount),
     correctCount: readCount(value.correctCount),
     source
@@ -155,6 +157,7 @@ function upsertPackProgress(
     previewStartedAt: patch.previewStartedAt ?? existing?.previewStartedAt,
     previewCompletedAt:
       patch.previewCompletedAt ?? existing?.previewCompletedAt,
+    lastReviewedAt: patch.lastReviewedAt ?? existing?.lastReviewedAt,
     reviewedCount: patch.reviewedCount ?? existing?.reviewedCount ?? 0,
     correctCount: patch.correctCount ?? existing?.correctCount ?? 0,
     source: patch.source
@@ -214,6 +217,36 @@ export function recordPackPreviewCompleted(
       source
     },
     previewCompletedAt
+  );
+}
+
+export function recordPackReviewCompleted({
+  packId,
+  reviewedCount,
+  correctCount,
+  source = "review",
+  reviewedAt = new Date().toISOString()
+}: {
+  packId: string;
+  reviewedCount: number;
+  correctCount: number;
+  source?: VlxPackProgressSource;
+  reviewedAt?: string;
+}) {
+  const existing = getPackProgress(packId);
+  const normalizedReviewedCount = Math.max(0, Math.floor(reviewedCount));
+  const normalizedCorrectCount = Math.max(0, Math.floor(correctCount));
+
+  return upsertPackProgress(
+    packId,
+    {
+      previewCompletedAt: reviewedAt,
+      lastReviewedAt: reviewedAt,
+      reviewedCount: (existing?.reviewedCount ?? 0) + normalizedReviewedCount,
+      correctCount: (existing?.correctCount ?? 0) + normalizedCorrectCount,
+      source
+    },
+    reviewedAt
   );
 }
 

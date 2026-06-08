@@ -10,6 +10,7 @@ const storageKeys = [
   'vlx_review_state_v1',
   'vlx_review_events_v1',
   'vlx_daily_stats_v1',
+  'vlx_pack_progress_v1',
 ] as const;
 
 const oneMinuteAgo = () => new Date(Date.now() - 60_000).toISOString();
@@ -309,6 +310,33 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     expect(event.slug).toBe('dissonance');
     expect(reviewedCount).toBeGreaterThan(0);
+  });
+
+  test('normal /review completion does not write pack progress without packId', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      savedWords: {
+        dissonance: makeSavedWord(),
+      },
+    });
+
+    await page.goto(`${baseUrl}/review`, {
+      waitUntil: 'networkidle',
+    });
+    await answerFirstCard(page);
+
+    await page.getByRole('button', { name: 'View summary' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Session summary' }),
+    ).toBeVisible();
+
+    const packProgress = await readLocalJson(
+      page,
+      'vlx_pack_progress_v1',
+    );
+
+    expect(packProgress).toBeNull();
   });
 
   test('missing focused word shows a safe empty state', async ({ page }) => {

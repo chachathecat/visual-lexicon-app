@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import { mockQuizWords } from "@/lib/packs/mock-data";
+import { recordPackReviewCompleted } from "@/lib/packs/progress";
 import type { VlxQuizWord } from "@/lib/packs/types";
 import type { VlxReviewRouteMode } from "@/lib/review/route-contract";
 import { getDueToday, getNewSaved, getWeakWords } from "@/lib/srs/selectors";
@@ -85,6 +86,26 @@ type SessionAnswer = {
   weakScoreAfter: number;
   weakAdded: boolean;
   movedForward: boolean;
+};
+
+type SessionSummarySpotlight = {
+  word: string;
+  result: VlxReviewResult;
+  mastery?: VlxMasteryLabel;
+  weakScore: number;
+  wrong: number;
+  nextDueAt?: string;
+};
+
+type SessionSummary = {
+  reviewed: number;
+  correct: number;
+  wrong: number;
+  weakAdded: number;
+  movedForward: number;
+  weakSpotlight?: SessionSummarySpotlight;
+  nextDueAt?: string;
+  nextDueWord?: string;
 };
 
 const modeCopy = {
@@ -522,14 +543,127 @@ function getVisualClass(slug: string) {
   return visualCueSlugs.has(slug) ? ` word-card__visual--${slug}` : "";
 }
 
+function getAnswerSummary(answers: SessionAnswer[]): SessionSummary {
+  return {
+    reviewed: answers.length,
+    correct: answers.filter((answer) => answer.result === "correct").length,
+    wrong: answers.filter((answer) => answer.result === "wrong").length,
+    weakAdded: answers.filter((answer) => answer.weakAdded).length,
+    movedForward: answers.filter((answer) => answer.movedForward).length
+  };
+}
+
+function getDateTime(value?: string) {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const time = Date.parse(value);
+
+  return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
+}
+
+function buildCompletedSummary(
+  answers: SessionAnswer[],
+  reviewState: VlxReviewStateStore
+): SessionSummary {
+  const answerSummary = getAnswerSummary(answers);
+  const reviewedStates = answers
+    .map((answer) => ({
+      answer,
+      state: reviewState[answer.slug]
+    }))
+    .filter(
+      (
+        item
+      ): item is {
+        answer: SessionAnswer;
+        state: VlxReviewStateItem;
+      } => Boolean(item.state)
+    );
+  const weakSpotlightCandidate = reviewedStates
+    .filter(
+      ({ answer, state }) =>
+        answer.result === "wrong" ||
+        state.mastery === "Weak" ||
+        state.weakScore > 0
+    )
+    .sort((first, second) => {
+      if (first.answer.result !== second.answer.result) {
+        return first.answer.result === "wrong" ? -1 : 1;
+      }
+
+      if (first.state.weakScore !== second.state.weakScore) {
+        return second.state.weakScore - first.state.weakScore;
+      }
+
+      return second.state.wrong - first.state.wrong;
+    })[0];
+  const nextDueCandidate = reviewedStates
+    .filter(({ state }) => Boolean(state.nextDueAt))
+    .sort(
+      (first, second) =>
+        getDateTime(first.state.nextDueAt) - getDateTime(second.state.nextDueAt)
+    )[0];
+
+  return {
+    ...answerSummary,
+    weakSpotlight: weakSpotlightCandidate
+      ? {
+          word: weakSpotlightCandidate.state.word,
+          result: weakSpotlightCandidate.answer.result,
+          mastery: weakSpotlightCandidate.state.mastery,
+          weakScore: weakSpotlightCandidate.state.weakScore,
+          wrong: weakSpotlightCandidate.state.wrong,
+          nextDueAt: weakSpotlightCandidate.state.nextDueAt
+        }
+      : undefined,
+    nextDueAt: nextDueCandidate?.state.nextDueAt,
+    nextDueWord: nextDueCandidate?.state.word
+  };
+}
+
+function formatDateLabel(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return undefined;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function getNextReviewMessage(nextDueAt?: string, word?: string) {
+  if (!nextDueAt) {
+    return undefined;
+  }
+
+  const label = formatDateLabel(nextDueAt);
+
+  if (!label) {
+    return undefined;
+  }
+
+  return word ? `${word} is next due ${label}.` : `Next review is due ${label}.`;
+}
+
 export function ReviewSessionView({
   limit = SESSION_SIZE,
   mode,
-  routeSession
+  packId,
+  routeSession,
+  routeSource
 }: {
   limit?: number;
   mode: ReviewMode;
+  packId?: string;
   routeSession?: ReviewRouteSession;
+  routeSource?: string;
 }) {
   const copy = modeCopy[mode];
   const sessionLimit = Number.isFinite(limit)
@@ -538,6 +672,7 @@ export function ReviewSessionView({
   const emptyTitle = routeSession?.emptyTitle ?? copy.emptyTitle;
   const emptyBody = routeSession?.emptyBody ?? copy.emptyBody;
   const cardStartedAt = useRef(getNowMs());
+  const completionRecordedSessionId = useRef<string | null>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [questions, setQuestions] = useState<ReviewQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -545,6 +680,9 @@ export function ReviewSessionView({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [currentAnswer, setCurrentAnswer] = useState<SessionAnswer | null>(null);
   const [answers, setAnswers] = useState<SessionAnswer[]>([]);
+  const [completedSummary, setCompletedSummary] = useState<SessionSummary | null>(
+    null
+  );
   const [queueLabel, setQueueLabel] = useState(copy.sourceLabel);
   const [availability, setAvailability] = useState<AvailabilityStats>({
     dueCount: 0,
@@ -567,6 +705,8 @@ export function ReviewSessionView({
 
       if (!nextQuestions.length) {
         setStatus("empty");
+        setCompletedSummary(null);
+        completionRecordedSessionId.current = null;
         return;
       }
 
@@ -582,14 +722,16 @@ export function ReviewSessionView({
       setSelectedAnswer(null);
       setCurrentAnswer(null);
       setAnswers([]);
+      setCompletedSummary(null);
       setQueueLabel(label);
       setStatus("active");
+      completionRecordedSessionId.current = null;
       resetCardTimer();
 
       emitVlxEvent(VLX_ANALYTICS_EVENTS.quizStart, {
         sessionId: nextSessionId,
         userState: "guest",
-        source: label,
+        source: routeSource ?? label,
         mode,
         cardsSeen: nextQuestions.length,
         dueCount: stats?.dueCount,
@@ -602,7 +744,7 @@ export function ReviewSessionView({
         emitVlxEvent(VLX_ANALYTICS_EVENTS.dueReviewStart, {
           sessionId: nextSessionId,
           userState: "guest",
-          source: label,
+          source: routeSource ?? label,
           mode,
           cardsSeen: nextQuestions.length,
           dueCount: stats?.dueCount,
@@ -614,7 +756,7 @@ export function ReviewSessionView({
         emitVlxEvent(VLX_ANALYTICS_EVENTS.weakReviewStart, {
           sessionId: nextSessionId,
           userState: "guest",
-          source: label,
+          source: routeSource ?? label,
           mode,
           cardsSeen: nextQuestions.length,
           dueCount: stats?.dueCount,
@@ -622,7 +764,7 @@ export function ReviewSessionView({
         });
       }
     },
-    [mode, resetCardTimer, sessionLimit]
+    [mode, resetCardTimer, routeSource, sessionLimit]
   );
 
   const loadLocalSession = useCallback(() => {
@@ -642,8 +784,10 @@ export function ReviewSessionView({
         setStatus("empty");
         setQuestions([]);
         setAnswers([]);
+        setCompletedSummary(null);
         setCurrentAnswer(null);
         setSelectedAnswer(null);
+        completionRecordedSessionId.current = null;
         return;
       }
 
@@ -657,8 +801,10 @@ export function ReviewSessionView({
       setStatus("empty");
       setQuestions([]);
       setAnswers([]);
+      setCompletedSummary(null);
       setCurrentAnswer(null);
       setSelectedAnswer(null);
+      completionRecordedSessionId.current = null;
       return;
     }
 
@@ -670,15 +816,11 @@ export function ReviewSessionView({
   }, [loadLocalSession]);
 
   const currentQuestion = questions[currentIndex];
-  const summary = useMemo(
-    () => ({
-      reviewed: answers.length,
-      correct: answers.filter((answer) => answer.result === "correct").length,
-      wrong: answers.filter((answer) => answer.result === "wrong").length,
-      weakAdded: answers.filter((answer) => answer.weakAdded).length,
-      movedForward: answers.filter((answer) => answer.movedForward).length
-    }),
-    [answers]
+  const liveSummary = useMemo(() => getAnswerSummary(answers), [answers]);
+  const summary = completedSummary ?? liveSummary;
+  const nextReviewMessage = getNextReviewMessage(
+    summary.nextDueAt,
+    summary.nextDueWord
   );
 
   function startStarterDeck() {
@@ -775,15 +917,31 @@ export function ReviewSessionView({
 
   function handleNext() {
     if (currentIndex + 1 >= questions.length) {
+      const nextSummary = buildCompletedSummary(answers, readReviewState());
+      const completedAt = new Date().toISOString();
+
+      setCompletedSummary(nextSummary);
+
+      if (packId && completionRecordedSessionId.current !== sessionId) {
+        recordPackReviewCompleted({
+          packId,
+          reviewedCount: nextSummary.reviewed,
+          correctCount: nextSummary.correct,
+          reviewedAt: completedAt,
+          source: "review"
+        });
+        completionRecordedSessionId.current = sessionId;
+      }
+
       emitVlxEvent(VLX_ANALYTICS_EVENTS.quizComplete, {
         sessionId,
         userState: "guest",
-        source: queueLabel,
+        source: routeSource ?? queueLabel,
         mode,
-        cardsSeen: summary.reviewed,
-        correctCount: summary.correct,
-        wrongCount: summary.wrong,
-        weakWordsCount: summary.weakAdded
+        cardsSeen: nextSummary.reviewed,
+        correctCount: nextSummary.correct,
+        wrongCount: nextSummary.wrong,
+        weakWordsCount: nextSummary.weakAdded
       });
       setStatus("summary");
       return;
@@ -986,6 +1144,32 @@ export function ReviewSessionView({
               <span className="metric-card__label">Words moved forward</span>
             </div>
           </div>
+
+          {summary.weakSpotlight || nextReviewMessage ? (
+            <div className="session-summary-insights">
+              {summary.weakSpotlight ? (
+                <div className="session-summary-insight session-summary-insight--weak">
+                  <span className="eyebrow">Weak word spotlight</span>
+                  <h3>{summary.weakSpotlight.word}</h3>
+                  <p>
+                    {summary.weakSpotlight.result === "wrong"
+                      ? "Missed in this session"
+                      : "Still needs reinforcement"}{" "}
+                    | {summary.weakSpotlight.mastery ?? "Learning"} | Weak score{" "}
+                    {summary.weakSpotlight.weakScore.toFixed(2)} |{" "}
+                    {summary.weakSpotlight.wrong} misses recorded
+                  </p>
+                </div>
+              ) : null}
+
+              {nextReviewMessage ? (
+                <div className="session-summary-insight">
+                  <span className="eyebrow">Next review</span>
+                  <p>{nextReviewMessage}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="review-results" aria-label="Reviewed cards">
             {answers.map((answer) => (

@@ -974,6 +974,35 @@ select {
   gap: 10px;
 }
 
+.session-summary-insights {
+  display: grid;
+  gap: 10px;
+}
+
+.session-summary-insight {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.session-summary-insight--weak {
+  border-color: rgba(180, 107, 74, 0.34);
+  background: rgba(180, 107, 74, 0.07);
+}
+
+.session-summary-insight h3,
+.session-summary-insight p {
+  margin: 0;
+}
+
+.session-summary-insight p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .review-results {
   display: grid;
   border: 1px solid var(--line);
