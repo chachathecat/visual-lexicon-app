@@ -12,6 +12,10 @@ export type VlxAnalyticsEventName =
   | "vlx_due_review_start"
   | "vlx_weak_review_start"
   | "vlx_save_word_click"
+  | "vlx_extension_open_app"
+  | "vlx_extension_save_click"
+  | "vlx_extension_review_start"
+  | "vlx_extension_quiz_later_click"
   | "vlx_exam_pack_preview_view"
   | "vlx_exam_pack_preview_start"
   | "vlx_paywall_view"
@@ -131,6 +135,31 @@ export type VlxSaveWordClickEventPayload = VlxAnalyticsBasePayload & {
   pack_source: VlxSavePackSource;
 };
 
+type VlxExtensionBridgeEventName =
+  | "vlx_extension_open_app"
+  | "vlx_extension_save_click"
+  | "vlx_extension_review_start"
+  | "vlx_extension_quiz_later_click";
+
+type VlxExtensionBridgeEventPayload<TEvent extends VlxExtensionBridgeEventName> =
+  VlxAnalyticsBasePayload & {
+    event: TEvent;
+    slug?: string;
+    mode?: VlxAnalyticsReviewMode;
+  };
+
+export type VlxExtensionOpenAppEventPayload =
+  VlxExtensionBridgeEventPayload<"vlx_extension_open_app">;
+
+export type VlxExtensionSaveClickEventPayload =
+  VlxExtensionBridgeEventPayload<"vlx_extension_save_click">;
+
+export type VlxExtensionReviewStartEventPayload =
+  VlxExtensionBridgeEventPayload<"vlx_extension_review_start">;
+
+export type VlxExtensionQuizLaterClickEventPayload =
+  VlxExtensionBridgeEventPayload<"vlx_extension_quiz_later_click">;
+
 export type VlxExamPackPreviewViewEventPayload = VlxAnalyticsBasePayload & {
   event: "vlx_exam_pack_preview_view";
   packId: string;
@@ -172,6 +201,10 @@ export type VlxAnalyticsEventMap = {
   vlx_due_review_start: VlxDueReviewStartEventPayload;
   vlx_weak_review_start: VlxWeakReviewStartEventPayload;
   vlx_save_word_click: VlxSaveWordClickEventPayload;
+  vlx_extension_open_app: VlxExtensionOpenAppEventPayload;
+  vlx_extension_save_click: VlxExtensionSaveClickEventPayload;
+  vlx_extension_review_start: VlxExtensionReviewStartEventPayload;
+  vlx_extension_quiz_later_click: VlxExtensionQuizLaterClickEventPayload;
   vlx_exam_pack_preview_view: VlxExamPackPreviewViewEventPayload;
   vlx_exam_pack_preview_start: VlxExamPackPreviewStartEventPayload;
   vlx_paywall_view: VlxPaywallViewEventPayload;
