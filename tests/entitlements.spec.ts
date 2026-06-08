@@ -107,27 +107,85 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     expect(readLocalPlanState().plan).toBe('guest');
   });
 
-  test('pricing page renders Free, Lite, and Pro plan shells', async ({
+  test('pricing page renders Free, Lite, and Pro outcome shells', async ({
     page,
   }) => {
+    await page.addInitScript(() => {
+      (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
+    });
+
     const response = await page.goto(`${baseUrl}/pricing`, {
       waitUntil: 'networkidle',
     });
 
     expect(response?.status()).toBe(200);
     await expect(
-      page.getByRole('heading', { name: /Choose the memory loop you need/i }),
+      page.getByRole('heading', {
+        name: /Turn visual words into remembered words/i,
+      }),
     ).toBeVisible();
-    await expect(page.getByText('Free').first()).toBeVisible();
-    await expect(page.getByText('Lite').first()).toBeVisible();
-    await expect(page.getByText('Pro').first()).toBeVisible();
-    await expect(page.getByText(/No billing provider/i)).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Start remembering your first 50 words.',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Build a daily visual memory habit.' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Fix weak words and prepare for exams.',
+      }),
+    ).toBeVisible();
+    await expect(page.getByText('Save words you meet')).toBeVisible();
+    await expect(page.getByText('Review before forgetting')).toBeVisible();
+    await expect(page.getByText('Repair weak words')).toBeVisible();
+    await expect(page.getByText('Continue exam packs')).toBeVisible();
+    const disclaimer = page.getByRole('region', {
+      name: 'Local MVP billing disclaimer',
+    });
+
+    await expect(disclaimer).toContainText('Billing is not connected.');
+    await expect(
+      disclaimer.getByText(/Upgrade clicks only record local interest/i),
+    ).toBeVisible();
+    await expect(disclaimer).toContainText('No real subscription is created.');
     await expect(
       page.getByRole('button', { name: 'Preview Lite' }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Preview Pro' }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /checkout|subscribe|pay/i }),
+    ).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Preview Pro' }).click();
+    await expect(
+      page.getByText('Upgrade interest noted locally. Billing is not connected.'),
+    ).toBeVisible();
+    await expect
+      .poll(async () => {
+        return await page.evaluate(() => {
+          const dataLayer = (window as Window & { dataLayer?: unknown[] })
+            .dataLayer;
+
+          if (!Array.isArray(dataLayer)) return false;
+
+          return dataLayer.some((item) => {
+            return Boolean(
+              item &&
+                typeof item === 'object' &&
+                !Array.isArray(item) &&
+                (item as Record<string, unknown>).event ===
+                  'vlx_upgrade_click' &&
+                (item as Record<string, unknown>).source === 'pricing_page' &&
+                (item as Record<string, unknown>).plan === 'pro',
+            );
+          });
+        });
+      })
+      .toBe(true);
   });
 
   test('no payment route is created', () => {
