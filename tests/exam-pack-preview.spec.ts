@@ -6,6 +6,15 @@ const baseUrl =
   'http://127.0.0.1:3006';
 
 const packProgressStorageKey = 'vlx_pack_progress_v1';
+const vlxLocalStorageKeys = [
+  'vlx_saved_words_v1',
+  'vlx_review_state_v1',
+  'vlx_review_events_v1',
+  'vlx_daily_stats_v1',
+  packProgressStorageKey,
+] as const;
+const academicPreviewReviewHref =
+  '/review?mode=hub&hub=academic-vocabulary&limit=10&packId=academic-vocabulary&source=pack_preview';
 
 const requiredPackRoutes = [
   {
@@ -54,9 +63,47 @@ async function readLocalJson<T = unknown>(
 
 async function clearPackProgress(page: Page) {
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-  await page.evaluate((storageKey) => {
-    localStorage.removeItem(storageKey);
-  }, packProgressStorageKey);
+  await page.evaluate((storageKeys) => {
+    for (const storageKey of storageKeys) {
+      localStorage.removeItem(storageKey);
+    }
+  }, vlxLocalStorageKeys);
+}
+
+async function completeReviewSession(page: Page) {
+  let answeredCards = 0;
+
+  for (let index = 0; index < 20; index += 1) {
+    await expect(page.locator('.review-session')).toBeVisible({
+      timeout: 15000,
+    });
+
+    const firstChoice = page.locator('.review-option').first();
+
+    await expect(firstChoice).toBeVisible();
+    await firstChoice.click();
+    answeredCards += 1;
+
+    const nextButton = page.getByRole('button', {
+      name: /Next card|View summary/i,
+    });
+
+    await expect(nextButton).toBeVisible();
+
+    const buttonLabel = await nextButton.innerText();
+
+    await nextButton.click();
+
+    if (/View summary/i.test(buttonLabel)) {
+      break;
+    }
+  }
+
+  await expect(
+    page.getByRole('heading', { name: 'Session summary' }),
+  ).toBeVisible();
+
+  return answeredCards;
 }
 
 test.describe('Visual Lexicon exam pack preview MVP', () => {
@@ -143,11 +190,11 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
 
     await expect(startReview).toHaveAttribute(
       'href',
-      '/review?mode=hub&hub=academic-vocabulary&limit=10',
+      academicPreviewReviewHref,
     );
     await startReview.click();
     await expect(page).toHaveURL(
-      /\/review\?mode=hub&hub=academic-vocabulary&limit=10$/,
+      /\/review\?mode=hub&hub=academic-vocabulary&limit=10&packId=academic-vocabulary&source=pack_preview$/,
     );
     await expect(
       page.getByRole('heading', { name: /Review a vocabulary hub/i }),
@@ -161,6 +208,7 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
 
     expect(academicProgress?.source).toBe('pack_detail');
     expect(typeof academicProgress?.previewStartedAt).toBe('string');
+    expect(academicProgress?.previewCompletedAt).toBeUndefined();
   });
 
   test('starting Academic preview records local pack progress and exposes a continue state', async ({
@@ -179,7 +227,7 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
       .getByRole('link', { name: 'Start preview review' })
       .click();
     await expect(page).toHaveURL(
-      /\/review\?mode=hub&hub=academic-vocabulary&limit=10$/,
+      /\/review\?mode=hub&hub=academic-vocabulary&limit=10&packId=academic-vocabulary&source=pack_preview$/,
     );
 
     await expect
@@ -216,6 +264,50 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
       updatedAcademicCard.getByRole('link', { name: 'Continue preview' }),
     ).toBeVisible();
     await expect(updatedAcademicCard.getByText('Preview started')).toBeVisible();
+  });
+
+  test('completing Academic preview review writes pack progress from real answers', async ({
+    page,
+  }) => {
+    await clearPackProgress(page);
+    await page.goto(`${baseUrl}/packs/academic-vocabulary`, {
+      waitUntil: 'networkidle',
+    });
+
+    await page
+      .getByRole('link', { name: 'Start preview review' })
+      .click();
+    await expect(page).toHaveURL(
+      /\/review\?mode=hub&hub=academic-vocabulary&limit=10&packId=academic-vocabulary&source=pack_preview$/,
+    );
+
+    const progressBeforeSummary = await readLocalJson<
+      Record<string, Record<string, unknown>>
+    >(page, packProgressStorageKey);
+
+    expect(
+      progressBeforeSummary?.['academic-vocabulary']?.previewCompletedAt,
+    ).toBeUndefined();
+
+    const answeredCards = await completeReviewSession(page);
+    const reviewEvents = await readLocalJson<Record<string, unknown>[]>(
+      page,
+      'vlx_review_events_v1',
+    );
+    const actualCorrectAnswers = (reviewEvents ?? []).filter(
+      (event) => event.result === 'correct',
+    ).length;
+    const progressStore = await readLocalJson<
+      Record<string, Record<string, unknown>>
+    >(page, packProgressStorageKey);
+    const academicProgress = progressStore?.['academic-vocabulary'];
+
+    expect(reviewEvents).toHaveLength(answeredCards);
+    expect(academicProgress?.reviewedCount).toBe(answeredCards);
+    expect(academicProgress?.correctCount).toBe(actualCorrectAnswers);
+    expect(typeof academicProgress?.previewCompletedAt).toBe('string');
+    expect(typeof academicProgress?.lastReviewedAt).toBe('string');
+    expect(academicProgress?.source).toBe('review');
   });
 
   test('missing planned exam pack data uses a clear empty state', async ({

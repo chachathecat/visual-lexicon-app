@@ -156,7 +156,15 @@ function summarizeDifficulties(words: VlxQuizWord[]) {
 
 function getReviewHref(definition: StarterPackDefinition) {
   if (definition.reviewHub) {
-    return `/review?mode=hub&hub=${definition.reviewHub}&limit=${PREVIEW_LIMIT}`;
+    const params = new URLSearchParams({
+      mode: "hub",
+      hub: definition.reviewHub,
+      limit: String(PREVIEW_LIMIT),
+      packId: definition.packId,
+      source: "pack_preview"
+    });
+
+    return `/review?${params.toString()}`;
   }
 
   return definition.fallbackReviewHref ?? MIXED_REVIEW_FALLBACK;

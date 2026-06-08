@@ -19,6 +19,8 @@ export type VlxReviewRouteContract = {
   slug?: string;
   hub?: string;
   limit: number;
+  packId?: string;
+  source?: string;
 };
 
 function firstParam(value?: string | string[]) {
@@ -46,24 +48,29 @@ export function parseReviewRouteContract(
 ): VlxReviewRouteContract {
   const requestedMode = normalizeToken(firstParam(searchParams.mode));
   const limit = normalizeLimit(firstParam(searchParams.limit));
+  const routeMetadata = {
+    packId: normalizeToken(firstParam(searchParams.packId)),
+    source: normalizeToken(firstParam(searchParams.source))
+  };
 
   if (requestedMode === "saved") {
-    return { mode: "saved", limit };
+    return { mode: "saved", limit, ...routeMetadata };
   }
 
   if (requestedMode === "due") {
-    return { mode: "due", limit };
+    return { mode: "due", limit, ...routeMetadata };
   }
 
   if (requestedMode === "weak") {
-    return { mode: "weak", limit };
+    return { mode: "weak", limit, ...routeMetadata };
   }
 
   if (requestedMode === "word") {
     return {
       mode: "word",
       slug: normalizeToken(firstParam(searchParams.slug)),
-      limit
+      limit,
+      ...routeMetadata
     };
   }
 
@@ -71,9 +78,10 @@ export function parseReviewRouteContract(
     return {
       mode: "hub",
       hub: normalizeToken(firstParam(searchParams.hub)),
-      limit
+      limit,
+      ...routeMetadata
     };
   }
 
-  return { mode: "mixed", limit };
+  return { mode: "mixed", limit, ...routeMetadata };
 }

@@ -81,7 +81,9 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     <ReviewSessionView
       limit={route.limit}
       mode={route.mode}
+      packId={route.packId}
       routeSession={routeSession}
+      routeSource={route.source}
     />
   );
 }
