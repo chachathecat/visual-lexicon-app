@@ -480,6 +480,56 @@ export type VlxQuizPack = {
 };
 ```
 
+## Multilingual Alias Contract
+
+The first multilingual layer is alias/search mapping only.
+
+It lets Korean and Japanese search terms enter the app and resolve to existing
+English Visual Lexicon word cards. It does not create translated word pages,
+translated card publishing, or full multilingual learning UI.
+
+Initial alias language pairs:
+
+```txt
+ko -> en
+ja -> en
+en -> ko
+en -> ja
+```
+
+Alias pack paths are reserved for future R2/static pack loading:
+
+```txt
+/aliases/manifest.json
+/aliases/ko-en-v1.json
+/aliases/ja-en-v1.json
+/aliases/en-ko-v1.json
+/aliases/en-ja-v1.json
+```
+
+Alias entries must point to known English card slugs from the current pack word
+list. A resolver must not return an alias match for a missing slug.
+
+Seed aliases:
+
+```txt
+불협화음 -> dissonance
+모호하게 하다 -> obfuscate
+명료한 -> lucid
+풍부함 -> abundance
+
+不協和音 -> dissonance
+曖昧にする -> obfuscate
+明快な -> lucid
+豊富 -> abundance
+```
+
+English reverse aliases may expose the Korean or Japanese equivalent for a known
+English card, but the card target remains the existing English visual card.
+
+Full multilingual learning cards come later, after the paid beta upgrade path
+and extension bridge are stable.
+
 ## Exam Pack
 
 Type:
