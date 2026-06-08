@@ -1,5 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import {
+  buildExtensionReviewUrl,
+  buildExtensionSaveUrl,
+  isExtensionSource,
+  normalizeExtensionSource,
+} from '../src/lib/extension/bridge';
+import {
+  VLX_ANALYTICS_EVENTS,
+  type VlxAnalyticsEventInput,
+} from '../src/lib/analytics';
+
 const baseUrl =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
@@ -11,6 +22,7 @@ const storageKeys = [
   'vlx_review_events_v1',
   'vlx_daily_stats_v1',
   'vlx_pack_progress_v1',
+  'vlx_plan_state_v1',
 ] as const;
 
 const oneMinuteAgo = () => new Date(Date.now() - 60_000).toISOString();
@@ -141,6 +153,81 @@ test.describe('Visual Lexicon review route mode contract', () => {
     await clearVlxLocalStorage(page);
   });
 
+  test('extension bridge URL helper builds app-side routes', () => {
+    expect(buildExtensionSaveUrl(' Dissonance ')).toBe(
+      '/save?slug=dissonance&source=extension',
+    );
+    expect(buildExtensionReviewUrl({ mode: 'saved' })).toBe(
+      '/review?mode=saved&source=extension',
+    );
+    expect(buildExtensionReviewUrl({ mode: 'due' })).toBe(
+      '/review?mode=due&source=extension',
+    );
+    expect(
+      buildExtensionReviewUrl({
+        mode: 'word',
+        slug: 'Dissonance',
+      }),
+    ).toBe('/review?mode=word&slug=dissonance&source=extension');
+    expect(
+      buildExtensionReviewUrl({
+        mode: 'hub',
+        hub: 'Academic-Vocabulary',
+        limit: 10,
+      }),
+    ).toBe(
+      '/review?mode=hub&hub=academic-vocabulary&limit=10&source=extension',
+    );
+    expect(normalizeExtensionSource(' Extension ')).toBe('extension');
+    expect(isExtensionSource('word_page')).toBe(false);
+  });
+
+  test('analytics event types accept extension bridge events', () => {
+    const openAppPayload = {
+      source: 'extension',
+      slug: 'dissonance',
+      mode: 'word',
+      userState: 'guest',
+      pagePath: '/review?mode=word&slug=dissonance&source=extension',
+      eventId: 'evt_extension_open_app',
+      eventTime: '2026-06-08T00:00:00.000Z',
+    } satisfies VlxAnalyticsEventInput<
+      typeof VLX_ANALYTICS_EVENTS.extensionOpenApp
+    >;
+    const reviewStartPayload = {
+      source: 'extension',
+      mode: 'due',
+      userState: 'guest',
+      pagePath: '/review?mode=due&source=extension',
+    } satisfies VlxAnalyticsEventInput<
+      typeof VLX_ANALYTICS_EVENTS.extensionReviewStart
+    >;
+
+    expect(VLX_ANALYTICS_EVENTS.extensionOpenApp).toBe(
+      'vlx_extension_open_app',
+    );
+    expect(VLX_ANALYTICS_EVENTS.extensionSaveClick).toBe(
+      'vlx_extension_save_click',
+    );
+    expect(VLX_ANALYTICS_EVENTS.extensionReviewStart).toBe(
+      'vlx_extension_review_start',
+    );
+    expect(VLX_ANALYTICS_EVENTS.extensionQuizLaterClick).toBe(
+      'vlx_extension_quiz_later_click',
+    );
+    expect(openAppPayload).toMatchObject({
+      source: 'extension',
+      slug: 'dissonance',
+      mode: 'word',
+      userState: 'guest',
+    });
+    expect(reviewStartPayload).toMatchObject({
+      source: 'extension',
+      mode: 'due',
+      userState: 'guest',
+    });
+  });
+
   test('/review renders without crashing', async ({ page }) => {
     const response = await page.goto(`${baseUrl}/review`, {
       waitUntil: 'networkidle',
@@ -208,6 +295,98 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     expect(event.slug).toBe('obfuscate');
     expect(event.questionType).toBe('due_review');
+  });
+
+  test('/review?mode=due&source=extension renders and preserves source analytics', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
+    });
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        obfuscate: makeReviewStateItem({
+          slug: 'obfuscate',
+          word: 'Obfuscate',
+          definition: 'To make something unclear or difficult to understand.',
+          box: 1,
+          mastery: 'Learning',
+          correct: 1,
+          nextDueAt: oneMinuteAgo(),
+        }),
+      },
+    });
+
+    const response = await page.goto(
+      `${baseUrl}/review?mode=due&source=extension`,
+      { waitUntil: 'networkidle' },
+    );
+
+    expect(response?.status()).toBe(200);
+    await expect(
+      page.getByRole('heading', { name: /Review words due right now/i }),
+    ).toBeVisible();
+    await expect(page.locator('.review-session')).toBeVisible({
+      timeout: 15000,
+    });
+
+    await page.waitForFunction(
+      () => {
+        const dataLayer = (window as Window & { dataLayer?: unknown[] })
+          .dataLayer;
+
+        if (!Array.isArray(dataLayer)) return false;
+
+        return dataLayer.some((item) => {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            return false;
+          }
+
+          const event = item as Record<string, unknown>;
+
+          return (
+            event.event === 'vlx_quiz_start' &&
+            event.mode === 'due' &&
+            event.source === 'extension'
+          );
+        });
+      },
+      { timeout: 15000 },
+    );
+
+    const analyticsEvents = await page.evaluate(() => {
+      const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
+
+      if (!Array.isArray(dataLayer)) return [];
+
+      return dataLayer.filter((item): item is Record<string, unknown> => {
+        return Boolean(
+          item &&
+            typeof item === 'object' &&
+            !Array.isArray(item) &&
+            ((item as Record<string, unknown>).event === 'vlx_quiz_start' ||
+              (item as Record<string, unknown>).event ===
+                'vlx_due_review_start'),
+        );
+      });
+    });
+
+    expect(
+      analyticsEvents.some(
+        (event) =>
+          event.event === 'vlx_quiz_start' &&
+          event.mode === 'due' &&
+          event.source === 'extension',
+      ),
+    ).toBe(true);
+    expect(
+      analyticsEvents.some(
+        (event) =>
+          event.event === 'vlx_due_review_start' &&
+          event.mode === 'due' &&
+          event.source === 'extension',
+      ),
+    ).toBe(true);
   });
 
   test('/review?mode=weak selects weakScore or Weak mastery items', async ({

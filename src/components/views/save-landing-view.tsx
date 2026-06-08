@@ -12,6 +12,7 @@ import type {
   VlxSaveWordResult
 } from "@/lib/analytics";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
+import { normalizeExtensionSource } from "@/lib/extension/bridge";
 import type { VlxWordFoundSource } from "@/lib/packs";
 import { getMockQuizWordBySlug } from "@/lib/packs/mock-data";
 import type { VlxQuizWord } from "@/lib/packs/types";
@@ -89,6 +90,12 @@ function normalizeSlug(value?: string) {
 }
 
 function normalizeSource(value?: string): VlxSavedWordSource | undefined {
+  const extensionSource = normalizeExtensionSource(value);
+
+  if (extensionSource) {
+    return extensionSource;
+  }
+
   const source = value?.trim();
 
   if (!source || !validSources.has(source)) {

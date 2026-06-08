@@ -12,6 +12,8 @@ const storageKeys = [
   'vlx_review_state_v1',
   'vlx_review_events_v1',
   'vlx_daily_stats_v1',
+  'vlx_pack_progress_v1',
+  'vlx_plan_state_v1',
 ] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -124,6 +126,57 @@ async function getSaveAnalyticsEvents(page: Page): Promise<
 }
 
 test.describe('Visual Lexicon local MVP smoke', () => {
+  test('extension save route stores saved word source as extension', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
+    });
+    await clearVlxLocalStorage(page);
+
+    const response = await page.goto(
+      `${baseUrl}/save?slug=${testSlug}&source=extension`,
+      { waitUntil: 'networkidle' },
+    );
+
+    expect(response?.status()).toBe(200);
+
+    await page.waitForFunction(
+      (slug) => {
+        const rawSaved = localStorage.getItem('vlx_saved_words_v1');
+        const rawState = localStorage.getItem('vlx_review_state_v1');
+
+        if (!rawSaved || !rawState) return false;
+
+        try {
+          const saved = JSON.parse(rawSaved);
+          const state = JSON.parse(rawState);
+
+          return saved?.[slug]?.source === 'extension' && Boolean(state?.[slug]);
+        } catch {
+          return false;
+        }
+      },
+      testSlug,
+      { timeout: 15000 },
+    );
+
+    const savedWords = await readLocalJson<Record<string, Record<string, unknown>>>(
+      page,
+      'vlx_saved_words_v1',
+    );
+    const saveAnalyticsEvents = await getSaveAnalyticsEvents(page);
+    const extensionSaveEvent = saveAnalyticsEvents.find(
+      (event) =>
+        event.slug === testSlug &&
+        event.source === 'extension' &&
+        event.result === 'saved',
+    );
+
+    expect(savedWords?.[testSlug]?.source).toBe('extension');
+    expect(extensionSaveEvent).toBeTruthy();
+  });
+
   test('save route creates local review item and review session writes events/stats', async ({
     page,
   }) => {

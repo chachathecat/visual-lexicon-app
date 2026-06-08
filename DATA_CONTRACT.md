@@ -610,6 +610,58 @@ If remote loading fails:
 - do not call Webflow CMS from browser
 - do not expose tokens
 
+## Extension Bridge App-Side Contract
+
+The Chrome extension may open only app-side learning routes. The app accepts
+these URLs and treats `source=extension` as metadata for save/review analytics
+and local saved-word state.
+
+Routes:
+
+```txt
+/save?slug={slug}&source=extension
+/review?mode=saved&source=extension
+/review?mode=due&source=extension
+/review?mode=word&slug={slug}&source=extension
+/review?mode=hub&hub={hubSlug}&limit=10&source=extension
+```
+
+App-side helper:
+
+```ts
+buildExtensionSaveUrl(slug)
+buildExtensionReviewUrl({ mode, slug, hub, limit })
+normalizeExtensionSource(source)
+isExtensionSource(source)
+```
+
+Extension bridge analytics events:
+
+```txt
+vlx_extension_open_app
+vlx_extension_save_click
+vlx_extension_review_start
+vlx_extension_quiz_later_click
+```
+
+Privacy-safe payload fields for these extension bridge events:
+
+```ts
+{
+  event: string;
+  eventId: string;
+  eventTime: string;
+  source?: "extension";
+  slug?: string;
+  mode?: "saved" | "due" | "word" | "hub";
+  userState?: "guest" | "free" | "lite" | "pro";
+  pagePath?: string;
+}
+```
+
+Do not include page text, browsing history, domain, full-page context, or full
+capture data in extension bridge analytics payloads.
+
 ## Analytics Event Contract
 
 Core events:
@@ -622,6 +674,10 @@ vlx_quiz_complete
 vlx_review_state_update
 vlx_due_review_start
 vlx_weak_review_start
+vlx_extension_open_app
+vlx_extension_save_click
+vlx_extension_review_start
+vlx_extension_quiz_later_click
 vlx_paywall_view
 vlx_upgrade_click
 ```
