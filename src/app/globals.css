@@ -691,6 +691,16 @@ select {
   border-radius: 50%;
 }
 
+.word-card__visual--image {
+  background-position: center;
+  background-size: cover;
+}
+
+.word-card__visual--image::before,
+.word-card__visual--image::after {
+  display: none;
+}
+
 .word-card__body,
 .pack-card,
 .plan-card {

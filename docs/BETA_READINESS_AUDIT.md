@@ -18,6 +18,7 @@ Implemented local MVP surfaces:
 - Save links can create local saved words and review state.
 - Review answers write review events, review state, and daily stats.
 - Dashboard memory counts are derived from local SRS state.
+- Saved library reads local saved words, review state, and review event counts.
 - Due, weak, mixed, focused word, hub, and weak sprint review modes exist.
 - Academic pack preview can start and complete a local preview review.
 - Pack progress records preview start/completion and reviewed/correct counts.
@@ -39,10 +40,10 @@ Not implemented for production paid launch:
 - Full Chrome extension integration beyond route helpers and source tagging.
 - Production analytics pipeline beyond local/dataLayer style event emission.
 
-Important implementation note: `/dashboard`, `/save`, and `/review` use the
-local SRS stores. `/saved` and `/word/[slug]` still render static/mock word card
-data, so they should not be presented as a live saved library or live per-word
-memory detail until that gap is closed.
+Important implementation note: `/dashboard`, `/save`, `/review`, and `/saved`
+use the local SRS stores. `/word/[slug]` still renders static/mock word card
+data, so it should not be presented as a live per-word memory detail until that
+gap is closed.
 
 ## Route Inventory
 
@@ -50,7 +51,7 @@ memory detail until that gap is closed.
 | --- | --- | --- |
 | `/` | Renders `DashboardView`, same learning dashboard as `/dashboard`. | OK for beta if dashboard counts pass QA. |
 | `/dashboard` | Reads local saved words, review state, review events, daily stats, and plan state. Shows due, weak, new saved, mastered, hub progress, saved library preview, alias search, and paywall prompts. | OK for beta. Must not show fake counts. |
-| `/saved` | Static saved page using `mockReviewItems` and `newSavedItems`, not the live local saved store. | Needs copy clarification before paid launch. Keep below learning actions. |
+| `/saved` | Reads `vlx_saved_words_v1`, `vlx_review_state_v1`, and `vlx_review_events_v1` in the browser. Shows real saved library entries, local due/weak/new-saved counts, review CTAs, and an honest empty state when no saved words exist. | OK for beta. Must not show sample words or fake mastery as saved state. |
 | `/save?slug=dissonance&source=word_page` | Resolves the word, writes `vlx_saved_words_v1`, creates `vlx_review_state_v1`, and tags source as `word_page` on first save. | P0 if it fails. Covered by smoke/regression tests. |
 | `/save?slug=dissonance&source=alias_search` | Same save flow with accepted `alias_search` source. Duplicate saves preserve existing review progress and do not duplicate queue entries. | P0 if alias source creates fake or unsafe save behavior. |
 | `/save?slug=dissonance&source=extension` | Same save flow with normalized extension source. Extension helper also builds this URL. | P0 if extension source cannot create review state. |
@@ -95,6 +96,7 @@ Current Playwright suites:
 | Suite | Coverage |
 | --- | --- |
 | `tests/mvp-smoke.spec.ts` | Save route, extension source save, local SRS write, review events/stats, dashboard memory loop smoke. |
+| `tests/saved-library.spec.ts` | `/saved` live saved library after save, empty state after local storage clear, saved entry links, no fake mastery for saved-only records. |
 | `tests/review-state-regression.spec.ts` | Saved words become review items, duplicate save preservation, correct/wrong SRS updates, due/weak/mastered selectors. |
 | `tests/review-mode-routes.spec.ts` | Review route contracts, extension bridge URLs, due/weak/weak sprint routes, focused word/hub routes, route answer writes, pack progress isolation. |
 | `tests/exam-pack-preview.spec.ts` | Pack catalog/detail, academic preview start, pack progress start/completion, planned IELTS/GRE placeholder honesty. |
@@ -124,6 +126,7 @@ Minimum manual pass before any paid beta invite:
 
 - [ ] Clear all seven approved local storage keys.
 - [ ] Save a `word_page` source word and confirm saved word plus review item.
+- [ ] Open `/saved` and confirm the saved library shows only local saved words.
 - [ ] Save an `alias_search` source word and confirm source tagging.
 - [ ] Save an `extension` source word and confirm source tagging.
 - [ ] Complete a review card and confirm event/state/stats mutation.
@@ -220,6 +223,7 @@ manual QA:
 | P0 condition | Current audit status |
 | --- | --- |
 | Save creates or preserves a review item. | Covered by `mvp-smoke` and `review-state-regression`; manual QA required. |
+| Saved library uses live local saved/review state. | Covered by `saved-library`; manual QA required. |
 | Review answer updates review state. | Covered by SRS regression and route tests; manual QA required. |
 | Due, Weak, and Mastered remain truthful. | Selectors and delayed mastery are tested; no fake mastery found. |
 | Pack progress remains truthful. | Tests assert no fake planned pack progress and completion from real answers. |
@@ -227,7 +231,7 @@ manual QA:
 | Alias search only links known safe canonical slugs. | Alias contract tests cover known/missing slugs and unknown no-action state. |
 | Weak sprint updates real SRS state. | Review route tests cover sprint state update. |
 | No-real-payment safety remains intact. | Tests assert no payment route directories and code has no payment SDK. |
-| Production safety boundaries are not touched. | This PR must remain docs-only plus README links. |
+| Production safety boundaries are not touched. | Hardening work must remain local to Track B app code, docs, tests, and safe mock/static data. |
 
 ### P1
 
@@ -239,8 +243,8 @@ manual QA:
   reporting is not audited.
 - Lack of a launch checklist covering support, data reset disclosure, beta
   invite copy, rollback, and no-payment boundaries.
-- `/saved` and `/word/[slug]` still rely on static/mock word data instead of
-  the live local saved/review state.
+- `/word/[slug]` still relies on static/mock word data instead of the live
+  local saved/review state.
 
 ### P2
 
