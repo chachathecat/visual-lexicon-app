@@ -19,6 +19,8 @@ Implemented local MVP surfaces:
 - Review answers write review events, review state, and daily stats.
 - Dashboard memory counts are derived from local SRS state.
 - Saved library reads local saved words, review state, and review event counts.
+- Word detail pages read saved status, source, mastery, box, weak score,
+  recall counts, due dates, and review event counts from local SRS state.
 - Due, weak, mixed, focused word, hub, and weak sprint review modes exist.
 - Academic pack preview can start and complete a local preview review.
 - Pack progress records preview start/completion and reviewed/correct counts.
@@ -40,10 +42,11 @@ Not implemented for production paid launch:
 - Full Chrome extension integration beyond route helpers and source tagging.
 - Production analytics pipeline beyond local/dataLayer style event emission.
 
-Important implementation note: `/dashboard`, `/save`, `/review`, and `/saved`
-use the local SRS stores. `/word/[slug]` still renders static/mock word card
-data, so it should not be presented as a live per-word memory detail until that
-gap is closed.
+Important implementation note: `/dashboard`, `/save`, `/review`, `/saved`, and
+the memory panel on `/word/[slug]` use the local SRS stores. `/word/[slug]`
+still uses static/mock word content for the word title, definition, visual cue,
+example, and memory hook; it must not be presented as production content-pack
+readiness.
 
 ## Route Inventory
 
@@ -63,7 +66,7 @@ gap is closed.
 | `/packs/academic-vocabulary` | Academic pack detail from exam pack or academic hub pack data. Start preview review routes to `/review?mode=hub&hub=academic-vocabulary&limit=10&packId=academic-vocabulary&source=pack_preview`. | OK for beta if manual preview completion writes pack progress. |
 | `/pricing` | Free/Lite/Pro outcome copy. Lite/Pro CTAs are placeholders or configured external paid beta links. Local clicks write upgrade interest. | OK for no-payment beta interest capture. No-Go for real payment. |
 | `/settings` | Local plan and paywall trigger panels plus preference placeholder copy. No auth, billing, or payment settings. | OK for beta if copy remains explicit. |
-| `/word/dissonance` | Static/mock word detail page with mock memory values, not live local review state. | Needs copy clarification before paid launch. |
+| `/word/dissonance` | Shows static/mock word content from `src/lib/mock-data.ts`, but saved status, source, mastery, box, weak score, recall counts, last reviewed, next due, and review event count come only from `vlx_saved_words_v1`, `vlx_review_state_v1`, and `vlx_review_events_v1`. Empty/saved-only states do not show fake mastery or boxes. | OK for beta with static content caveat. |
 
 ## LocalStorage Key Inventory
 
@@ -97,6 +100,7 @@ Current Playwright suites:
 | --- | --- |
 | `tests/mvp-smoke.spec.ts` | Save route, extension source save, local SRS write, review events/stats, dashboard memory loop smoke. |
 | `tests/saved-library.spec.ts` | `/saved` live saved library after save, empty state after local storage clear, saved entry links, no fake mastery for saved-only records. |
+| `tests/word-detail-memory-state.spec.ts` | `/word/[slug]` local memory panel after clear/save/seeded weak state/saved-only state/source labels/unknown slug. |
 | `tests/review-state-regression.spec.ts` | Saved words become review items, duplicate save preservation, correct/wrong SRS updates, due/weak/mastered selectors. |
 | `tests/review-mode-routes.spec.ts` | Review route contracts, extension bridge URLs, due/weak/weak sprint routes, focused word/hub routes, route answer writes, pack progress isolation. |
 | `tests/exam-pack-preview.spec.ts` | Pack catalog/detail, academic preview start, pack progress start/completion, planned IELTS/GRE placeholder honesty. |
@@ -109,6 +113,7 @@ Focused commands for narrow regression runs:
 
 ```powershell
 npm.cmd run test -- tests/mvp-smoke.spec.ts --workers=1
+npm.cmd run test -- tests/word-detail-memory-state.spec.ts --workers=1
 npm.cmd run test -- tests/review-state-regression.spec.ts tests/review-mode-routes.spec.ts --workers=1
 npm.cmd run test -- tests/exam-pack-preview.spec.ts --workers=1
 npm.cmd run test -- tests/paywall-triggers.spec.ts tests/paywall-surfaces.spec.ts tests/entitlements.spec.ts --workers=1
@@ -126,6 +131,9 @@ Minimum manual pass before any paid beta invite:
 
 - [ ] Clear all seven approved local storage keys.
 - [ ] Save a `word_page` source word and confirm saved word plus review item.
+- [ ] Open `/word/dissonance` after saving and confirm saved status, source,
+      mastery, box, weak score, recall counts, due date, and review event count
+      are local SRS values.
 - [ ] Open `/saved` and confirm the saved library shows only local saved words.
 - [ ] Save an `alias_search` source word and confirm source tagging.
 - [ ] Save an `extension` source word and confirm source tagging.
@@ -205,6 +213,7 @@ No `TODO` or `FIXME` matches were found in the searched code/docs.
 | Local entitlement feature bullets say placeholder | `src/lib/entitlements/local-entitlements.ts` | Needs copy clarification | Lite/Pro bullets such as unlimited save/review placeholder and Pro placeholders should be made user-safe before paid launch. |
 | Settings preference placeholder | `src/app/settings/page.tsx` | OK for beta | Clearly states no auth, billing, or payment settings. |
 | Save route mock fallback source | `src/components/views/save-landing-view.tsx` | OK for beta; P1 before paid launch | Save does not create unknown words, but production pack source should be validated. |
+| Word detail static content | `src/app/word/[slug]/page.tsx`, `src/lib/mock-data.ts` | OK for beta; P1 before paid launch | The word card content is static/mock, but the `/word/[slug]` memory panel reads only local saved/review state and does not fake mastery. |
 | Review starter deck and distractor fallback use mock pack words | `src/components/views/review-session-view.tsx` | OK for beta; P1 before paid launch | The SRS loop is real; content remains starter/mock. Avoid claiming full content readiness. |
 | Analytics source enums include mock/fallback/placeholder | `src/lib/analytics/types.ts` | OK for beta | Useful for honest event source tagging. |
 | Paywall trigger copy references planned Pro tools | `src/lib/paywall/triggers.ts`, `tests/paywall-triggers.spec.ts` | Needs copy clarification | Safe for internal beta, but should be reviewed so users do not infer active paid entitlements. |
@@ -243,8 +252,8 @@ manual QA:
   reporting is not audited.
 - Lack of a launch checklist covering support, data reset disclosure, beta
   invite copy, rollback, and no-payment boundaries.
-- `/word/[slug]` still relies on static/mock word data instead of the live
-  local saved/review state.
+- Static/mock word and pack content remains a P1 content readiness gap even
+  where memory state is now local and honest.
 
 ### P2
 
