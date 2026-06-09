@@ -76,13 +76,28 @@ npm run test:packs
 The Playwright checks expect the app to be running on `http://127.0.0.1:3006`
 unless `PLAYWRIGHT_BASE_URL` is set.
 
+## Paid Beta Readiness
+
+Audit and manual QA docs:
+
+```txt
+docs/BETA_READINESS_AUDIT.md
+docs/PAID_BETA_MANUAL_QA.md
+```
+
+These docs are for the no-payment paid beta readiness review. They do not add
+checkout, billing, auth, Webflow, Cloudflare Worker, DNS, production data, or
+deployment behavior.
+
 ## Current Scope
 
-- Next.js App Router shell
-- Approved initial routes
-- Shared layout and navigation
-- Mock learning cards and pack previews
-- Empty-state components
-- Local-only scaffold data
+- Next.js App Router shell for the Track B learning app
+- Approved initial routes plus local save and review modes
+- Local Save -> Review -> SRS state/events loop
+- Dashboard memory mission from local SRS state
+- Pack previews and local pack progress
+- Local paid beta placeholder surfaces and upgrade interest capture
+- Extension bridge and multilingual alias search contracts
 
-No SRS engine, auth, payment, Webflow bridge, or Cloudflare production integration is implemented in this phase.
+Auth, real payment, Webflow publishing, Cloudflare production integration,
+production user data, and deployment settings are outside this repository scope.
