@@ -200,6 +200,60 @@ test.describe('Saved library live local state', () => {
     ).toHaveAttribute('href', '/review?mode=saved');
   });
 
+  test('saved entries show alias_search and extension source labels', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      savedWords: {
+        obfuscate: makeSavedWord({
+          slug: 'obfuscate',
+          word: 'Obfuscate',
+          image: 'https://cdn.visuallexicon.org/images/obfuscate.webp',
+          definition: 'To make something unclear or difficult to understand.',
+          hub: 'academic-vocabulary',
+          source: 'alias_search',
+        }),
+        lucid: makeSavedWord({
+          slug: 'lucid',
+          word: 'Lucid',
+          image: 'https://cdn.visuallexicon.org/images/lucid.webp',
+          definition: 'Clear and easy to understand.',
+          hub: 'academic-vocabulary',
+          source: 'extension',
+        }),
+      },
+      reviewState: {
+        obfuscate: makeReviewStateItem({
+          slug: 'obfuscate',
+          word: 'Obfuscate',
+          definition: 'To make something unclear or difficult to understand.',
+          box: 0,
+          mastery: 'Weak',
+          correct: 1,
+          wrong: 2,
+          weakScore: 0.72,
+        }),
+      },
+    });
+
+    await page.goto(`${baseUrl}/saved`, { waitUntil: 'networkidle' });
+
+    const aliasCard = page
+      .locator('.saved-word-card')
+      .filter({ hasText: 'Obfuscate' });
+    const extensionCard = page
+      .locator('.saved-word-card')
+      .filter({ hasText: 'Lucid' });
+
+    await expect(aliasCard).toContainText('Source: Alias search');
+    await expect(aliasCard).toContainText('Weak');
+    await expect(aliasCard).toContainText('Box 0');
+    await expect(aliasCard).toContainText('Weak 72%');
+    await expect(extensionCard).toContainText('Source: Extension');
+    await expect(extensionCard).toContainText('No review state yet');
+    await expect(extensionCard).not.toContainText('Mastered');
+  });
+
   test('saved-only entries do not show fake mastery', async ({ page }) => {
     await seedVlxLocalStorage(page, {
       savedWords: {

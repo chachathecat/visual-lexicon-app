@@ -41,6 +41,7 @@ type SavedLibraryWord = {
   definition?: string;
   image?: string;
   hub?: string;
+  source?: string;
   savedAt?: string;
   mastery?: VlxMasteryLabel;
   box?: number;
@@ -112,6 +113,22 @@ function formatShortDate(value?: string) {
   }).format(date);
 }
 
+function formatSourceLabel(source?: string) {
+  const normalizedSource = source?.trim();
+
+  if (!normalizedSource) {
+    return undefined;
+  }
+
+  const sourceLabels: Record<string, string> = {
+    alias_search: "Alias search",
+    extension: "Extension",
+    word_page: "Word page"
+  };
+
+  return `Source: ${sourceLabels[normalizedSource] ?? normalizedSource}`;
+}
+
 function getVisualClass(slug: string, image?: string) {
   if (image || !visualCueSlugs.has(slug)) {
     return "";
@@ -142,6 +159,8 @@ function toSavedLibraryWord(
     definition: reviewStateItem?.definition ?? savedWord.definition,
     image: reviewStateItem?.image ?? savedWord.image,
     hub: reviewStateItem?.hub ?? savedWord.hub,
+    source:
+      typeof savedWord.source === "string" ? savedWord.source : undefined,
     savedAt: savedWord.savedAt,
     mastery: reviewStateItem?.mastery,
     box: reviewStateItem?.box,
@@ -158,6 +177,7 @@ function SavedWordCard({ word }: { word: SavedLibraryWord }) {
   const savedDate = formatShortDate(word.savedAt);
   const reviewedDate = formatShortDate(word.lastReviewedAt);
   const dueDate = formatShortDate(word.nextDueAt);
+  const sourceLabel = formatSourceLabel(word.source);
 
   return (
     <article className="word-card saved-word-card">
@@ -195,6 +215,7 @@ function SavedWordCard({ word }: { word: SavedLibraryWord }) {
             </span>
           ) : null}
           <span className="tag">{formatHubLabel(word.hub)}</span>
+          {sourceLabel ? <span className="tag">{sourceLabel}</span> : null}
           {savedDate ? <span className="tag">Saved {savedDate}</span> : null}
           {reviewedDate ? (
             <span className="tag">Reviewed {reviewedDate}</span>
