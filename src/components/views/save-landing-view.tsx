@@ -69,6 +69,7 @@ const validSources = new Set<string>([
   "word_page",
   "hub_page",
   "extension",
+  "alias_search",
   "app",
   "exam_pack",
   "manual"

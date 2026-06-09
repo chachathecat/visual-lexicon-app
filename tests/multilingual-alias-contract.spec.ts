@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import {
   getAliasesForSlug,
@@ -11,6 +11,16 @@ import {
 import { mockQuizWords } from '../src/lib/packs/mock-data';
 
 const knownMockSlugs = new Set(mockQuizWords.map((word) => word.slug));
+const baseUrl =
+  process.env.PLAYWRIGHT_BASE_URL ??
+  process.env.NEXT_PUBLIC_APP_URL ??
+  'http://127.0.0.1:3006';
+
+async function openAliasSearch(page: Page) {
+  await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
+
+  return page.getByRole('region', { name: 'Alias search' });
+}
 
 test.describe('Visual Lexicon multilingual alias contract', () => {
   test('Korean aliases resolve to existing English visual card slugs', () => {
@@ -101,5 +111,102 @@ test.describe('Visual Lexicon multilingual alias contract', () => {
         knownSlugs: [...knownMockSlugs],
       }),
     ).toBeNull();
+  });
+});
+
+test.describe('Visual Lexicon multilingual alias search UI', () => {
+  test('Korean alias resolves to the existing Dissonance card actions', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
+    });
+
+    const aliasSearch = await openAliasSearch(page);
+
+    await aliasSearch.getByLabel('Search alias').fill('불협화음');
+
+    await expect(aliasSearch.getByText('불협화음')).toBeVisible();
+    await expect(
+      aliasSearch.getByRole('heading', { name: 'Dissonance' }),
+    ).toBeVisible();
+    await expect(aliasSearch.getByText('Korean to English')).toBeVisible();
+    await expect(aliasSearch.getByText('slug: dissonance')).toBeVisible();
+
+    await expect(aliasSearch.getByRole('link', { name: 'View card' })).toHaveAttribute(
+      'href',
+      '/word/dissonance',
+    );
+    await expect(
+      aliasSearch.getByRole('link', { name: 'Save to review' }),
+    ).toHaveAttribute('href', '/save?slug=dissonance&source=alias_search');
+
+    await expect
+      .poll(async () => {
+        return await page.evaluate(() => {
+          const dataLayer = (window as Window & { dataLayer?: unknown[] })
+            .dataLayer;
+
+          if (!Array.isArray(dataLayer)) return null;
+
+          return (
+            dataLayer.find((item) => {
+              if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                return false;
+              }
+
+              const event = item as Record<string, unknown>;
+
+              return (
+                event.event === 'vlx_alias_search' &&
+                event.source === 'alias_search' &&
+                event.query_language === 'ko' &&
+                event.matched_slug === 'dissonance' &&
+                event.result === 'matched'
+              );
+            }) ?? null
+          );
+        });
+      })
+      .toBeTruthy();
+  });
+
+  test('Japanese alias resolves to the existing Obfuscate card actions', async ({
+    page,
+  }) => {
+    const aliasSearch = await openAliasSearch(page);
+
+    await aliasSearch.getByLabel('Search alias').fill('曖昧にする');
+
+    await expect(aliasSearch.getByText('曖昧にする')).toBeVisible();
+    await expect(
+      aliasSearch.getByRole('heading', { name: 'Obfuscate' }),
+    ).toBeVisible();
+    await expect(aliasSearch.getByText('Japanese to English')).toBeVisible();
+    await expect(aliasSearch.getByText('slug: obfuscate')).toBeVisible();
+
+    await expect(aliasSearch.getByRole('link', { name: 'View card' })).toHaveAttribute(
+      'href',
+      '/word/obfuscate',
+    );
+    await expect(
+      aliasSearch.getByRole('link', { name: 'Save to review' }),
+    ).toHaveAttribute('href', '/save?slug=obfuscate&source=alias_search');
+  });
+
+  test('unknown alias shows the no-match state without fake actions', async ({
+    page,
+  }) => {
+    const aliasSearch = await openAliasSearch(page);
+
+    await aliasSearch.getByLabel('Search alias').fill('없는 별칭');
+
+    await expect(aliasSearch.getByText('No alias match found')).toBeVisible();
+    await expect(aliasSearch.getByRole('link', { name: 'View card' })).toHaveCount(
+      0,
+    );
+    await expect(
+      aliasSearch.getByRole('link', { name: 'Save to review' }),
+    ).toHaveCount(0);
   });
 });

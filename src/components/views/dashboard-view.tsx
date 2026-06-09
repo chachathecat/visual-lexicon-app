@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { MissionPanel } from "@/components/mission-panel";
+import { MultilingualAliasSearch } from "@/components/multilingual-alias-search";
 import { PaywallPrompt } from "@/components/paywall-prompt";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import {
@@ -433,6 +434,8 @@ export function DashboardView() {
         startReviewHref={startReviewHref}
         weakCount={snapshot.weakWords.length}
       />
+
+      <MultilingualAliasSearch />
 
       {!snapshot.hasAnyLocalData ? (
         <EmptyState
