@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "product": "Visual Lexicon Track B",
+  "northStar": "Weekly Reviewed Words",
+  "cases": [
+    {
+      "id": "golden-save-word-page-dissonance",
+      "flow": "word_page save",
+      "entry": "/save?slug=dissonance&source=word_page",
+      "setup": ["Clear localStorage learning keys."],
+      "assertions": [
+        "vlx_saved_words_v1 contains dissonance.",
+        "Saved source is word_page.",
+        "vlx_review_state_v1 contains dissonance.",
+        "Initial mastery is New.",
+        "Initial box is 0.",
+        "Page offers a review action."
+      ],
+      "safety": "No Webflow, payment, auth, or production data behavior."
+    },
+    {
+      "id": "golden-save-alias-search-dissonance",
+      "flow": "alias_search save",
+      "entry": "/save?slug=dissonance&source=alias_search",
+      "setup": ["Clear localStorage learning keys or use a fresh slug."],
+      "assertions": [
+        "Canonical slug dissonance is saved.",
+        "Saved source is alias_search on first save.",
+        "Review state is created with mastery New.",
+        "Unknown aliases do not expose fake save actions."
+      ],
+      "safety": "Alias search must not create invented word cards."
+    },
+    {
+      "id": "golden-save-extension-dissonance",
+      "flow": "extension save",
+      "entry": "/save?slug=dissonance&source=extension",
+      "setup": ["Clear localStorage learning keys or use a fresh slug."],
+      "assertions": [
+        "Saved source is extension.",
+        "Review state is created with box 0.",
+        "No extension token or private browsing data is stored.",
+        "Review is offered as the next action."
+      ],
+      "safety": "Extension source uses the same app-side contract as other saves."
+    },
+    {
+      "id": "golden-due-review-updates-state",
+      "flow": "due review",
+      "entry": "/review?mode=due",
+      "setup": ["Seed at least one item with nextDueAt in the past."],
+      "assertions": [
+        "A due item is selected from review state.",
+        "Submitting an answer appends vlx_review_events_v1.",
+        "Submitting an answer updates vlx_review_state_v1.",
+        "Wrong answers increase weakness and return sooner.",
+        "Correct answers obey VLX 5-box rules."
+      ],
+      "safety": "No fake due counts or mastery claims."
+    },
+    {
+      "id": "golden-weak-review-updates-weakness",
+      "flow": "weak review",
+      "entry": "/review?mode=weak",
+      "setup": ["Seed at least one item with mastery Weak or weakScore above 0."],
+      "assertions": [
+        "A weak item is selected from real review state.",
+        "Answer event records questionType, result, responseMs, boxAfter, and weakScoreAfter.",
+        "State updates after correct or wrong answer.",
+        "Mastered is not assigned without delayed recall."
+      ],
+      "safety": "Weak review must not use random filler words."
+    },
+    {
+      "id": "golden-weak-sprint-real-weak-items",
+      "flow": "weak sprint",
+      "entry": "/review/weak-sprint",
+      "setup": ["Seed multiple weak items or verify honest empty state."],
+      "assertions": [
+        "Sprint uses real weak candidates.",
+        "Empty state appears when there are no weak words.",
+        "Each answer writes an event.",
+        "Completion does not fake mastery."
+      ],
+      "safety": "Weak sprint is a rescue path, not a decorative game mode."
+    },
+    {
+      "id": "golden-academic-pack-preview",
+      "flow": "academic pack preview",
+      "entry": "/packs/academic-vocabulary",
+      "setup": ["Clear vlx_pack_progress_v1."],
+      "assertions": [
+        "Pack detail renders academic preview honestly.",
+        "Starting preview records preview start.",
+        "Preview review carries packId academic-vocabulary.",
+        "Completion records reviewed and correct counts from actual answers.",
+        "Placeholder paid packs do not claim unlock."
+      ],
+      "safety": "Pack progress must be event-backed."
+    },
+    {
+      "id": "golden-pricing-lite-cta",
+      "flow": "pricing Lite CTA",
+      "entry": "/pricing",
+      "setup": ["Run with no NEXT_PUBLIC_LITE_PAYMENT_URL unless testing configured external beta links."],
+      "assertions": [
+        "Lite CTA explains beta/payment status.",
+        "Without payment URL, click writes local upgrade interest only.",
+        "No checkout route is created.",
+        "No subscription state is claimed."
+      ],
+      "safety": "Lite CTA must not create real payment."
+    },
+    {
+      "id": "golden-pricing-pro-cta",
+      "flow": "pricing Pro CTA",
+      "entry": "/pricing",
+      "setup": ["Run with no NEXT_PUBLIC_PRO_PAYMENT_URL unless testing configured external beta links."],
+      "assertions": [
+        "Pro CTA explains beta/payment status.",
+        "Without payment URL, click writes local upgrade interest only.",
+        "Configured external URL appends safe plan and source context.",
+        "No payment SDK is loaded."
+      ],
+      "safety": "Pro CTA must not create real payment."
+    },
+    {
+      "id": "golden-no-real-payment-route",
+      "flow": "no real payment route",
+      "entry": "/checkout",
+      "setup": ["Inspect routes and browser behavior."],
+      "assertions": [
+        "No app checkout route completes payment.",
+        "No billing route mutates subscription state.",
+        "No API checkout handler exists without explicit payment scope.",
+        "No frontend payment secret is present."
+      ],
+      "safety": "Real payment remains out of scope for paid beta hardening."
+    }
+  ]
+}

@@ -1,104 +1,84 @@
-# AGENTS.md — Visual Lexicon Learning App
+# AGENTS.md - Visual Lexicon Learning App
 
-## Project Mission
+## Project Goal
 
-You are working on Visual Lexicon, a two-track education product.
+You are working on Visual Lexicon Track B, the paid learning app for
+`app.visuallexicon.org`.
 
-Track A is the public discovery layer:
+Visual Lexicon turns difficult words users meet online into visual memory cards,
+then reviews them before they forget.
 
-- `visuallexicon.org`
-- Webflow public visual dictionary
-- SEO word pages
-- vocabulary hub pages
-- image search
-- guest ads
-- public Save / Quiz / App CTA
+Track A is the public discovery layer on `visuallexicon.org` and Webflow. Track
+B is the Next.js learning app. Build Track B without breaking Track A.
 
-Track B is the paid learning app:
-
-- `app.visuallexicon.org`
-- Vercel / Next.js app
-- Save
-- Review
-- spaced repetition
-- Due / Weak / Mastered
-- Exam Packs
-- Lite / Pro monetization
-- future AI mistake explanations
-
-The immediate goal is to build Track B without breaking Track A.
-
-## Non-Negotiable Rules
-
-Do not touch Webflow.
-
-Do not touch Cloudflare production Workers.
-
-Do not change billing, DNS, payment settings, or production user data.
-
-Do not delete or mass-edit Webflow CMS items.
-
-Do not modify existing production authentication, save, payment, or subscription logic unless a task explicitly asks for it.
-
-Do not ask for secrets, API keys, passwords, tokens, or billing credentials.
-
-Do not expose API tokens in frontend code.
-
-Do not call Webflow CMS directly from the browser.
-
-Build `app.visuallexicon.org` as a separate learning app.
-
-Main priority:
-
-Save → Review → review_state/events → Due/Weak/Mastered.
-
-## Core Product Principle
-
-Save is not enough.
-
-Saved words must become review items.
-
-Review is not enough.
-
-Review must update memory state.
-
-Memory state is the moat.
-
-Do not fake mastery.
-
-Do not use random easy distractors as the main quiz method.
-
-Do not overbuild AI before the SRS loop works.
-
-AI comes later, first as wrong-answer mistake explanation.
-
-## North Star Metric
+## North Star
 
 Weekly Reviewed Words.
 
-This means the number of words a learner actually reviews in a week.
+The product succeeds when learners actually review words each week. Saved words,
+traffic, pack previews, and upgrade interest matter only when they support
+repeat review behavior.
 
-Traffic is not the primary goal.
+## Core Formula
 
-Saved words are not the primary goal.
+```txt
+Visual metaphor -> Active recall -> Mistake record -> Spaced review -> Mastery status -> Paid habit
+```
 
-Repeated learning behavior is the primary goal.
+## Commands
 
-## Core Learning Formula
+Use these validation commands before finishing work:
 
-Visual metaphor → Active recall → Mistake record → Spaced review → Mastery status → Paid habit
+```powershell
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run test -- --workers=1
+```
 
-## Current Build Priority
+If a script is missing or a command fails, report it honestly. Do not claim a
+check passed unless it actually ran.
 
-The first app version must prove this loop:
+For local development:
 
-1. A user saves a word.
-2. The saved word becomes a review item.
-3. The user reviews the word in a short session.
-4. The answer creates a review event.
-5. The review event updates review state.
-6. The dashboard shows real Due / Weak / Mastered states.
-7. Free / Lite / Pro gating can be added after the loop works.
+```powershell
+npm.cmd run dev
+```
+
+For browser QA, the docs and tests commonly use:
+
+```powershell
+npm.cmd run dev -- --hostname 127.0.0.1 --port 3006
+```
+
+## Product Principles
+
+- Save is not enough; saved words must become review items.
+- Review is not enough; answers must write events and update memory state.
+- Memory state is the moat.
+- Due, Weak, and Mastered must come from real review state.
+- Do not fake mastery, pack progress, dashboard metrics, or streaks.
+- Do not use random easy distractors as the main quiz method.
+- Keep review short, focused, and built around active recall.
+- AI comes later, first as wrong-answer mistake explanation after the SRS loop
+  works.
+- The UI should feel calm, premium, minimal, warm, credible, and
+  learning-focused.
+- Dashboard priority is Today Memory Mission, then Start Review, Practice Weak
+  Words, and Continue Deck. Saved Library should support the learning loop, not
+  dominate it.
+
+## Engineering Principles
+
+- Prefer existing app patterns over new abstractions.
+- Keep PRs small and scoped to the requested behavior.
+- Do not add large route groups without approval.
+- Keep Track B separate from Webflow and production infrastructure.
+- Use structured pack, review, and SRS contracts instead of ad hoc state.
+- Preserve local storage key contracts.
+- Add or update tests when runtime behavior changes.
+- Update docs when routes, storage keys, safety boundaries, or product contracts
+  change.
 
 ## Approved Initial App Routes
 
@@ -106,16 +86,16 @@ Create or maintain these routes:
 
 ```txt
 /
- /dashboard
- /saved
- /review
- /review/due
- /review/weak
- /packs
- /packs/[packId]
- /word/[slug]
- /pricing
- /settings
+/dashboard
+/saved
+/review
+/review/due
+/review/weak
+/packs
+/packs/[packId]
+/word/[slug]
+/pricing
+/settings
 ```
 
 Do not add large new route groups without approval.
@@ -185,21 +165,16 @@ Each review answer must create an event shaped like:
 
 ## VLX 5-Box SRS Rules
 
-Box 0: New or failed. Due soon or again in-session.
-
-Box 1: First recall. Due in 1 day.
-
-Box 2: Stable. Due in 3 days.
-
-Box 3: Strong. Due in 7 days.
-
-Box 4: Mastering. Due in 14 days.
-
-Box 5: Mastered. Due in 30 days.
+- Box 0: New or failed. Due soon or again in-session.
+- Box 1: First recall. Due in 1 day.
+- Box 2: Stable. Due in 3 days.
+- Box 3: Strong. Due in 7 days.
+- Box 4: Mastering. Due in 14 days.
+- Box 5: Mastered. Due in 30 days.
 
 Update rules:
 
-- Correct + fast + no hint: box +1.
+- Correct plus fast plus no hint: box +1.
 - Correct but slow: keep box or apply only small improvement.
 - Correct but guessed: keep box.
 - Wrong: box -1 or box 0.
@@ -207,160 +182,74 @@ Update rules:
 - Repeated mistakes increase weakScore.
 - Do not mark a word as Mastered unless it has passed delayed recall.
 
-## UI Principles
+## Forbidden Actions
 
-Visual Lexicon should feel:
+Do not:
 
-- calm
-- premium
-- minimal
-- warm
-- credible
-- learning-focused
+- Touch Webflow or publish Webflow changes.
+- Touch Cloudflare production Workers.
+- Change billing, DNS, payment settings, auth, deployment settings, secrets, or
+  production user data.
+- Delete or mass-edit Webflow CMS items.
+- Delete R2 objects or mutate production pack data.
+- Add real payment, checkout, subscription, invoice, billing portal, or payment
+  SDK unless explicitly authorized.
+- Ask for secrets, API keys, passwords, tokens, or billing credentials.
+- Expose API tokens in frontend code.
+- Call Webflow CMS directly from the browser.
+- Add AI Tutor functionality before the SRS loop works.
+- Add multilingual page generation during paid beta hardening.
+- Run `npm audit fix` unless explicitly requested and scoped.
 
-Avoid:
+## Definition Of Done
 
-- childish game UI
-- noisy animations
-- cluttered dashboards
-- fake metrics
-- overdramatic copy
-- random badges that do not reflect real learning
+For runtime PRs:
 
-Dashboard priority:
+- Save creates or preserves review state.
+- Review answers create events and update state.
+- Due, Weak, and Mastered are derived from real state.
+- Tests cover changed contracts.
+- Manual QA notes identify the golden flows checked.
+- Risk, rollback, and safety notes are included.
 
-```txt
-Today’s Memory Mission
-{dueCount} words due · {weakCount} weak · 3 minutes
+For documentation-only or agent-ops PRs:
 
-Primary actions:
-Start Review
-Practice Weak Words
-Continue Deck
-```
+- No runtime behavior changes.
+- New docs are linked from README when useful.
+- Validation commands are run or failures are reported.
+- Safety confirmation states that Webflow, Cloudflare Workers, auth, billing,
+  DNS, payment, secrets, production data, and deployment settings were not
+  touched.
 
-Saved Library should appear below learning modules, not above them.
+## Safe Approval Rules
 
-## Data Pack Rules
+Stop and ask for explicit approval if a task requires:
 
-The app should read static learning packs from R2 or mock data.
+- Webflow publishing.
+- Cloudflare production Worker changes.
+- DNS changes.
+- Payment, Paddle, Stripe, billing, invoice, checkout, or subscription changes.
+- Production user data modification.
+- Deleting R2 objects.
+- Deleting CMS items.
+- Exposing, moving, or requesting secrets.
+- Changing login or authentication behavior.
 
-Support these future files:
+If approval is not explicit, keep the work local to Track B app code, docs,
+tests, and safe mock/static data.
 
-```txt
-/quiz-pack/manifest.json
-/quiz-pack/core-v1.json
-/quiz-pack/home-v1.json
-/quiz-pack/hubs/{hub}.json
-/quiz-pack/words/{slug}.json
-/exam-packs/manifest.json
-/exam-packs/{packId}.json
-/search/search-lite-v1.json
-```
+## Operating Docs
 
-Each quiz word should include:
-
-```ts
-{
-  slug: string;
-  word: string;
-  url?: string;
-  image?: string;
-  definition: string;
-  example?: string;
-  memoryHook?: string;
-  hub?: string;
-  hubs?: string[];
-  partOfSpeech?: string;
-  cefr?: string;
-  difficulty?: string;
-  relatedWords?: string[];
-  confusableWords?: string[];
-  distractors?: string[];
-  updatedAt?: string;
-}
-```
-
-## Branch and PR Discipline
-
-Use small branches.
-
-Recommended branch names:
+Use these docs when planning, reviewing, or releasing work:
 
 ```txt
-feat/app-scaffold
-feat/pack-contract
-feat/srs-engine
-feat/review-ui
-feat/dashboard-memory-mission
-feat/r2-pack-reader
-feat/save-landing
-feat/webflow-bridge
-feat/analytics-events
-feat/exam-pack-preview
+docs/world_class_bar.md
+docs/product_quality_rubric.md
+docs/golden_user_flows.md
+docs/code_review.md
+docs/security_and_permissions.md
+docs/release_checklist.md
+docs/BETA_READINESS_AUDIT.md
+docs/PAID_BETA_MANUAL_QA.md
+PLANS.md
 ```
-
-Each PR must include:
-
-- summary
-- changed files
-- tests run
-- screenshots if UI changed
-- risks
-- rollback note
-
-## Merge Order
-
-Merge in this order unless the Control Room says otherwise:
-
-1. App Scaffold
-2. Pack Data Contract
-3. SRS Engine
-4. Review UI
-5. Dashboard Memory Mission
-6. R2 Pack Reader
-7. Save Landing Endpoint
-8. Analytics Events
-9. Free / Lite / Pro UI Gating
-10. Exam Pack Preview
-11. Webflow CTA Bridge
-
-Webflow CTA Bridge must not be merged or applied before the app review flow works.
-
-## Testing Expectations
-
-Run available checks before finishing:
-
-```txt
-npm run typecheck
-npm run lint
-npm run test
-npm run build
-```
-
-If a script does not exist, report that honestly.
-
-Do not claim tests passed unless they actually ran.
-
-## Safety Stop Conditions
-
-Stop and ask for approval if a task requires:
-
-- Webflow publishing
-- Cloudflare production Worker changes
-- DNS changes
-- payment or Paddle changes
-- billing changes
-- production user data modification
-- deleting R2 objects
-- deleting CMS items
-- exposing secrets
-- changing login or authentication behavior
-
-## Final Reminder
-
-The goal is not to make another dictionary.
-
-The goal is to turn saved visual words into remembered words.
-
-Build the memory loop first.
