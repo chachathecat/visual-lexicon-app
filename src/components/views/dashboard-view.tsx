@@ -284,6 +284,8 @@ function QueueModule({
   note,
   actionHref,
   actionLabel,
+  secondaryActionHref,
+  secondaryActionLabel,
   words,
   emptyText,
   ctaLabel
@@ -293,6 +295,8 @@ function QueueModule({
   note: string;
   actionHref: string;
   actionLabel: string;
+  secondaryActionHref?: string;
+  secondaryActionLabel?: string;
   words: DashboardWord[];
   emptyText: string;
   ctaLabel: string;
@@ -311,9 +315,16 @@ function QueueModule({
         emptyText={emptyText}
         words={words}
       />
-      <Link className="button button--quiet" href={actionHref}>
-        {actionLabel}
-      </Link>
+      <div className="actions">
+        <Link className="button button--quiet" href={actionHref}>
+          {actionLabel}
+        </Link>
+        {secondaryActionHref && secondaryActionLabel ? (
+          <Link className="button button--primary" href={secondaryActionHref}>
+            {secondaryActionLabel}
+          </Link>
+        ) : null}
+      </div>
     </article>
   );
 }
@@ -475,6 +486,12 @@ export function DashboardView() {
             ctaLabel="Open word"
             emptyText="Weak words appear after missed or fragile recall."
             note="Words with repeated misses or high weakScore."
+            secondaryActionHref={
+              snapshot.weakWords.length > 0 ? "/review/weak-sprint" : undefined
+            }
+            secondaryActionLabel={
+              snapshot.weakWords.length > 0 ? "Start Weak Sprint" : undefined
+            }
             title="Weak Words"
             words={dashboardWords.weakWords}
           />

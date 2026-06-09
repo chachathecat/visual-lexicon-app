@@ -41,6 +41,7 @@ import type {
 } from "@/lib/srs/types";
 
 const SESSION_SIZE = 5;
+const WEAK_SPRINT_SIZE = 5;
 const visualCueSlugs = new Set([
   "dissonance",
   "abundance",
@@ -98,8 +99,10 @@ type SessionAnswer = {
   questionType: VlxQuestionType;
   boxBefore: number;
   boxAfter: number;
+  weakScoreBefore: number;
   weakScoreAfter: number;
   weakAdded: boolean;
+  weakImproved: boolean;
   movedForward: boolean;
 };
 
@@ -117,6 +120,8 @@ type SessionSummary = {
   correct: number;
   wrong: number;
   weakAdded: number;
+  weakImproved: number;
+  stillWeak: number;
   movedForward: number;
   weakSpotlight?: SessionSummarySpotlight;
   nextDueAt?: string;
@@ -168,6 +173,16 @@ const modeCopy = {
     emptyBody:
       "Weak words appear after missed answers. The starter deck can create real review state.",
     sourceLabel: "Weak queue"
+  },
+  "weak-sprint": {
+    eyebrow: "Weak sprint",
+    title: "A five-card sprint for fragile recall.",
+    description:
+      "Weak sprints use only real local memory state and prioritize high weakScore, misses, and low boxes.",
+    emptyTitle: "No weak words right now.",
+    emptyBody:
+      "Weak sprints appear after missed or fragile recall is stored locally.",
+    sourceLabel: "Weak sprint"
   },
   word: {
     eyebrow: "Focused review",
@@ -280,7 +295,7 @@ function getQuestionType(
     return "due_review";
   }
 
-  if (word.source === "weak" || mode === "weak") {
+  if (word.source === "weak" || mode === "weak" || mode === "weak-sprint") {
     return "weak_review";
   }
 
@@ -470,6 +485,34 @@ function getRouteWeakWords(reviewState: VlxReviewStateStore) {
         return second.wrong - first.wrong;
       }
 
+      if (first.box !== second.box) {
+        return first.box - second.box;
+      }
+
+      return first.slug.localeCompare(second.slug);
+    });
+}
+
+function getWeakSprintWords(reviewState: VlxReviewStateStore) {
+  return Object.values(reviewState)
+    .filter(
+      (item) =>
+        item.mastery !== "Mastered" &&
+        (item.mastery === "Weak" || item.weakScore > 0 || item.wrong > 0)
+    )
+    .sort((first, second) => {
+      if (first.weakScore !== second.weakScore) {
+        return second.weakScore - first.weakScore;
+      }
+
+      if (first.wrong !== second.wrong) {
+        return second.wrong - first.wrong;
+      }
+
+      if (first.box !== second.box) {
+        return first.box - second.box;
+      }
+
       return first.slug.localeCompare(second.slug);
     });
 }
@@ -540,6 +583,12 @@ function buildLocalWords(
     ).slice(0, limit);
   }
 
+  if (mode === "weak-sprint") {
+    return dedupeBySlug(
+      getWeakSprintWords(reviewState).map((item) => fromStateItem(item, "weak"))
+    ).slice(0, Math.min(limit, WEAK_SPRINT_SIZE));
+  }
+
   return dedupeBySlug([
     ...dueWords,
     ...weakWords,
@@ -569,6 +618,8 @@ function getAnswerSummary(answers: SessionAnswer[]): SessionSummary {
     correct: answers.filter((answer) => answer.result === "correct").length,
     wrong: answers.filter((answer) => answer.result === "wrong").length,
     weakAdded: answers.filter((answer) => answer.weakAdded).length,
+    weakImproved: answers.filter((answer) => answer.weakImproved).length,
+    stillWeak: answers.filter((answer) => answer.result === "wrong").length,
     movedForward: answers.filter((answer) => answer.movedForward).length
   };
 }
@@ -625,9 +676,18 @@ function buildCompletedSummary(
       (first, second) =>
         getDateTime(first.state.nextDueAt) - getDateTime(second.state.nextDueAt)
     )[0];
+  const stillWeak = reviewedStates.filter(({ answer, state }) => {
+    const hasRemainingMistakes = state.wrong > 0 || answer.result === "wrong";
+
+    return (
+      hasRemainingMistakes &&
+      (state.mastery === "Weak" || state.weakScore > 0 || state.wrong > 0)
+    );
+  }).length;
 
   return {
     ...answerSummary,
+    stillWeak,
     weakSpotlight: weakSpotlightCandidate
       ? {
           word: weakSpotlightCandidate.state.word,
@@ -740,9 +800,13 @@ export function ReviewSessionView({
   routeSource?: string;
 }) {
   const copy = modeCopy[mode];
-  const sessionLimit = Number.isFinite(limit)
+  const normalizedLimit = Number.isFinite(limit)
     ? Math.max(1, Math.floor(limit))
     : SESSION_SIZE;
+  const sessionLimit =
+    mode === "weak-sprint"
+      ? Math.min(normalizedLimit, WEAK_SPRINT_SIZE)
+      : normalizedLimit;
   const emptyTitle = routeSession?.emptyTitle ?? copy.emptyTitle;
   const emptyBody = routeSession?.emptyBody ?? copy.emptyBody;
   const cardStartedAt = useRef(getNowMs());
@@ -830,7 +894,7 @@ export function ReviewSessionView({
         });
       }
 
-      if (mode === "weak" && hasWeakCards) {
+      if ((mode === "weak" || mode === "weak-sprint") && hasWeakCards) {
         emitVlxEvent(VLX_ANALYTICS_EVENTS.weakReviewStart, {
           sessionId: nextSessionId,
           userState: "guest",
@@ -953,9 +1017,13 @@ export function ReviewSessionView({
       questionType: output.event.questionType,
       boxBefore: output.event.boxBefore,
       boxAfter: output.event.boxAfter,
+      weakScoreBefore: output.event.weakScoreBefore,
       weakScoreAfter: output.event.weakScoreAfter,
       weakAdded:
         previousState?.mastery !== "Weak" && output.state.mastery === "Weak",
+      weakImproved:
+        output.event.weakScoreAfter < output.event.weakScoreBefore ||
+        output.event.boxAfter > output.event.boxBefore,
       movedForward: output.event.boxAfter > output.event.boxBefore
     };
 
@@ -1021,7 +1089,8 @@ export function ReviewSessionView({
         cardsSeen: nextSummary.reviewed,
         correctCount: nextSummary.correct,
         wrongCount: nextSummary.wrong,
-        weakWordsCount: nextSummary.weakAdded
+        weakWordsCount:
+          mode === "weak-sprint" ? nextSummary.stillWeak : nextSummary.weakAdded
       });
       setSummaryPaywallSurface(
         getReviewSummaryPaywallSurface({
@@ -1073,6 +1142,9 @@ export function ReviewSessionView({
             <Link className="button" href="/review/weak">
               Weak
             </Link>
+            <Link className="button" href="/review/weak-sprint">
+              Weak Sprint
+            </Link>
           </>
         }
       />
@@ -1113,14 +1185,25 @@ export function ReviewSessionView({
         <section className="empty-state" aria-live="polite">
           <h3>{emptyTitle}</h3>
           <p>{emptyBody}</p>
-          <div className="actions">
-            <button className="button button--primary" onClick={startStarterDeck} type="button">
-              Start starter deck
-            </button>
-            <Link className="button button--quiet" href="/packs">
-              Browse packs
-            </Link>
-          </div>
+          {mode === "weak-sprint" ? (
+            <div className="actions">
+              <Link className="button button--primary" href="/dashboard">
+                Dashboard
+              </Link>
+              <Link className="button button--quiet" href="/review">
+                All Review
+              </Link>
+            </div>
+          ) : (
+            <div className="actions">
+              <button className="button button--primary" onClick={startStarterDeck} type="button">
+                Start starter deck
+              </button>
+              <Link className="button button--quiet" href="/packs">
+                Browse packs
+              </Link>
+            </div>
+          )}
         </section>
       ) : null}
 
@@ -1222,14 +1305,35 @@ export function ReviewSessionView({
               <span className="metric-card__value">{summary.wrong}</span>
               <span className="metric-card__label">Wrong</span>
             </div>
-            <div className="metric-card">
-              <span className="metric-card__value">{summary.weakAdded}</span>
-              <span className="metric-card__label">Weak words added</span>
-            </div>
-            <div className="metric-card">
-              <span className="metric-card__value">{summary.movedForward}</span>
-              <span className="metric-card__label">Words moved forward</span>
-            </div>
+            {mode === "weak-sprint" ? (
+              <>
+                <div className="metric-card">
+                  <span className="metric-card__value">
+                    {summary.weakImproved}
+                  </span>
+                  <span className="metric-card__label">Weak words improved</span>
+                </div>
+                <div className="metric-card">
+                  <span className="metric-card__value">
+                    {summary.stillWeak}
+                  </span>
+                  <span className="metric-card__label">Still weak</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="metric-card">
+                  <span className="metric-card__value">{summary.weakAdded}</span>
+                  <span className="metric-card__label">Weak words added</span>
+                </div>
+                <div className="metric-card">
+                  <span className="metric-card__value">
+                    {summary.movedForward}
+                  </span>
+                  <span className="metric-card__label">Words moved forward</span>
+                </div>
+              </>
+            )}
           </div>
 
           {summary.weakSpotlight || nextReviewMessage ? (
