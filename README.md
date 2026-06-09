@@ -89,6 +89,26 @@ These docs are for the no-payment paid beta readiness review. They do not add
 checkout, billing, auth, Webflow, Cloudflare Worker, DNS, production data, or
 deployment behavior.
 
+## World-Class Operating System
+
+Agent and release guidance:
+
+```txt
+AGENTS.md
+PLANS.md
+docs/world_class_bar.md
+docs/product_quality_rubric.md
+docs/golden_user_flows.md
+docs/code_review.md
+docs/security_and_permissions.md
+docs/release_checklist.md
+evals/visual_lexicon_golden_cases.json
+```
+
+These docs define the product bar, quality rubric, golden flows, review
+standards, safety boundaries, release checklist, and golden eval cases for paid
+beta hardening. They do not change runtime behavior.
+
 ## Current Scope
 
 - Next.js App Router shell for the Track B learning app
