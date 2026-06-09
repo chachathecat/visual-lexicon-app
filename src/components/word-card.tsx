@@ -5,9 +5,14 @@ import type { MockReviewItem } from "@/lib/mock-data";
 type WordCardProps = {
   item: MockReviewItem;
   ctaLabel?: string;
+  showMemoryState?: boolean;
 };
 
-export function WordCard({ item, ctaLabel = "Open word" }: WordCardProps) {
+export function WordCard({
+  item,
+  ctaLabel = "Open word",
+  showMemoryState = true
+}: WordCardProps) {
   const masteryClass =
     item.mastery === "Weak"
       ? "tag tag--weak"
@@ -25,11 +30,13 @@ export function WordCard({ item, ctaLabel = "Open word" }: WordCardProps) {
       <div className="word-card__body">
         <div className="word-card__topline">
           <h3>{item.word}</h3>
-          <span className={masteryClass}>{item.mastery}</span>
+          {showMemoryState ? (
+            <span className={masteryClass}>{item.mastery}</span>
+          ) : null}
         </div>
         <p>{item.definition}</p>
         <div className="tag-row">
-          <span className="tag">Box {item.box}</span>
+          {showMemoryState ? <span className="tag">Box {item.box}</span> : null}
           <span className="tag">{item.hub}</span>
         </div>
         <div className="actions">

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
 import { WordCard } from "@/components/word-card";
+import { WordMemoryStatePanel } from "@/components/views/word-memory-state-panel";
 import { getWordBySlug, mockReviewItems } from "@/lib/mock-data";
 
 type WordPageProps = {
@@ -52,28 +53,20 @@ export default function WordPage({ params }: WordPageProps) {
       />
 
       <section className="detail-grid" aria-label={`${word.word} details`}>
-        <WordCard ctaLabel="Back to word" item={word} />
-        <div className="detail-panel">
-          <h2 className="section-title">Memory state</h2>
+        <WordCard
+          ctaLabel="Back to word"
+          item={word}
+          showMemoryState={false}
+        />
+        <WordMemoryStatePanel slug={word.slug} />
+      </section>
+
+      <section className="detail-panel" aria-labelledby="word-notes">
+        <h2 className="section-title" id="word-notes">
+          Word notes
+        </h2>
+        <div>
           <dl className="detail-list">
-            <div className="detail-row">
-              <dt>Mastery</dt>
-              <dd>{word.mastery}</dd>
-            </div>
-            <div className="detail-row">
-              <dt>Box</dt>
-              <dd>{word.box}</dd>
-            </div>
-            <div className="detail-row">
-              <dt>Weak score</dt>
-              <dd>{word.weakScore}</dd>
-            </div>
-            <div className="detail-row">
-              <dt>Recall</dt>
-              <dd>
-                {word.correct} correct, {word.wrong} wrong
-              </dd>
-            </div>
             <div className="detail-row">
               <dt>Example</dt>
               <dd>{word.example}</dd>
@@ -81,10 +74,6 @@ export default function WordPage({ params }: WordPageProps) {
             <div className="detail-row">
               <dt>Memory hook</dt>
               <dd>{word.memoryHook}</dd>
-            </div>
-            <div className="detail-row">
-              <dt>Next due</dt>
-              <dd>{word.nextDueAt ?? "Not scheduled"}</dd>
             </div>
           </dl>
         </div>

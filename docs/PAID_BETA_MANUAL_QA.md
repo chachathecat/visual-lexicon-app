@@ -37,7 +37,11 @@ Expected:
 
 - Dashboard shows no local memory loop data.
 - `/saved` shows an honest "No saved words in this browser" empty state.
+- `/word/dissonance` shows "No local memory state yet" in the local memory
+  panel.
 - No due, weak, mastered, or saved counts are faked.
+- `/word/dissonance` does not show fake saved state, fake mastery, or a fake box
+  in the local memory panel.
 
 ## 2. Save Word Page Word
 
@@ -54,6 +58,10 @@ Expected:
 - The saved word and review item exist locally.
 - `/saved` shows `Dissonance` from local saved/review state and does not show
   sample words as saved.
+- `/word/dissonance` shows `Saved locally`, `Source: Word page`, mastery
+  `New`, `Box 0`, weak score `0`, and `0 correct, 0 wrong` from local storage.
+- `/word/dissonance` does not use static/mock word card values for mastery,
+  box, weak score, recall counts, or due date.
 
 Console check:
 
@@ -64,6 +72,9 @@ const state = JSON.parse(localStorage.getItem("vlx_review_state_v1") || "{}");
 saved.dissonance.source;
 state.dissonance.mastery;
 state.dissonance.box;
+state.dissonance.weakScore;
+state.dissonance.correct;
+state.dissonance.wrong;
 ```
 
 Expected values:
@@ -71,6 +82,9 @@ Expected values:
 - `saved.dissonance.source` is `"word_page"`.
 - `state.dissonance.mastery` is `"New"`.
 - `state.dissonance.box` is `0`.
+- `state.dissonance.weakScore` is `0`.
+- `state.dissonance.correct` is `0`.
+- `state.dissonance.wrong` is `0`.
 
 ## 3. Save Alias Search Word
 
