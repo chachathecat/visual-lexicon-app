@@ -36,6 +36,7 @@ location.reload();
 Expected:
 
 - Dashboard shows no local memory loop data.
+- `/saved` shows an honest "No saved words in this browser" empty state.
 - No due, weak, mastered, or saved counts are faked.
 
 ## 2. Save Word Page Word
@@ -51,6 +52,8 @@ Expected:
 - Page says the word was saved to review.
 - Page offers a review action.
 - The saved word and review item exist locally.
+- `/saved` shows `Dissonance` from local saved/review state and does not show
+  sample words as saved.
 
 Console check:
 
