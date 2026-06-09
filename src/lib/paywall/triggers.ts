@@ -38,7 +38,8 @@ const PAYWALL_COPY = {
   weak_words_sprint_locked: {
     recommendedPlan: "pro",
     title: "Work through weak words first",
-    body: "You have weak words waiting. Pro unlocks focused weak-word sprint.",
+    body:
+      "You have weak words waiting. Pro is planned for deeper weak-word tools; the local sprint stays available in this MVP.",
     primaryCtaLabel: "Preview Pro"
   },
   mastery_export_locked: {

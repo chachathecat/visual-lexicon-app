@@ -29,6 +29,7 @@ export type VlxAnalyticsReviewMode =
   | "saved"
   | "due"
   | "weak"
+  | "weak-sprint"
   | "word"
   | "hub";
 
@@ -124,7 +125,7 @@ export type VlxDueReviewStartEventPayload = VlxAnalyticsBasePayload & {
 export type VlxWeakReviewStartEventPayload = VlxAnalyticsBasePayload & {
   event: "vlx_weak_review_start";
   sessionId: string;
-  mode: "weak";
+  mode: "weak" | "weak-sprint";
   cardsSeen: number;
   dueCount?: number;
   weakWordsCount?: number;

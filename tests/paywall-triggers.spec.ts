@@ -174,7 +174,8 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
     expect(prompt).toMatchObject({
       id: 'weak_words_sprint_locked',
       recommendedPlan: 'pro',
-      body: 'You have weak words waiting. Pro unlocks focused weak-word sprint.',
+      body:
+        'You have weak words waiting. Pro is planned for deeper weak-word tools; the local sprint stays available in this MVP.',
       reasonMetrics: {
         weakCount: 4,
       },

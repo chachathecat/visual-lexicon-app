@@ -428,6 +428,149 @@ test.describe('Visual Lexicon review route mode contract', () => {
     expect(event.questionType).toBe('weak_review');
   });
 
+  test('/review/weak-sprint renders real weak words and updates SRS state', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        abundance: makeReviewStateItem({
+          slug: 'abundance',
+          word: 'Abundance',
+          definition: 'A large quantity of something useful or valuable.',
+          mastery: 'Weak',
+          box: 2,
+          correct: 1,
+          wrong: 2,
+          weakScore: 0.65,
+          nextDueAt: oneDayFromNow(),
+        }),
+        laconic: makeReviewStateItem({
+          slug: 'laconic',
+          word: 'Laconic',
+          definition: 'Using very few words.',
+          mastery: 'Weak',
+          box: 0,
+          correct: 1,
+          wrong: 1,
+          weakScore: 0.8,
+          nextDueAt: oneDayFromNow(),
+        }),
+        obfuscate: makeReviewStateItem({
+          slug: 'obfuscate',
+          word: 'Obfuscate',
+          definition: 'To make something unclear or difficult to understand.',
+          mastery: 'Weak',
+          box: 3,
+          correct: 2,
+          wrong: 1,
+          weakScore: 0.8,
+          nextDueAt: oneDayFromNow(),
+        }),
+      },
+    });
+
+    await page.goto(`${baseUrl}/review/weak-sprint`, {
+      waitUntil: 'networkidle',
+    });
+
+    await expect(
+      page.getByRole('heading', { name: /A five-card sprint for fragile recall/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Card 1 of 3' })).toBeVisible();
+    await page.getByRole('button', { name: 'Laconic' }).click();
+    await expect(page.locator('.review-feedback')).toBeVisible();
+
+    const event = await expectLastReviewEvent(page);
+    const reviewState = await readLocalJson<
+      Record<string, Record<string, unknown>>
+    >(page, 'vlx_review_state_v1');
+    const dailyStats = await readLocalJson<Record<string, { reviewed?: number }>>(
+      page,
+      'vlx_daily_stats_v1',
+    );
+    const reviewedCount = Object.values(dailyStats ?? {}).reduce(
+      (sum, item) => sum + (typeof item.reviewed === 'number' ? item.reviewed : 0),
+      0,
+    );
+
+    expect(event).toMatchObject({
+      slug: 'laconic',
+      word: 'Laconic',
+      questionType: 'weak_review',
+      result: 'correct',
+      selected: 'Laconic',
+      answer: 'Laconic',
+      weakScoreBefore: 0.8,
+    });
+    expect(typeof event.responseMs).toBe('number');
+    expect(reviewState?.laconic).toMatchObject({
+      slug: 'laconic',
+      correct: 2,
+      wrong: 1,
+      lastQuestionType: 'weak_review',
+    });
+    expect(
+      Number(reviewState?.laconic?.weakScore ?? 1),
+    ).toBeLessThan(0.8);
+    expect(reviewedCount).toBeGreaterThan(0);
+  });
+
+  test('/review/weak-sprint shows empty state when no weak words exist', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        lucid: makeReviewStateItem({
+          slug: 'lucid',
+          word: 'Lucid',
+          definition: 'Clear and easy to understand.',
+          mastery: 'Strong',
+          box: 3,
+          correct: 5,
+          wrong: 0,
+          weakScore: 0,
+          nextDueAt: oneMinuteAgo(),
+        }),
+      },
+    });
+
+    await page.goto(`${baseUrl}/review/weak-sprint`, {
+      waitUntil: 'networkidle',
+    });
+
+    await expect(
+      page.getByRole('heading', { name: 'No weak words right now.' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.empty-state').getByRole('link', { name: 'Dashboard' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.empty-state').getByRole('link', { name: 'All Review' }),
+    ).toBeVisible();
+    await expect(page.locator('.review-session')).toHaveCount(0);
+  });
+
+  test('dashboard shows Start Weak Sprint when weak words exist', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        dissonance: makeReviewStateItem({
+          mastery: 'Weak',
+          wrong: 3,
+          weakScore: 0.72,
+        }),
+      },
+    });
+
+    await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
+
+    const sprintLink = page.getByRole('link', { name: 'Start Weak Sprint' });
+
+    await expect(sprintLink).toBeVisible();
+    await expect(sprintLink).toHaveAttribute('href', '/review/weak-sprint');
+  });
+
   test('/review?mode=word&slug=dissonance renders a focused session', async ({
     page,
   }) => {

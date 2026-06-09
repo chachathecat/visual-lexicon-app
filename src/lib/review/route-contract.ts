@@ -6,6 +6,7 @@ export type VlxReviewRouteMode =
   | "saved"
   | "due"
   | "weak"
+  | "weak-sprint"
   | "word"
   | "hub";
 
@@ -63,6 +64,10 @@ export function parseReviewRouteContract(
 
   if (requestedMode === "weak") {
     return { mode: "weak", limit, ...routeMetadata };
+  }
+
+  if (requestedMode === "weak-sprint") {
+    return { mode: "weak-sprint", limit, ...routeMetadata };
   }
 
   if (requestedMode === "word") {
