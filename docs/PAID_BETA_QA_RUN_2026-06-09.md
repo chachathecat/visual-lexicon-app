@@ -17,6 +17,7 @@ Commit under test: `<fill exact commit SHA before execution>`
 
 - [docs/BETA_READINESS_AUDIT.md](BETA_READINESS_AUDIT.md)
 - [docs/PAID_BETA_MANUAL_QA.md](PAID_BETA_MANUAL_QA.md)
+- [docs/PAID_BETA_V0_RELEASE_CHECKLIST.md](PAID_BETA_V0_RELEASE_CHECKLIST.md)
 - [docs/golden_user_flows.md](golden_user_flows.md)
 - [evals/visual_lexicon_golden_cases.json](../evals/visual_lexicon_golden_cases.json)
 
