@@ -86,6 +86,15 @@ docs/PAID_BETA_MANUAL_QA.md
 docs/PAID_BETA_QA_RUN_2026-06-09.md
 ```
 
+Release candidate docs:
+
+```txt
+docs/PAID_BETA_V0_RELEASE_CHECKLIST.md
+docs/PAID_BETA_INVITE_COPY.md
+docs/PAID_BETA_ROLLBACK_PLAN.md
+docs/PAID_BETA_SUPPORT_AND_DATA_DISCLOSURE.md
+```
+
 These docs are for the no-payment paid beta readiness review. They do not add
 checkout, billing, auth, Webflow, Cloudflare Worker, DNS, production data, or
 deployment behavior.
