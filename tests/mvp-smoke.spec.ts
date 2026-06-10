@@ -136,7 +136,7 @@ test.describe('Visual Lexicon local MVP smoke', () => {
 
     const response = await page.goto(
       `${baseUrl}/save?slug=${testSlug}&source=extension`,
-      { waitUntil: 'networkidle' },
+      { waitUntil: 'domcontentloaded' },
     );
 
     expect(response?.status()).toBe(200);
@@ -186,7 +186,9 @@ test.describe('Visual Lexicon local MVP smoke', () => {
     await clearVlxLocalStorage(page);
 
     const saveUrl = `${baseUrl}/save?slug=${testSlug}&source=word_page`;
-    const saveResponse = await page.goto(saveUrl, { waitUntil: 'networkidle' });
+    const saveResponse = await page.goto(saveUrl, {
+      waitUntil: 'domcontentloaded',
+    });
 
     expect(saveResponse).not.toBeNull();
     expect(saveResponse!.status()).toBe(200);
@@ -355,7 +357,7 @@ test.describe('Visual Lexicon local MVP smoke', () => {
       expect(typeof dissonanceState.nextDueAt).toBe('string');
     }
 
-    await page.goto(saveUrl, { waitUntil: 'networkidle' });
+    await page.goto(saveUrl, { waitUntil: 'domcontentloaded' });
 
     await page.waitForFunction(
       (slug) => {

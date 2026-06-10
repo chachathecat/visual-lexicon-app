@@ -121,7 +121,7 @@ test.describe('Saved library live local state', () => {
   test('saved words appear on /saved after /save', async ({ page }) => {
     const response = await page.goto(
       `${baseUrl}/save?slug=dissonance&source=word_page`,
-      { waitUntil: 'networkidle' },
+      { waitUntil: 'domcontentloaded' },
     );
 
     expect(response?.status()).toBe(200);
