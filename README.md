@@ -83,6 +83,7 @@ Audit and manual QA docs:
 ```txt
 docs/BETA_READINESS_AUDIT.md
 docs/PAID_BETA_MANUAL_QA.md
+docs/PAID_BETA_QA_RUN_2026-06-09.md
 ```
 
 These docs are for the no-payment paid beta readiness review. They do not add
