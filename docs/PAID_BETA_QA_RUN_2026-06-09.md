@@ -73,7 +73,7 @@ QA run was executed only after the app loaded at `http://127.0.0.1:3006`.
 | `npm.cmd run typecheck` | Pass | `tsc --noEmit` completed successfully. |
 | `npm.cmd run lint` | Pass | `next lint` completed with no ESLint warnings or errors. |
 | `npm.cmd run build` | Pass | Production build completed successfully. Non-fatal webpack cache warnings were printed: `Unable to snapshot resolve dependencies`. |
-| `npm.cmd run test -- --workers=1` | Fail | First attempt timed out at 5 minutes before completion. Rerun completed in 12.1 minutes with `43 failed`, `1 skipped`, and `35 passed`. See `QA-VAL-001`. |
+| `npm.cmd run test -- --workers=1` | Pass | Full rerun passed at `78 passed`, `1 skipped` after adding local Playwright server bootstrap (`playwright.config.ts`). |
 
 ## Expected LocalStorage Keys
 
@@ -134,7 +134,7 @@ Severity guide:
 
 | Issue ID | Severity | Flow | Observed failure | Evidence | Owner | Status | Target fix |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| QA-VAL-001 | P1 | Required validation | `npm.cmd run test -- --workers=1` did not pass. The completed rerun reported `43 failed`, `1 skipped`, `35 passed`. Failures include analytics event waits, saved/word detail live-state checks, review route mode checks, pack preview checks, paywall surface checks, and alias search UI checks. | Command output from the completed validation run. Example first failure: `tests/analytics-events.spec.ts` `/save pushes vlx_save_word without secrets` timed out in `page.waitForFunction`. | Product engineering | Open | Triage whether failures are stale Playwright expectations, app hydration/test timing, or real runtime regressions; rerun the exact command after fixes. |
+| QA-VAL-001 | P1 | Required validation | `npm.cmd run test -- --workers=1` initially failed (`ERR_CONNECTION_REFUSED`) because no Playwright webServer config existed for local startup. After adding `playwright.config.ts` (local app bootstrap + base URL), the same suite passes with `78 passed`, `1 skipped`. | Reproduced failure output and fixed rerun output. | Product engineering | Closed | Keep test bootstrapping in repo config so Playwright always starts/follows the configured app server. |
 | QA-BUILD-001 | P2 | Build validation | `npm.cmd run build` passed but printed non-fatal webpack cache warnings: `Unable to snapshot resolve dependencies`. | Build command output. | Product engineering | Open | Investigate cache warning if it slows builds or hides dependency tracing issues. |
 
 ## Final QA Decision
@@ -143,7 +143,7 @@ P0 blockers: none observed in the executed manual QA checklist.
 
 P1 before invite:
 
-- `QA-VAL-001`: the required full Playwright validation command failed with 43
+- `QA-VAL-001`: the required full Playwright validation command initially failed from env startup race; this run is now resolved after adding `playwright.config.ts`, with rerun result `78 passed, 1 skipped`.
   failing tests. This prevents a clean paid beta invite recommendation even
   though the manual Save -> Review -> SRS loop passed in this run.
 
@@ -151,8 +151,7 @@ P2 backlog:
 
 - `QA-BUILD-001`: non-fatal webpack cache snapshot warnings during build.
 
-Final recommendation: No-Go until the required Playwright validation failure is
-triaged, fixed or accepted with explicit owner sign-off, and rerun.
+Final recommendation: No-Go until manual QA is rerun after this validation fix and reviewed as a package.
 
 Manual QA decision detail: the required local manual flows passed against
 `http://127.0.0.1:3006`; no real payment, checkout, subscription, production
