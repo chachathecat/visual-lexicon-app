@@ -118,6 +118,30 @@ function memoryPanel(page: Page) {
   return page.locator('.word-memory-state');
 }
 
+const localMemoryLoadingText = 'Reading local saved and review stores.';
+
+async function waitForMemoryPanelResolved(
+  page: Page,
+  expectedText?: string,
+) {
+  await expect
+    .poll(
+      async () => {
+        const text = await memoryPanel(page)
+          .innerText()
+          .catch(() => '');
+
+        if (!text) return false;
+
+        return expectedText
+          ? text.includes(expectedText)
+          : !text.includes(localMemoryLoadingText);
+      },
+      { timeout: 15000 },
+    )
+    .toBe(true);
+}
+
 test.describe('Word detail local memory state', () => {
   test.beforeEach(async ({ page }) => {
     await clearVlxLocalStorage(page);
@@ -133,6 +157,7 @@ test.describe('Word detail local memory state', () => {
     const panel = memoryPanel(page);
     const staticCard = page.locator('.word-card').first();
 
+    await waitForMemoryPanelResolved(page);
     await expect(panel).toContainText('No local memory state yet', {
       timeout: 15000,
     });
@@ -160,6 +185,7 @@ test.describe('Word detail local memory state', () => {
 
     const panel = memoryPanel(page);
 
+    await waitForMemoryPanelResolved(page, 'Saved locally');
     await expect(panel).toContainText('Saved locally');
     await expect(panel).toContainText('Source: Word page');
     await expect(panel.locator('.detail-row').filter({ hasText: 'Mastery' }))
@@ -206,6 +232,7 @@ test.describe('Word detail local memory state', () => {
 
     const panel = memoryPanel(page);
 
+    await waitForMemoryPanelResolved(page, 'Saved locally');
     await expect(panel).toContainText('Saved locally');
     await expect(panel).toContainText('Source: Extension');
     await expect(panel.locator('.detail-row').filter({ hasText: 'Mastery' }))
@@ -244,6 +271,7 @@ test.describe('Word detail local memory state', () => {
     const panel = memoryPanel(page);
     const staticCard = page.locator('.word-card').first();
 
+    await waitForMemoryPanelResolved(page, 'Saved locally');
     await expect(panel).toContainText('Saved locally');
     await expect(panel).toContainText('No local review state yet');
     await expect(panel).not.toContainText('Box 0');
@@ -292,6 +320,7 @@ test.describe('Word detail local memory state', () => {
         waitUntil: 'domcontentloaded',
       });
 
+      await waitForMemoryPanelResolved(page, sourceCase.label);
       await expect(memoryPanel(page)).toContainText(sourceCase.label);
     }
   });

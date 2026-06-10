@@ -141,6 +141,59 @@ async function waitForDataLayerEvent(page: Page, eventName: string) {
   );
 }
 
+function isExpectedSaveNavigationAbort(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /net::ERR_ABORTED|frame was detached/i.test(message);
+}
+
+async function gotoSaveRoute(page: Page, url: string) {
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+  } catch (error) {
+    if (!isExpectedSaveNavigationAbort(error)) {
+      throw error;
+    }
+  }
+}
+
+async function waitForSaveEventOrLocalState(page: Page, slug: string) {
+  await page.waitForFunction(
+    (targetSlug) => {
+      const dataLayer = (window as Window & { dataLayer?: unknown[] })
+        .dataLayer;
+      const hasSaveEvent =
+        Array.isArray(dataLayer) &&
+        dataLayer.some(
+          (item) =>
+            item &&
+            typeof item === 'object' &&
+            !Array.isArray(item) &&
+            (item as Record<string, unknown>).event === 'vlx_save_word' &&
+            (item as Record<string, unknown>).slug === targetSlug,
+        );
+
+      if (hasSaveEvent) return true;
+
+      const rawSaved = localStorage.getItem('vlx_saved_words_v1');
+      const rawState = localStorage.getItem('vlx_review_state_v1');
+
+      if (!rawSaved || !rawState) return false;
+
+      try {
+        const saved = JSON.parse(rawSaved);
+        const state = JSON.parse(rawState);
+
+        return Boolean(saved?.[targetSlug] && state?.[targetSlug]);
+      } catch {
+        return false;
+      }
+    },
+    slug,
+    { timeout: 15000 },
+  );
+}
+
 test.describe('Visual Lexicon paid beta analytics events', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -193,12 +246,22 @@ test.describe('Visual Lexicon paid beta analytics events', () => {
 
   test('/save pushes vlx_save_word without secrets', async ({ page }) => {
     await clearVlxLocalStorage(page);
-    await page.goto(
+    await gotoSaveRoute(
+      page,
       `${baseUrl}/save?slug=dissonance&source=word_page&email=learner@example.test&token=secret`,
-      { waitUntil: 'networkidle' },
     );
 
-    await waitForDataLayerEvent(page, 'vlx_save_word');
+    await waitForSaveEventOrLocalState(page, 'dissonance');
+    await expect
+      .poll(
+        async () => {
+          const events = await getDataLayerEvents(page, 'vlx_save_word');
+
+          return Boolean(events.find((item) => item.slug === 'dissonance'));
+        },
+        { timeout: 15000 },
+      )
+      .toBe(true);
 
     const events = await getDataLayerEvents(page, 'vlx_save_word');
     const event = events.find((item) => item.slug === 'dissonance');

@@ -255,7 +255,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     });
 
     await page.goto(`${baseUrl}/save?slug=dissonance&source=word_page`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     const prompt = page.locator('[data-paywall-trigger="save_limit"]');
@@ -404,7 +404,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     });
 
     await page.goto(`${baseUrl}/save?slug=dissonance&source=word_page`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
 
     await expect(
