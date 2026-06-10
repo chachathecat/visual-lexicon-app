@@ -119,7 +119,7 @@ async function getSaveAnalyticsEvents(page: Page): Promise<
         item &&
           typeof item === 'object' &&
           !Array.isArray(item) &&
-          (item as Record<string, unknown>).event === 'vlx_save_word_click',
+          (item as Record<string, unknown>).event === 'vlx_save_word',
       );
     });
   });
@@ -240,7 +240,7 @@ test.describe('Visual Lexicon local MVP smoke', () => {
           const event = item as Record<string, unknown>;
 
           return (
-            event.event === 'vlx_save_word_click' &&
+            event.event === 'vlx_save_word' &&
             event.slug === slug &&
             event.result === 'saved'
           );
@@ -257,10 +257,9 @@ test.describe('Visual Lexicon local MVP smoke', () => {
 
     expect(firstSaveAnalytics).toBeTruthy();
     expect(firstSaveAnalytics?.source).toBe('word_page');
-    expect(firstSaveAnalytics?.user_state).toBe('guest');
-    expect(['r2', 'mock', 'fallback']).toContain(
-      firstSaveAnalytics?.pack_source,
-    );
+    expect(firstSaveAnalytics?.route).toBe('/save');
+    expect(firstSaveAnalytics?.hasLocalReviewState).toBe(true);
+    expect(firstSaveAnalytics?.hasLocalSavedWord).toBe(true);
 
     const savedWords = await readLocalJson(page, 'vlx_saved_words_v1');
     expect(hasSavedSlug(savedWords, testSlug)).toBe(true);
@@ -373,7 +372,7 @@ test.describe('Visual Lexicon local MVP smoke', () => {
           const event = item as Record<string, unknown>;
 
           return (
-            event.event === 'vlx_save_word_click' &&
+            event.event === 'vlx_save_word' &&
             event.slug === slug &&
             event.result === 'duplicate'
           );

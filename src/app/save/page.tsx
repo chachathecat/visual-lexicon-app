@@ -33,7 +33,6 @@ export default async function SavePage({ searchParams }: SavePageProps) {
       slug={slug}
       source={firstParam(searchParams.source)}
       word={resolvedWord?.word ?? null}
-      wordFoundSource={resolvedWord?.wordFoundSource ?? "missing"}
     />
   );
 }

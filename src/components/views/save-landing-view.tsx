@@ -7,13 +7,9 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { PaywallPrompt } from "@/components/paywall-prompt";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
-import type {
-  VlxSavePackSource,
-  VlxSaveWordResult
-} from "@/lib/analytics";
+import type { VlxSaveWordResult } from "@/lib/analytics";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import { normalizeExtensionSource } from "@/lib/extension/bridge";
-import type { VlxWordFoundSource } from "@/lib/packs";
 import { getMockQuizWordBySlug } from "@/lib/packs/mock-data";
 import type { VlxQuizWord } from "@/lib/packs/types";
 import {
@@ -36,7 +32,6 @@ type SaveLandingViewProps = {
   slug?: string;
   source?: string;
   word?: VlxQuizWord | null;
-  wordFoundSource?: VlxWordFoundSource;
 };
 
 type SaveStatus =
@@ -184,48 +179,23 @@ function emitSaveWordAnalytics(input: {
   source?: string;
   result: VlxSaveWordResult;
   word?: SaveAnalyticsWord;
-  packSource: VlxSavePackSource;
+  hasLocalReviewState?: boolean;
+  hasLocalSavedWord?: boolean;
 }) {
-  emitVlxEvent(VLX_ANALYTICS_EVENTS.saveWordClick, {
+  emitVlxEvent(VLX_ANALYTICS_EVENTS.saveWord, {
     slug: input.slug ?? "",
     source: normalizeAnalyticsSource(input.source),
-    user_state: "guest",
     result: input.result,
     word: input.word?.word,
-    hub: input.word?.hub,
-    pack_source: input.packSource
+    hasLocalReviewState: input.hasLocalReviewState,
+    hasLocalSavedWord: input.hasLocalSavedWord
   });
-}
-
-function getAnalyticsPackSource(input: {
-  packWord?: VlxQuizWord | null;
-  word?: VlxQuizWord;
-  wordFoundSource: VlxWordFoundSource;
-}): VlxSavePackSource {
-  if (!input.word) {
-    return "unavailable";
-  }
-
-  if (!input.packWord) {
-    return "mock";
-  }
-
-  if (input.wordFoundSource === "r2_pack") {
-    return "r2";
-  }
-
-  if (input.wordFoundSource === "mock_fallback") {
-    return "fallback";
-  }
-
-  return "unavailable";
 }
 
 export function SaveLandingView({
   slug,
   source,
-  word: packWord,
-  wordFoundSource = "missing"
+  word: packWord
 }: SaveLandingViewProps) {
   const normalizedSlug = useMemo(() => normalizeSlug(slug), [slug]);
   const normalizedSource = useMemo(() => normalizeSource(source), [source]);
@@ -237,16 +207,6 @@ export function SaveLandingView({
     [normalizedSlug, packWord]
   );
   const word = packWord ?? fallbackWord;
-  const resolvedWordFoundSource: VlxWordFoundSource = word
-    ? packWord
-      ? wordFoundSource
-      : "mock_fallback"
-    : "missing";
-  const packSource = getAnalyticsPackSource({
-    packWord,
-    word,
-    wordFoundSource: resolvedWordFoundSource
-  });
   const [outcome, setOutcome] = useState<SaveOutcome>(() =>
     getInitialOutcome(normalizedSlug, word)
   );
@@ -260,8 +220,7 @@ export function SaveLandingView({
       emitSaveWordAnalytics({
         slug: normalizedSlug,
         source,
-        result: "missing",
-        packSource: "unavailable"
+        result: "missing"
       });
       return;
     }
@@ -272,8 +231,7 @@ export function SaveLandingView({
       emitSaveWordAnalytics({
         slug: normalizedSlug,
         source,
-        result: "missing",
-        packSource
+        result: "missing"
       });
       return;
     }
@@ -285,8 +243,7 @@ export function SaveLandingView({
         slug: normalizedSlug,
         source,
         result: "storage_error",
-        word,
-        packSource
+        word
       });
       return;
     }
@@ -310,6 +267,7 @@ export function SaveLandingView({
       }
 
       const reviewItem = createReviewItemFromSavedWord(savedWord, savedAt);
+      const hasLocalReviewState = Boolean(readReviewState()[word.slug]);
       const userState = readLocalPlanState().plan;
       const savedCount = Object.keys(readSavedWords()).length;
       const paywallPrompt = evaluateSaveLimitPaywall({
@@ -333,7 +291,8 @@ export function SaveLandingView({
         source,
         result: existingSavedWord ? "duplicate" : "saved",
         word: savedWord,
-        packSource
+        hasLocalReviewState,
+        hasLocalSavedWord: true
       });
     } catch {
       setOutcome({ status: "storage_error" });
@@ -342,11 +301,10 @@ export function SaveLandingView({
         slug: normalizedSlug,
         source,
         result: "storage_error",
-        word,
-        packSource
+        word
       });
     }
-  }, [normalizedSlug, normalizedSource, packSource, source, word]);
+  }, [normalizedSlug, normalizedSource, source, word]);
 
   if (outcome.status === "checking") {
     return (

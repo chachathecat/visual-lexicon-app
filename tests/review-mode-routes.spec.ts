@@ -345,7 +345,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
           const event = item as Record<string, unknown>;
 
           return (
-            event.event === 'vlx_quiz_start' &&
+            event.event === 'vlx_review_start' &&
             event.mode === 'due' &&
             event.source === 'extension'
           );
@@ -364,9 +364,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
           item &&
             typeof item === 'object' &&
             !Array.isArray(item) &&
-            ((item as Record<string, unknown>).event === 'vlx_quiz_start' ||
-              (item as Record<string, unknown>).event ===
-                'vlx_due_review_start'),
+            (item as Record<string, unknown>).event === 'vlx_review_start',
         );
       });
     });
@@ -374,15 +372,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
     expect(
       analyticsEvents.some(
         (event) =>
-          event.event === 'vlx_quiz_start' &&
-          event.mode === 'due' &&
-          event.source === 'extension',
-      ),
-    ).toBe(true);
-    expect(
-      analyticsEvents.some(
-        (event) =>
-          event.event === 'vlx_due_review_start' &&
+          event.event === 'vlx_review_start' &&
           event.mode === 'due' &&
           event.source === 'extension',
       ),

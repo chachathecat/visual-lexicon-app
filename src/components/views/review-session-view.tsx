@@ -870,43 +870,18 @@ export function ReviewSessionView({
       completionRecordedSessionId.current = null;
       resetCardTimer();
 
-      emitVlxEvent(VLX_ANALYTICS_EVENTS.quizStart, {
-        sessionId: nextSessionId,
-        userState: "guest",
+      emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewStart, {
         source: routeSource ?? label,
         mode,
-        cardsSeen: nextQuestions.length,
+        packId,
+        reviewedCount: nextQuestions.length,
         dueCount: stats?.dueCount,
-        weakWordsCount: stats?.weakCount,
-        savedWordsCount: stats?.savedCount,
-        localCandidateCount: stats?.localCandidateCount
+        weakCount: stats?.weakCount,
+        savedCount: stats?.savedCount,
+        hasLocalReviewState: hasDueCards || hasWeakCards
       });
-
-      if (mode === "due" && hasDueCards) {
-        emitVlxEvent(VLX_ANALYTICS_EVENTS.dueReviewStart, {
-          sessionId: nextSessionId,
-          userState: "guest",
-          source: routeSource ?? label,
-          mode,
-          cardsSeen: nextQuestions.length,
-          dueCount: stats?.dueCount,
-          weakWordsCount: stats?.weakCount
-        });
-      }
-
-      if ((mode === "weak" || mode === "weak-sprint") && hasWeakCards) {
-        emitVlxEvent(VLX_ANALYTICS_EVENTS.weakReviewStart, {
-          sessionId: nextSessionId,
-          userState: "guest",
-          source: routeSource ?? label,
-          mode,
-          cardsSeen: nextQuestions.length,
-          dueCount: stats?.dueCount,
-          weakWordsCount: stats?.weakCount
-        });
-      }
     },
-    [mode, resetCardTimer, routeSource, sessionLimit]
+    [mode, packId, resetCardTimer, routeSource, sessionLimit]
   );
 
   const loadLocalSession = useCallback(() => {
@@ -1031,35 +1006,17 @@ export function ReviewSessionView({
     setCurrentAnswer(answer);
     setAnswers((previousAnswers) => [...previousAnswers, answer]);
 
-    emitVlxEvent(VLX_ANALYTICS_EVENTS.quizAnswer, {
-      sessionId: output.event.sessionId,
-      userState: "guest",
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewAnswer, {
       source: currentQuestion.source,
       slug: output.event.slug,
       word: output.event.word,
-      hub: output.event.hub,
-      mode,
-      questionType: output.event.questionType,
-      result: output.event.result,
-      correct: output.event.result === "correct",
-      responseMs: output.event.responseMs
-    });
-
-    emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewStateUpdate, {
-      sessionId: output.event.sessionId,
-      userState: "guest",
-      source: currentQuestion.source,
-      slug: output.state.slug,
-      word: output.state.word,
-      hub: output.state.hub,
       mode,
       questionType: output.event.questionType,
       result: output.event.result,
       boxBefore: output.event.boxBefore,
       boxAfter: output.event.boxAfter,
-      weakScoreBefore: output.event.weakScoreBefore,
       weakScoreAfter: output.event.weakScoreAfter,
-      masteryAfter: output.state.mastery
+      mastery: output.state.mastery
     });
   }
 
@@ -1081,17 +1038,27 @@ export function ReviewSessionView({
         completionRecordedSessionId.current = sessionId;
       }
 
-      emitVlxEvent(VLX_ANALYTICS_EVENTS.quizComplete, {
-        sessionId,
-        userState: "guest",
+      emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewComplete, {
         source: routeSource ?? queueLabel,
         mode,
-        cardsSeen: nextSummary.reviewed,
+        packId,
+        reviewedCount: nextSummary.reviewed,
         correctCount: nextSummary.correct,
         wrongCount: nextSummary.wrong,
-        weakWordsCount:
+        weakCount:
           mode === "weak-sprint" ? nextSummary.stillWeak : nextSummary.weakAdded
       });
+
+      if (packId && routeSource === "pack_preview") {
+        emitVlxEvent(VLX_ANALYTICS_EVENTS.packPreviewComplete, {
+          source: "pack_preview",
+          mode,
+          packId,
+          reviewedCount: nextSummary.reviewed,
+          correctCount: nextSummary.correct,
+          wrongCount: nextSummary.wrong
+        });
+      }
       setSummaryPaywallSurface(
         getReviewSummaryPaywallSurface({
           packId,

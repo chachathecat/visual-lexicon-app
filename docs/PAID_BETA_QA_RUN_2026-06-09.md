@@ -115,6 +115,49 @@ These are the expected local-only keys for this no-payment beta QA run.
 No checkout, billing, subscription, payment SDK, payment secret, or production
 user data should appear in local storage.
 
+## Optional Local Analytics Console Checks
+
+The paid beta analytics contract is local-only. It should push sanitized events
+to `window.dataLayer` without sending events over the network.
+
+After running save, saved library, word detail, review, pack preview, pricing,
+and paywall flows, inspect recent events in the browser console:
+
+```js
+(window.dataLayer || [])
+  .filter((item) => item && typeof item === "object")
+  .filter((item) => String(item.event || "").startsWith("vlx_"))
+  .slice(-20);
+```
+
+Expected local event names include:
+
+```txt
+vlx_save_word
+vlx_saved_library_view
+vlx_word_memory_state_view
+vlx_review_start
+vlx_review_answer
+vlx_review_complete
+vlx_pack_preview_start
+vlx_pack_preview_complete
+vlx_pricing_interest
+vlx_paywall_interest
+```
+
+Optional privacy check:
+
+```js
+(window.dataLayer || [])
+  .filter((item) => item && typeof item === "object")
+  .some((item) =>
+    ["email", "authToken", "apiToken", "pageText", "browserHistory", "pagePath", "sessionId"]
+      .some((key) => Object.prototype.hasOwnProperty.call(item, key))
+  );
+```
+
+Expected result: `false`.
+
 ## Manual QA Flow Checklist
 
 All statuses below start as `Pending manual execution`. Change a status only

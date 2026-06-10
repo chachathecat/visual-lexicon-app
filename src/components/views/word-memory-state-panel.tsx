@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
+import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import {
   readReviewEvents,
   readReviewState,
@@ -105,7 +106,18 @@ export function WordMemoryStatePanel({ slug }: WordMemoryStatePanelProps) {
   const reviewHref = `/review?mode=word&slug=${encodeURIComponent(slug)}`;
 
   useEffect(() => {
-    setSnapshot(readWordMemorySnapshot(slug));
+    const nextSnapshot = readWordMemorySnapshot(slug);
+
+    setSnapshot(nextSnapshot);
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.wordMemoryStateView, {
+      slug,
+      source: nextSnapshot.savedWord?.source,
+      word: nextSnapshot.reviewItem?.word ?? nextSnapshot.savedWord?.word,
+      hasLocalSavedWord: Boolean(nextSnapshot.savedWord),
+      hasLocalReviewState: Boolean(nextSnapshot.reviewItem),
+      mastery: nextSnapshot.reviewItem?.mastery,
+      reviewEventCount: nextSnapshot.reviewEventCount
+    });
   }, [slug]);
 
   if (!snapshot) {

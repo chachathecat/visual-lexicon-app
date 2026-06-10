@@ -34,16 +34,15 @@ export function PaywallPrompt({
   useEffect(() => {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.paywallView, {
       plan: prompt.recommendedPlan,
-      source: prompt.source,
-      userState
+      source: prompt.source
     });
   }, [prompt.id, prompt.recommendedPlan, prompt.source, userState]);
 
   function recordUpgradeClick() {
-    emitVlxEvent(VLX_ANALYTICS_EVENTS.upgradeClick, {
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.paywallInterest, {
       plan: prompt.recommendedPlan,
       source: prompt.source,
-      userState
+      trigger: prompt.id
     });
 
     appendUpgradeInterest({

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import {
   getDueToday,
   getNewSaved,
@@ -241,7 +242,18 @@ export function SavedLibraryView() {
   const [snapshot, setSnapshot] = useState<SavedLibrarySnapshot | null>(null);
 
   useEffect(() => {
-    setSnapshot(readSavedLibrarySnapshot());
+    const nextSnapshot = readSavedLibrarySnapshot();
+
+    setSnapshot(nextSnapshot);
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.savedLibraryView, {
+      source: "saved_library",
+      savedCount: nextSnapshot.savedLibrary.length,
+      dueCount: nextSnapshot.dueCount,
+      weakCount: nextSnapshot.weakCount,
+      reviewEventCount: nextSnapshot.reviewEventCount,
+      hasLocalReviewState: hasKeys(nextSnapshot.reviewState),
+      hasLocalSavedWord: nextSnapshot.savedLibrary.length > 0
+    });
   }, []);
 
   const savedWords = useMemo(() => {

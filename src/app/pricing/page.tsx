@@ -104,7 +104,7 @@ export default function PricingPage() {
         </h2>
         <p className="settings-panel__body">
           Billing is not connected. Upgrade clicks only record local interest and
-          placeholder analytics through vlx_upgrade_click. No real subscription
+          placeholder analytics through vlx_pricing_interest. No real subscription
           is created. If no paid beta URL is configured, the app stays on the
           current page and records interest in this browser only.
         </p>

@@ -67,7 +67,26 @@ async function clearPackProgress(page: Page) {
     for (const storageKey of storageKeys) {
       localStorage.removeItem(storageKey);
     }
+
+    (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
   }, vlxLocalStorageKeys);
+}
+
+async function getDataLayerEvents(page: Page, eventName: string) {
+  return await page.evaluate((name) => {
+    const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
+
+    if (!Array.isArray(dataLayer)) return [];
+
+    return dataLayer.filter((item): item is Record<string, unknown> => {
+      return Boolean(
+        item &&
+          typeof item === 'object' &&
+          !Array.isArray(item) &&
+          (item as Record<string, unknown>).event === name,
+      );
+    });
+  }, eventName);
 }
 
 async function completeReviewSession(page: Page) {
@@ -209,6 +228,17 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
     expect(academicProgress?.source).toBe('pack_detail');
     expect(typeof academicProgress?.previewStartedAt).toBe('string');
     expect(academicProgress?.previewCompletedAt).toBeUndefined();
+    await expect
+      .poll(async () => {
+        const events = await getDataLayerEvents(page, 'vlx_pack_preview_start');
+
+        return events.some(
+          (event) =>
+            event.packId === 'academic-vocabulary' &&
+            event.source === 'pack_preview',
+        );
+      })
+      .toBe(true);
   });
 
   test('starting Academic preview records local pack progress and exposes a continue state', async ({
@@ -308,6 +338,21 @@ test.describe('Visual Lexicon exam pack preview MVP', () => {
     expect(typeof academicProgress?.previewCompletedAt).toBe('string');
     expect(typeof academicProgress?.lastReviewedAt).toBe('string');
     expect(academicProgress?.source).toBe('review');
+    await expect
+      .poll(async () => {
+        const events = await getDataLayerEvents(
+          page,
+          'vlx_pack_preview_complete',
+        );
+
+        return events.some(
+          (event) =>
+            event.packId === 'academic-vocabulary' &&
+            event.reviewedCount === answeredCards &&
+            event.correctCount === actualCorrectAnswers,
+        );
+      })
+      .toBe(true);
   });
 
   test('missing planned exam pack data uses a clear empty state', async ({
