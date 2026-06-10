@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { PackProgressSummary } from "@/components/pack-progress-summary";
+import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import {
   hasVisiblePackProgress,
   readPackProgress,
@@ -41,6 +42,11 @@ export function PackCard({ pack }: { pack: VlxPackPreview }) {
 
   function handleStartPreview() {
     setProgress(recordPackPreviewStarted(pack.packId, "packs_page"));
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.packPreviewStart, {
+      source: "pack_preview",
+      mode: "hub",
+      packId: pack.packId
+    });
   }
 
   return (

@@ -26,10 +26,10 @@ export function UpgradePlaceholderButton({
   const upgradeTarget = getUpgradeTarget(plan, source);
 
   function recordUpgradeClick() {
-    emitVlxEvent(VLX_ANALYTICS_EVENTS.upgradeClick, {
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.pricingInterest, {
       plan,
       source,
-      userState: "guest"
+      trigger
     });
 
     appendUpgradeInterest({

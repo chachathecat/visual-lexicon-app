@@ -315,11 +315,13 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     await expect
       .poll(async () => {
-        const events = await getDataLayerEvents(page, 'vlx_upgrade_click');
+        const events = await getDataLayerEvents(page, 'vlx_paywall_interest');
 
         return events.some(
           (event) =>
-            event.source === 'save_confirmation' && event.plan === 'lite',
+            event.source === 'save_confirmation' &&
+            event.plan === 'lite' &&
+            event.trigger === 'save_limit',
         );
       })
       .toBe(true);

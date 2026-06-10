@@ -28,6 +28,9 @@ Implemented local MVP surfaces:
   placeholders.
 - Upgrade interest capture writes to local storage when no external paid beta
   URL is configured.
+- Local privacy-safe dataLayer events cover the paid beta funnel from save,
+  saved library, word memory state, review, pack preview, pricing interest, and
+  paywall interest.
 - Extension save/review URL helpers normalize app-side routes.
 - Multilingual alias matching resolves known aliases to canonical English word
   slugs and avoids creating fake actions for unknown aliases.
@@ -40,7 +43,7 @@ Not implemented for production paid launch:
 - Full multilingual word pages or cross-language content pages.
 - AI mistake explanations.
 - Full Chrome extension integration beyond route helpers and source tagging.
-- Production analytics pipeline beyond local/dataLayer style event emission.
+- Production analytics pipeline beyond local dataLayer event emission.
 
 Important implementation note: `/dashboard`, `/save`, `/review`, `/saved`, and
 the memory panel on `/word/[slug]` use the local SRS stores. `/word/[slug]`
@@ -80,6 +83,35 @@ readiness.
 | `vlx_plan_state_v1` | Entitlements | Local plan state only. Defaults to guest. | Manual/local state only; no billing writer. | OK for local gating previews. Not a subscription record. |
 | `vlx_upgrade_interest_v1` | Upgrade interest | Array of local interest records with plan, source, trigger, timestamp, and page path. | Pricing and paywall prompts. | P0 if pricing/paywall CTA does not record interest in no-payment mode. |
 
+## Local Analytics Event Contract
+
+Analytics is local-only for this beta hardening pass. `src/lib/analytics/events.ts`
+pushes privacy-safe payloads to `window.dataLayer` in the browser and no-ops on
+the server. It does not send events over the network and does not add an
+external analytics SDK.
+
+Covered local event names:
+
+```txt
+vlx_save_word
+vlx_saved_library_view
+vlx_word_memory_state_view
+vlx_review_start
+vlx_review_answer
+vlx_review_complete
+vlx_pack_preview_start
+vlx_pack_preview_complete
+vlx_pricing_interest
+vlx_paywall_interest
+```
+
+Payloads are sanitized to local funnel fields such as `event`, `eventId`,
+`eventTime`, `route`, `source`, `slug`, `word`, `mode`, `packId`, `plan`,
+`trigger`, `result`, `questionType`, SRS box/weak-score fields, local counts,
+and local saved/review-state booleans. Disallowed inputs such as email, tokens,
+full query URLs, page text, browser history, session IDs, and user/account IDs
+are dropped before dataLayer push.
+
 ## Test Inventory
 
 Required validation commands for this audit PR:
@@ -108,6 +140,7 @@ Current Playwright suites:
 | `tests/paywall-surfaces.spec.ts` | Product paywall prompts, pricing Lite/Pro interest capture, configured external paid beta URLs, no prompt for paid preview plans. |
 | `tests/entitlements.spec.ts` | Local entitlement skeleton, pricing plans, local billing disclaimer, no payment route directories. |
 | `tests/multilingual-alias-contract.spec.ts` | Alias resolver, known canonical slugs, alias search UI, unknown alias no-action state. |
+| `tests/analytics-events.spec.ts` | Local paid beta analytics contract, sanitized dataLayer payloads, save/saved/word/review/pricing event coverage, no analytics/payment SDK guard. |
 
 Focused commands for narrow regression runs:
 
@@ -118,6 +151,7 @@ npm.cmd run test -- tests/review-state-regression.spec.ts tests/review-mode-rout
 npm.cmd run test -- tests/exam-pack-preview.spec.ts --workers=1
 npm.cmd run test -- tests/paywall-triggers.spec.ts tests/paywall-surfaces.spec.ts tests/entitlements.spec.ts --workers=1
 npm.cmd run test -- tests/multilingual-alias-contract.spec.ts --workers=1
+npm.cmd run test -- tests/analytics-events.spec.ts --workers=1
 ```
 
 Package script aliases also exist: `test:mvp`, `test:review`, `test:packs`,
@@ -152,9 +186,13 @@ Minimum manual pass before any paid beta invite:
 - [x] Configured external paid beta URLs are sanitized to `http`/`https` and append `plan` and `source`.
 - [x] Paywall prompts can record upgrade interest from trigger surfaces.
 - [x] Tests assert no payment route directories are created.
+- [x] Local dataLayer beta analytics covers save, saved library, word memory
+      state, review, pack preview, pricing interest, and paywall interest.
 - [ ] Manual QA must confirm both Lite and Pro write `vlx_upgrade_interest_v1`.
 - [ ] P1: launch checklist should define allowed beta invite copy, support path, data reset disclosure, and no-payment language.
-- [ ] P1: analytics coverage should be reviewed before launch. Current event emission is useful but not a complete production funnel.
+- [ ] P1: production analytics pipeline and reporting should be reviewed before
+      launch. Current event emission is local-only and not connected to a real
+      analytics backend.
 
 ## Multilingual Alias/Search Checklist
 
@@ -215,7 +253,7 @@ No `TODO` or `FIXME` matches were found in the searched code/docs.
 | Save route mock fallback source | `src/components/views/save-landing-view.tsx` | OK for beta; P1 before paid launch | Save does not create unknown words, but production pack source should be validated. |
 | Word detail static content | `src/app/word/[slug]/page.tsx`, `src/lib/mock-data.ts` | OK for beta; P1 before paid launch | The word card content is static/mock, but the `/word/[slug]` memory panel reads only local saved/review state and does not fake mastery. |
 | Review starter deck and distractor fallback use mock pack words | `src/components/views/review-session-view.tsx` | OK for beta; P1 before paid launch | The SRS loop is real; content remains starter/mock. Avoid claiming full content readiness. |
-| Analytics source enums include mock/fallback/placeholder | `src/lib/analytics/types.ts` | OK for beta | Useful for honest event source tagging. |
+| Local paid beta analytics contract | `src/lib/analytics/types.ts`, `src/lib/analytics/events.ts`, `tests/analytics-events.spec.ts` | OK for beta; P1 before paid launch | Local dataLayer events are sanitized and covered by tests. Production analytics reporting is still not connected. |
 | Paywall trigger copy references planned Pro tools | `src/lib/paywall/triggers.ts`, `tests/paywall-triggers.spec.ts` | Needs copy clarification | Safe for internal beta, but should be reviewed so users do not infer active paid entitlements. |
 | Alias search input placeholder examples | `src/components/multilingual-alias-search.tsx` | OK for beta | UI placeholder only. Alias safety is covered by tests. |
 | Roadmap and data contract mock/planned references | `ROADMAP.md`, `DATA_CONTRACT.md`, `AGENTS.md` | OK for beta | Planning/reference docs, not shipped app claims. |
@@ -248,8 +286,8 @@ manual QA:
 - Placeholder copy that could confuse users around Lite/Pro entitlements.
 - Missing manual QA docs before this audit PR. This PR adds the docs, but the
   QA run still must be performed before beta invite.
-- Weak analytics coverage gaps. Event emission exists, but production funnel
-  reporting is not audited.
+- Production analytics pipeline is not connected. Local dataLayer beta events
+  exist and are tested, but backend/reporting readiness remains P1.
 - Lack of a launch checklist covering support, data reset disclosure, beta
   invite copy, rollback, and no-payment boundaries.
 - Static/mock word and pack content remains a P1 content readiness gap even

@@ -174,11 +174,11 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
 
           return dataLayer.some((item) => {
             return Boolean(
-              item &&
+                item &&
                 typeof item === 'object' &&
                 !Array.isArray(item) &&
                 (item as Record<string, unknown>).event ===
-                  'vlx_upgrade_click' &&
+                  'vlx_pricing_interest' &&
                 (item as Record<string, unknown>).source === 'pricing_page' &&
                 (item as Record<string, unknown>).plan === 'pro',
             );

@@ -53,15 +53,9 @@ export function PackPreviewActions({
     const progress = recordPackPreviewStarted(packId, "pack_detail");
 
     setHasProgress(hasVisiblePackProgress(progress));
-    emitVlxEvent(VLX_ANALYTICS_EVENTS.examPackPreviewStart, {
+    emitVlxEvent(VLX_ANALYTICS_EVENTS.packPreviewStart, {
       packId,
-      title,
-      targetLabel,
-      wordCount,
-      previewCount,
-      status,
-      reviewHref,
-      userState: "guest",
+      mode: "hub",
       source: "pack_preview"
     });
   }

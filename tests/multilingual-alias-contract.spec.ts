@@ -160,8 +160,7 @@ test.describe('Visual Lexicon multilingual alias search UI', () => {
               return (
                 event.event === 'vlx_alias_search' &&
                 event.source === 'alias_search' &&
-                event.query_language === 'ko' &&
-                event.matched_slug === 'dissonance' &&
+                event.slug === 'dissonance' &&
                 event.result === 'matched'
               );
             }) ?? null
