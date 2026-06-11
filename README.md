@@ -111,11 +111,15 @@ Production paid launch planning docs:
 - [Production v1 Gap Audit](docs/PRODUCTION_V1_GAP_AUDIT.md)
 - [Production v1 Roadmap](docs/PRODUCTION_V1_ROADMAP.md)
 - [Production v1 Release Criteria](docs/PRODUCTION_V1_RELEASE_CRITERIA.md)
+- [Auth Account Persistence Architecture](docs/AUTH_ACCOUNT_PERSISTENCE_ARCHITECTURE.md)
+- [Auth Data Model Proposal](docs/AUTH_DATA_MODEL_PROPOSAL.md)
+- [Auth Sync Contract](docs/AUTH_SYNC_CONTRACT.md)
+- [Auth Rollout Plan](docs/AUTH_ROLLOUT_PLAN.md)
 
 These docs recommend against a full paid SaaS launch until account persistence,
 server-side SRS sync, billing/entitlement, production deployment readiness,
 analytics/reporting, support/refund/legal systems, content readiness, and launch
-QA are complete. They do not change runtime behavior.
+QA are complete. They do not change runtime behavior or implement real auth.
 
 ## World-Class Operating System
 
