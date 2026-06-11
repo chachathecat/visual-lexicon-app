@@ -131,6 +131,7 @@ Production paid launch planning docs:
 - [Account Persistence Contracts](docs/ACCOUNT_PERSISTENCE_CONTRACTS.md)
 - [Server SRS Sync Architecture](docs/SERVER_SRS_SYNC_ARCHITECTURE.md)
 - [Server SRS Sync Contract](docs/SERVER_SRS_SYNC_CONTRACT.md)
+- [Server SRS Sync Spike](docs/SERVER_SRS_SYNC_SPIKE.md)
 - [Server SRS Sync Test Plan](docs/SERVER_SRS_SYNC_TEST_PLAN.md)
 - [Billing Entitlement Architecture](docs/BILLING_ENTITLEMENT_ARCHITECTURE.md)
 - [Billing Data Model Proposal](docs/BILLING_DATA_MODEL_PROPOSAL.md)
