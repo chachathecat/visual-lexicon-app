@@ -104,6 +104,19 @@ These docs are for the no-payment paid beta readiness review. They do not add
 checkout, billing, auth, Webflow, Cloudflare Worker, DNS, production data, or
 deployment behavior.
 
+## Production v1 Planning
+
+Production paid launch planning docs:
+
+- [Production v1 Gap Audit](docs/PRODUCTION_V1_GAP_AUDIT.md)
+- [Production v1 Roadmap](docs/PRODUCTION_V1_ROADMAP.md)
+- [Production v1 Release Criteria](docs/PRODUCTION_V1_RELEASE_CRITERIA.md)
+
+These docs recommend against a full paid SaaS launch until account persistence,
+server-side SRS sync, billing/entitlement, production deployment readiness,
+analytics/reporting, support/refund/legal systems, content readiness, and launch
+QA are complete. They do not change runtime behavior.
+
 ## World-Class Operating System
 
 Agent and release guidance:
