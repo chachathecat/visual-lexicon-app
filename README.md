@@ -108,6 +108,10 @@ deployment behavior.
 
 Production paid launch planning docs:
 
+- [Public Paid Launch Decision 2026-06-11](docs/PUBLIC_PAID_LAUNCH_DECISION_2026-06-11.md)
+- [Public Launch Decision Rationale](docs/PUBLIC_LAUNCH_DECISION_RATIONALE.md)
+- [Next Production Implementation Roadmap](docs/NEXT_PRODUCTION_IMPLEMENTATION_ROADMAP.md)
+- [Production Decision Changelog](docs/PRODUCTION_DECISION_CHANGELOG.md)
 - [Production v1 Gap Audit](docs/PRODUCTION_V1_GAP_AUDIT.md)
 - [Production v1 Roadmap](docs/PRODUCTION_V1_ROADMAP.md)
 - [Production v1 Release Criteria](docs/PRODUCTION_V1_RELEASE_CRITERIA.md)
