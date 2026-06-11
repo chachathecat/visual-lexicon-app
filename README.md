@@ -123,6 +123,11 @@ Production paid launch planning docs:
 - [Billing Provider Decision Record](docs/BILLING_PROVIDER_DECISION_RECORD.md)
 - [Billing Rollout Plan](docs/BILLING_ROLLOUT_PLAN.md)
 - [Billing Release Criteria](docs/BILLING_RELEASE_CRITERIA.md)
+- [Production Deployment Readiness](docs/PRODUCTION_DEPLOYMENT_READINESS.md)
+- [Deployment Environment Inventory](docs/DEPLOYMENT_ENVIRONMENT_INVENTORY.md)
+- [Deployment Rollout Plan](docs/DEPLOYMENT_ROLLOUT_PLAN.md)
+- [Production Deployment Checklist](docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md)
+- [Production Smoke Test Plan](docs/PRODUCTION_SMOKE_TEST_PLAN.md)
 
 These docs recommend against a full paid SaaS launch until account persistence,
 server-side SRS sync, billing/entitlement, production deployment readiness,
