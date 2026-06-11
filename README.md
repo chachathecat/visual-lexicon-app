@@ -128,6 +128,11 @@ Production paid launch planning docs:
 - [Deployment Rollout Plan](docs/DEPLOYMENT_ROLLOUT_PLAN.md)
 - [Production Deployment Checklist](docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md)
 - [Production Smoke Test Plan](docs/PRODUCTION_SMOKE_TEST_PLAN.md)
+- [Production Analytics Reporting](docs/PRODUCTION_ANALYTICS_REPORTING.md)
+- [Analytics Event Contract](docs/ANALYTICS_EVENT_CONTRACT.md)
+- [Analytics Dashboard Requirements](docs/ANALYTICS_DASHBOARD_REQUIREMENTS.md)
+- [Analytics Privacy and Data Safety](docs/ANALYTICS_PRIVACY_AND_DATA_SAFETY.md)
+- [Analytics Rollout Plan](docs/ANALYTICS_ROLLOUT_PLAN.md)
 
 These docs recommend against a full paid SaaS launch until account persistence,
 server-side SRS sync, billing/entitlement, production deployment readiness,
