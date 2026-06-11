@@ -95,6 +95,9 @@ docs/PAID_BETA_V0_RELEASE_CHECKLIST.md
 docs/PAID_BETA_INVITE_COPY.md
 docs/PAID_BETA_ROLLBACK_PLAN.md
 docs/PAID_BETA_SUPPORT_AND_DATA_DISCLOSURE.md
+docs/PAID_OPEN_BETA_V0_LAUNCH_PLAN.md
+docs/PAID_OPEN_BETA_V0_COPY.md
+docs/PAID_OPEN_BETA_V0_OPERATIONS.md
 ```
 
 These docs are for the no-payment paid beta readiness review. They do not add
