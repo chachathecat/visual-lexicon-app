@@ -128,6 +128,7 @@ Production paid launch planning docs:
 - [Auth Implementation Plan](docs/AUTH_IMPLEMENTATION_PLAN.md)
 - [Auth Provider Evaluation Checklist](docs/AUTH_PROVIDER_EVALUATION_CHECKLIST.md)
 - [Auth Implementation P0 Requirements](docs/AUTH_IMPLEMENTATION_P0_REQUIREMENTS.md)
+- [Account Persistence Contracts](docs/ACCOUNT_PERSISTENCE_CONTRACTS.md)
 - [Server SRS Sync Architecture](docs/SERVER_SRS_SYNC_ARCHITECTURE.md)
 - [Server SRS Sync Contract](docs/SERVER_SRS_SYNC_CONTRACT.md)
 - [Server SRS Sync Test Plan](docs/SERVER_SRS_SYNC_TEST_PLAN.md)
