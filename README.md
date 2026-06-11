@@ -115,6 +115,9 @@ Production paid launch planning docs:
 - [Auth Data Model Proposal](docs/AUTH_DATA_MODEL_PROPOSAL.md)
 - [Auth Sync Contract](docs/AUTH_SYNC_CONTRACT.md)
 - [Auth Rollout Plan](docs/AUTH_ROLLOUT_PLAN.md)
+- [Server SRS Sync Architecture](docs/SERVER_SRS_SYNC_ARCHITECTURE.md)
+- [Server SRS Sync Contract](docs/SERVER_SRS_SYNC_CONTRACT.md)
+- [Server SRS Sync Test Plan](docs/SERVER_SRS_SYNC_TEST_PLAN.md)
 
 These docs recommend against a full paid SaaS launch until account persistence,
 server-side SRS sync, billing/entitlement, production deployment readiness,
