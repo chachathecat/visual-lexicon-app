@@ -142,6 +142,7 @@ Production paid launch planning docs:
 - [Account Sync Route Readiness Audit](docs/ACCOUNT_SYNC_ROUTE_READINESS_AUDIT.md)
 - [Account Sync Auth Ownership Boundary](docs/ACCOUNT_SYNC_AUTH_OWNERSHIP_BOUNDARY.md)
 - [Account Sync Idempotency Storage Design](docs/ACCOUNT_SYNC_IDEMPOTENCY_STORAGE_DESIGN.md)
+- [Account Sync Schema Payload Contract](docs/ACCOUNT_SYNC_SCHEMA_PAYLOAD_CONTRACT.md)
 - [Billing Entitlement Architecture](docs/BILLING_ENTITLEMENT_ARCHITECTURE.md)
 - [Billing Data Model Proposal](docs/BILLING_DATA_MODEL_PROPOSAL.md)
 - [Billing Provider Decision Record](docs/BILLING_PROVIDER_DECISION_RECORD.md)
