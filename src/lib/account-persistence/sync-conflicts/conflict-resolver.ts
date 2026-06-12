@@ -195,7 +195,7 @@ function createResolution({
   preservesWeakEvidence
 }: ResolutionInput): VlxAccountSyncResolution {
   const key =
-    slug ?? eventId ?? idempotencyKey ?? packId ?? interestId ?? payloadType ?? target;
+    eventId ?? idempotencyKey ?? slug ?? packId ?? interestId ?? payloadType ?? target;
 
   return {
     resolutionId: `${planId}:${target}:${category}:${key}`,
