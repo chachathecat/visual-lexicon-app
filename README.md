@@ -133,6 +133,7 @@ Production paid launch planning docs:
 - [Server SRS Sync Contract](docs/SERVER_SRS_SYNC_CONTRACT.md)
 - [Server SRS Sync Spike](docs/SERVER_SRS_SYNC_SPIKE.md)
 - [Server SRS Sync Test Plan](docs/SERVER_SRS_SYNC_TEST_PLAN.md)
+- [Guest Account Migration Prototype](docs/GUEST_ACCOUNT_MIGRATION_PROTOTYPE.md)
 - [Billing Entitlement Architecture](docs/BILLING_ENTITLEMENT_ARCHITECTURE.md)
 - [Billing Data Model Proposal](docs/BILLING_DATA_MODEL_PROPOSAL.md)
 - [Billing Provider Decision Record](docs/BILLING_PROVIDER_DECISION_RECORD.md)
