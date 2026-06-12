@@ -12,6 +12,7 @@ export type VlxInMemoryProcessedIdempotencyKey = {
   idempotencyKey: string;
   operation: VlxServerSrsSyncOperation;
   userId?: string;
+  payloadFingerprint: string;
   processedAt: string;
   response: VlxServerSrsSyncResponse<unknown>;
 };
