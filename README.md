@@ -136,6 +136,7 @@ Production paid launch planning docs:
 - [Guest Account Migration Prototype](docs/GUEST_ACCOUNT_MIGRATION_PROTOTYPE.md)
 - [Account Sync Conflict Resolution](docs/ACCOUNT_SYNC_CONFLICT_RESOLUTION.md)
 - [Server Persistence Adapter Contract](docs/SERVER_PERSISTENCE_ADAPTER_CONTRACT.md)
+- [Server Persistence Integration Harness](docs/SERVER_PERSISTENCE_INTEGRATION_HARNESS.md)
 - [Billing Entitlement Architecture](docs/BILLING_ENTITLEMENT_ARCHITECTURE.md)
 - [Billing Data Model Proposal](docs/BILLING_DATA_MODEL_PROPOSAL.md)
 - [Billing Provider Decision Record](docs/BILLING_PROVIDER_DECISION_RECORD.md)
