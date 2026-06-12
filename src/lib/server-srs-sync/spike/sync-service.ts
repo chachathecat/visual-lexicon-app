@@ -86,6 +86,32 @@ function advanceSyncCursor(store: VlxInMemoryServerSrsSyncStore) {
   store.syncVersion += 1;
 }
 
+function stableSerialize(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableSerialize(record[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value) ?? String(value);
+}
+
+function createIdempotencyPayloadFingerprint(envelope: SpikeWriteEnvelope) {
+  return stableSerialize({
+    operation: envelope.operation,
+    payload: envelope.payload,
+    payloadVersion: envelope.payloadVersion,
+    userId: envelope.userId
+  });
+}
+
 function normalizeServerSource(
   source: VlxSavedWord["source"]
 ): VlxServerSrsSyncSource {
@@ -156,12 +182,27 @@ function errorResponse<TData>({
 
 function getProcessedResponse<TData>(
   store: VlxInMemoryServerSrsSyncStore,
-  idempotencyKey: string
+  envelope: SpikeWriteEnvelope,
+  serverTime: string
 ): VlxServerSrsSyncResponse<TData> | undefined {
-  const processed = store.processedIdempotencyKeys[idempotencyKey];
+  const processed = store.processedIdempotencyKeys[envelope.idempotencyKey];
 
   if (!processed) {
     return undefined;
+  }
+
+  if (
+    processed.payloadFingerprint !==
+    createIdempotencyPayloadFingerprint(envelope)
+  ) {
+    return errorResponse({
+      error: createError(
+        "idempotency_conflict",
+        "Idempotency key was already used with a different payload."
+      ),
+      serverTime,
+      idempotencyKey: envelope.idempotencyKey
+    });
   }
 
   return {
@@ -180,6 +221,7 @@ function rememberResponse<TData>(
     idempotencyKey: envelope.idempotencyKey,
     operation: envelope.operation,
     userId: envelope.userId,
+    payloadFingerprint: createIdempotencyPayloadFingerprint(envelope),
     processedAt,
     response: response as VlxServerSrsSyncResponse<unknown>
   };
@@ -454,7 +496,8 @@ export function createInMemoryServerSrsSyncService(
 
     const processed = getProcessedResponse<ResponseData<VlxSaveWordResponse>>(
       store,
-      envelope.idempotencyKey
+      envelope,
+      serverTime
     );
 
     if (processed) {
@@ -537,7 +580,8 @@ export function createInMemoryServerSrsSyncService(
 
     const processed = getProcessedResponse<ResponseData<VlxArchiveWordResponse>>(
       store,
-      envelope.idempotencyKey
+      envelope,
+      serverTime
     );
 
     if (processed) {
@@ -602,7 +646,8 @@ export function createInMemoryServerSrsSyncService(
       ResponseData<VlxSubmitReviewEventResponse>
     >(
       store,
-      envelope.idempotencyKey
+      envelope,
+      serverTime
     );
 
     if (processed) {
@@ -828,7 +873,8 @@ export function createInMemoryServerSrsSyncService(
     const processed =
       getProcessedResponse<ResponseData<VlxSyncPendingLocalQueueResponse>>(
         store,
-        envelope.idempotencyKey
+        envelope,
+        serverTime
       );
 
     if (processed) {
