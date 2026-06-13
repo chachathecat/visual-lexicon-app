@@ -145,7 +145,6 @@ Production paid launch planning docs:
 - [Account Sync Schema Payload Contract](docs/ACCOUNT_SYNC_SCHEMA_PAYLOAD_CONTRACT.md)
 - [Account Sync Audit Redaction Policy](docs/ACCOUNT_SYNC_AUDIT_REDACTION_POLICY.md)
 - [Account Sync Rollout Gate](docs/ACCOUNT_SYNC_ROLLOUT_GATE.md)
-- [Account Sync Final Readiness Review](docs/ACCOUNT_SYNC_FINAL_READINESS_REVIEW.md)
 - [Billing Entitlement Architecture](docs/BILLING_ENTITLEMENT_ARCHITECTURE.md)
 - [Billing Data Model Proposal](docs/BILLING_DATA_MODEL_PROPOSAL.md)
 - [Billing Provider Decision Record](docs/BILLING_PROVIDER_DECISION_RECORD.md)
