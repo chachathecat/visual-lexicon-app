@@ -27,10 +27,12 @@ export type VlxPackPreview = {
   difficultyLabel?: string;
   wordCount?: number;
   previewCount?: number;
+  planDays?: number;
   priceTier?: VlxPriceTier;
   updatedAt?: string;
   reviewHref: string;
   reviewFallbackNote?: string;
+  wordSlugs: string[];
   previewWords: VlxQuizWord[];
   sourceLabel: string;
   emptyTitle: string;
@@ -60,7 +62,7 @@ const starterPackDefinitions = [
     packId: "academic-vocabulary",
     title: "Academic Vocabulary",
     description:
-      "Abstract words for essays, lectures, and exam reading passages.",
+      "A guided visual plan for abstract words in essays, lectures, and exam reading passages.",
     kind: "exam",
     targetLabel: "Academic essays and lectures",
     targetExam: "academic",
@@ -72,7 +74,7 @@ const starterPackDefinitions = [
     packId: "ielts-writing-vocabulary",
     title: "IELTS Writing Vocabulary",
     description:
-      "A planned preview surface for IELTS writing vocabulary once pack data is available.",
+      "A planned writing-focused visual vocabulary plan for IELTS Task 1 and Task 2.",
     kind: "exam",
     targetLabel: "IELTS Writing",
     targetExam: "ielts",
@@ -87,7 +89,7 @@ const starterPackDefinitions = [
     packId: "gre-visual-verbal",
     title: "GRE Visual Verbal",
     description:
-      "A planned preview surface for GRE verbal vocabulary once pack data is available.",
+      "A planned visual verbal plan for abstract GRE words and mistake-prone choices.",
     kind: "exam",
     targetLabel: "GRE Verbal",
     targetExam: "gre",
@@ -207,6 +209,7 @@ function buildBasePreview(
     difficultyLabel: summarizeDifficulties(previewWords),
     reviewHref: getReviewHref(definition),
     reviewFallbackNote: getReviewFallbackNote(definition),
+    wordSlugs: words.map((word) => word.slug),
     previewWords,
     sourceLabel: definition.sourceLabel,
     emptyTitle: definition.emptyTitle ?? "No preview words available",
@@ -252,6 +255,7 @@ async function getAcademicPreview(
     previewCount:
       examPack?.freePreviewCount ??
       (words.length ? Math.min(words.length, PREVIEW_LIMIT) : undefined),
+    planDays: examPack?.days,
     priceTier: examPack?.priceTier,
     updatedAt: examPack?.updatedAt ?? hubPack?.updatedAt
   } satisfies VlxPackPreview;
