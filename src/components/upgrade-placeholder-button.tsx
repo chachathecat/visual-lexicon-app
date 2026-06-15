@@ -13,10 +13,12 @@ type UpgradePlaceholderButtonProps = {
   plan: PaidPreviewPlan;
   label: string;
   source: string;
+  className?: string;
   trigger?: string;
 };
 
 export function UpgradePlaceholderButton({
+  className = "button button--quiet",
   plan,
   label,
   source,
@@ -48,7 +50,7 @@ export function UpgradePlaceholderButton({
     <div className="upgrade-placeholder">
       {upgradeTarget ? (
         <a
-          className="button button--quiet"
+          className={className}
           href={upgradeTarget}
           onClick={recordUpgradeClick}
           rel="noopener noreferrer"
@@ -58,7 +60,7 @@ export function UpgradePlaceholderButton({
         </a>
       ) : (
         <button
-          className="button button--quiet"
+          className={className}
           onClick={handleClick}
           type="button"
         >

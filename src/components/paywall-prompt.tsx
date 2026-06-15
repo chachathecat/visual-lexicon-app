@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 
 import {
@@ -105,6 +106,9 @@ export function PaywallPrompt({
             Paid beta interest noted locally. Billing is not connected.
           </p>
         ) : null}
+        <Link className="button button--quiet" href="/pricing">
+          Compare plans
+        </Link>
       </div>
     </section>
   );

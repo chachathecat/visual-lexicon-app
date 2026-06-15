@@ -45,12 +45,12 @@ export const VLX_PLAN_DEFINITIONS = {
     priceLabel: "$0",
     summary:
       "Save a focused starter set, review a basic daily queue, and keep progress in this browser while the MVP stays local.",
-    outcome: "Start remembering your first 50 words.",
+    outcome: "Start remembering your first words.",
     availabilityNote: "Local MVP. No billing or active subscription is connected.",
     featureBullets: [
       "Save up to 50 visual words",
-      "Basic daily review for the first habit loop",
-      "Browser local state with no account sync"
+      "Preview the daily review loop with 10 local review cards",
+      "Watermarked downloads where download surfaces apply"
     ],
     limits: {
       localOnlyState: true,
@@ -72,13 +72,13 @@ export const VLX_PLAN_DEFINITIONS = {
     label: "Lite",
     priceLabel: "Planned",
     summary:
-      "For learners who want every saved word to keep moving through due review and weak-word practice.",
+      "For learners who want saved words to keep moving through due and weak review every day.",
     outcome: "Build a daily visual memory habit.",
     availabilityNote: "Paid beta placeholder. Billing is not connected.",
     featureBullets: [
-      "Unlimited save and review placeholder",
-      "Full due queue and weak-word practice",
-      "No-ads marker for paid beta positioning"
+      "Expanded save and review capacity for paid beta positioning",
+      "Due and weak review emphasis",
+      "Planned no-ad experience once paid beta copy is approved"
     ],
     limits: {
       localOnlyState: true,
@@ -100,13 +100,13 @@ export const VLX_PLAN_DEFINITIONS = {
     label: "Pro",
     priceLabel: "Planned",
     summary:
-      "For learners using memory state to repair repeated misses and follow an exam pack path as it becomes available.",
+      "For learners using memory state to repair repeated misses and follow guided exam vocabulary plans.",
     outcome: "Fix weak words and prepare for exams.",
     availabilityNote: "Paid beta placeholder. No real subscription is created.",
     featureBullets: [
       "Everything in Lite",
-      "Exam pack path and focused weak sprint placeholders",
-      "Mistake explanation and progress history placeholders"
+      "Exam Packs and Weak Sprint positioning",
+      "AI mistake explanation later, plus no-watermark download and export support"
     ],
     limits: {
       localOnlyState: true,
