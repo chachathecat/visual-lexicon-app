@@ -2373,6 +2373,204 @@ select {
   box-shadow: var(--vlx-track-b-focus-shadow);
 }
 
+.saved-v2-section,
+.saved-v2-section *,
+.saved-v2-word-card,
+.saved-v2-word-card *,
+.saved-v2-tabs,
+.saved-v2-tabs * {
+  letter-spacing: 0;
+}
+
+.saved-v2-section {
+  display: grid;
+  gap: var(--vlx-track-b-space-md);
+  min-width: 0;
+}
+
+.saved-v2-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vlx-track-b-space-lg);
+}
+
+.saved-v2-section__header > div {
+  display: grid;
+  gap: var(--vlx-track-b-space-xs);
+  min-width: 0;
+}
+
+.saved-v2-section__title {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: var(--vlx-track-b-type-title);
+  font-weight: 760;
+  line-height: 1.12;
+}
+
+.saved-v2-section__description,
+.saved-v2-word-card__definition {
+  margin: 0;
+  color: var(--vlx-track-b-ink-soft);
+  font-size: var(--vlx-track-b-type-body);
+  line-height: 1.5;
+}
+
+.saved-v2-status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--vlx-track-b-space-sm);
+}
+
+.saved-v2-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--vlx-track-b-space-xs);
+}
+
+.saved-v2-tab {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  min-width: 0;
+  min-height: 92px;
+  gap: 3px;
+  padding: var(--vlx-track-b-space-sm);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-md);
+  background: var(--vlx-track-b-surface);
+  color: var(--vlx-track-b-ink-soft);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color var(--vlx-track-b-motion-fast) ease,
+    border-color var(--vlx-track-b-motion-fast) ease,
+    color var(--vlx-track-b-motion-fast) ease;
+}
+
+.saved-v2-tab:hover,
+.saved-v2-tab[aria-selected="true"] {
+  border-color: var(--vlx-track-b-border-strong);
+  background: var(--vlx-track-b-surface-muted);
+  color: var(--vlx-track-b-ink);
+}
+
+.saved-v2-tab__label {
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 760;
+}
+
+.saved-v2-tab__count {
+  color: var(--vlx-track-b-ink);
+  font-size: 1.5rem;
+  font-weight: 780;
+  line-height: 1;
+}
+
+.saved-v2-tab__description {
+  color: var(--vlx-track-b-ink-muted);
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+.saved-v2-panel {
+  min-width: 0;
+}
+
+.saved-v2-word-list {
+  display: grid;
+  gap: var(--vlx-track-b-space-md);
+}
+
+.saved-v2-word-card {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: var(--vlx-track-b-space-md);
+  min-width: 0;
+  padding: var(--vlx-track-b-space-md);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-md);
+  background: var(--vlx-track-b-surface);
+  box-shadow: var(--vlx-track-b-shadow-panel);
+}
+
+.saved-v2-word-card__image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 108px;
+  min-height: 132px;
+  overflow: hidden;
+  border-radius: var(--vlx-track-b-radius-md);
+  background:
+    linear-gradient(145deg, rgba(49, 91, 74, 0.12), rgba(143, 111, 47, 0.12)),
+    var(--vlx-track-b-surface-muted);
+  background-position: center;
+  background-size: cover;
+  color: var(--vlx-track-b-accent);
+  font-size: 1.65rem;
+  font-weight: 780;
+}
+
+.saved-v2-word-card__body {
+  display: grid;
+  align-content: start;
+  gap: var(--vlx-track-b-space-sm);
+  min-width: 0;
+}
+
+.saved-v2-word-card__topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vlx-track-b-space-sm);
+}
+
+.saved-v2-word-card h3 {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: 1.12rem;
+  font-weight: 760;
+  line-height: 1.22;
+}
+
+.saved-v2-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vlx-track-b-space-xs);
+  align-items: center;
+}
+
+.saved-v2-token {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  max-width: 100%;
+  padding: 4px var(--vlx-track-b-space-xs);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-pill);
+  background: var(--vlx-track-b-surface-muted);
+  color: var(--vlx-track-b-ink-soft);
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 680;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.saved-v2-word-card__actions {
+  margin-top: var(--vlx-track-b-space-xs);
+}
+
+.saved-v2-section a:focus-visible,
+.saved-v2-word-card a:focus-visible,
+.saved-v2-tab:focus-visible,
+.saved-v2-panel:focus-visible {
+  outline: var(--vlx-track-b-focus-outline);
+  outline-offset: 3px;
+  box-shadow: var(--vlx-track-b-focus-shadow);
+}
+
 @media (max-width: 980px) {
   .track-b-shell {
     grid-template-columns: 1fr;
@@ -2399,14 +2597,20 @@ select {
   .track-b-section__header,
   .track-b-upgrade-nudge,
   .dashboard-v2-section__header,
-  .dashboard-v2-continue-panel {
+  .dashboard-v2-continue-panel,
+  .saved-v2-section__header {
     display: grid;
   }
 
   .dashboard-v2-status-grid,
   .dashboard-v2-word-grid,
-  .dashboard-v2-pack-grid {
+  .dashboard-v2-pack-grid,
+  .saved-v2-status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .saved-v2-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .track-b-page-header__aside {
@@ -2485,7 +2689,9 @@ select {
 
   .dashboard-v2-status-grid,
   .dashboard-v2-word-grid,
-  .dashboard-v2-pack-grid {
+  .dashboard-v2-pack-grid,
+  .saved-v2-status-grid,
+  .saved-v2-tabs {
     grid-template-columns: 1fr;
   }
 
@@ -2499,6 +2705,19 @@ select {
     min-height: 92px;
   }
 
+  .saved-v2-word-card {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .saved-v2-word-card__image {
+    width: 76px;
+    min-height: 96px;
+  }
+
+  .saved-v2-tab {
+    min-height: 0;
+  }
+
   .track-b-bottom-nav {
     overflow-x: auto;
   }
@@ -2510,7 +2729,13 @@ select {
   [class^="track-b-"]::before,
   [class^="track-b-"]::after,
   [class*=" track-b-"]::before,
-  [class*=" track-b-"]::after {
+  [class*=" track-b-"]::after,
+  [class^="saved-v2-"],
+  [class*=" saved-v2-"],
+  [class^="saved-v2-"]::before,
+  [class^="saved-v2-"]::after,
+  [class*=" saved-v2-"]::before,
+  [class*=" saved-v2-"]::after {
     animation-duration: var(--vlx-track-b-motion-instant) !important;
     scroll-behavior: auto !important;
     transition-duration: var(--vlx-track-b-motion-instant) !important;
