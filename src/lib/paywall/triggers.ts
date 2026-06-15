@@ -19,39 +19,44 @@ const FREE_DAILY_REVIEW_LIMIT =
 const PAYWALL_COPY = {
   save_limit: {
     recommendedPlan: "lite",
-    title: "Keep every saved word in review",
-    body: "Your first 50 saved words are safe. Lite unlocks unlimited visual review.",
+    title: "Keep new saved words in review",
+    body:
+      "Free starts your first saved-word habit. Lite is for a larger daily visual memory habit with expanded review capacity.",
     primaryCtaLabel: "Preview Lite"
   },
   review_limit: {
     recommendedPlan: "lite",
-    title: "Keep today's queue moving",
-    body: "You used today's free review cards. Lite keeps the due queue moving.",
+    title: "Keep reviewing before words fade",
+    body:
+      "Free previews today's review loop. Lite is for daily due and weak review when you want the habit to continue.",
     primaryCtaLabel: "Preview Lite"
   },
   exam_pack_preview_end: {
     recommendedPlan: "pro",
-    title: "Continue the exam memory path",
-    body: "You finished the preview. Pro unlocks the full exam memory path.",
+    title: "Continue the guided exam plan",
+    body:
+      "The free preview is complete. Pro is positioned for full Exam Packs like Academic Vocabulary, IELTS Writing, and GRE Visual Verbal.",
     primaryCtaLabel: "Preview Pro"
   },
   weak_words_sprint_locked: {
     recommendedPlan: "pro",
-    title: "Work through weak words first",
+    title: "Repair weak words with Pro tools",
     body:
-      "You have weak words waiting. Pro is planned for deeper weak-word tools; the local sprint stays available in this MVP.",
+      "Your weak words come from review misses and weakScore. Pro is positioned for Weak Sprint and advanced weak-word repair while the local sprint remains safe in this MVP.",
     primaryCtaLabel: "Preview Pro"
   },
   mastery_export_locked: {
     recommendedPlan: "pro",
-    title: "Plan from real mastery state",
-    body: "Mastery export is a Pro planning tool.",
+    title: "Use review history outside the app",
+    body:
+      "Pro export and no-watermark download support planning from real review history; they do not replace recall practice.",
     primaryCtaLabel: "Preview Pro"
   },
   mistake_explanation_locked: {
     recommendedPlan: "pro",
-    title: "Learn why the wrong answer pulled you in",
-    body: "Pro explains why the wrong answer was tempting.",
+    title: "Get mistake explanations later",
+    body:
+      "AI mistake explanations are planned later for Pro after the SRS loop is working. No AI is connected in this MVP.",
     primaryCtaLabel: "Preview Pro"
   }
 } as const satisfies Record<

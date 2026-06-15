@@ -199,6 +199,12 @@ select {
   box-shadow: none;
 }
 
+.button:focus-visible {
+  outline: var(--vlx-track-b-focus-outline, 2px solid #315b4a);
+  outline-offset: 3px;
+  box-shadow: var(--vlx-track-b-focus-shadow, 0 0 0 4px rgba(49, 91, 74, 0.18));
+}
+
 .mission-panel {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.7fr);
@@ -2870,6 +2876,170 @@ select {
   box-shadow: var(--vlx-track-b-focus-shadow);
 }
 
+.pricing-v2-plan-grid,
+.pricing-v2-pack-grid,
+.pricing-v2-trigger-grid,
+.pricing-v2-faq-list {
+  display: grid;
+  gap: var(--vlx-track-b-space-md);
+  min-width: 0;
+}
+
+.pricing-v2-plan-grid,
+.pricing-v2-pack-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pricing-v2-trigger-grid,
+.pricing-v2-faq-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pricing-v2-plan-card,
+.pricing-v2-pack-card,
+.pricing-v2-trigger-card,
+.pricing-v2-faq-item {
+  display: grid;
+  align-content: start;
+  gap: var(--vlx-track-b-space-md);
+  min-width: 0;
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-md);
+  background: var(--vlx-track-b-surface);
+  box-shadow: var(--vlx-track-b-shadow-panel);
+}
+
+.pricing-v2-plan-card {
+  min-height: 100%;
+  padding: var(--vlx-track-b-space-lg);
+}
+
+.pricing-v2-pack-card,
+.pricing-v2-trigger-card,
+.pricing-v2-faq-item {
+  padding: var(--vlx-track-b-space-md);
+}
+
+.pricing-v2-plan-card__topline,
+.pricing-v2-pack-card__topline,
+.pricing-v2-trigger-card__topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vlx-track-b-space-sm);
+  min-width: 0;
+}
+
+.pricing-v2-plan-card__badge,
+.pricing-v2-plan-card__price,
+.pricing-v2-trigger-card__topline span {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 4px var(--vlx-track-b-space-xs);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-pill);
+  background: var(--vlx-track-b-surface-muted);
+  color: var(--vlx-track-b-ink-soft);
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 720;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.pricing-v2-plan-card__badge {
+  border-color: rgba(49, 91, 74, 0.28);
+  background: var(--vlx-track-b-accent-soft);
+  color: var(--vlx-track-b-accent);
+}
+
+.pricing-v2-plan-card__copy {
+  display: grid;
+  gap: var(--vlx-track-b-space-xs);
+  min-width: 0;
+}
+
+.pricing-v2-plan-card h2,
+.pricing-v2-pack-card h3,
+.pricing-v2-trigger-card h3,
+.pricing-v2-faq-item h3 {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: var(--vlx-track-b-type-title);
+  font-weight: 760;
+  line-height: 1.15;
+}
+
+.pricing-v2-pack-card h3,
+.pricing-v2-trigger-card h3,
+.pricing-v2-faq-item h3 {
+  font-size: 1.08rem;
+}
+
+.pricing-v2-plan-card p,
+.pricing-v2-plan-card__note,
+.pricing-v2-pack-card p,
+.pricing-v2-trigger-card p,
+.pricing-v2-faq-item p {
+  margin: 0;
+  color: var(--vlx-track-b-ink-soft);
+  font-size: var(--vlx-track-b-type-body);
+  line-height: 1.5;
+}
+
+.pricing-v2-feature-list,
+.pricing-v2-check-list {
+  display: grid;
+  gap: var(--vlx-track-b-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pricing-v2-feature-list li,
+.pricing-v2-check-list li {
+  position: relative;
+  min-width: 0;
+  padding-left: var(--vlx-track-b-space-lg);
+  color: var(--vlx-track-b-ink-soft);
+  line-height: 1.45;
+}
+
+.pricing-v2-feature-list li::before,
+.pricing-v2-check-list li::before {
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--vlx-track-b-radius-pill);
+  background: var(--vlx-track-b-accent);
+  content: "";
+}
+
+.pricing-v2-inline-link {
+  color: var(--vlx-track-b-accent);
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 760;
+}
+
+.pricing-v2-pack-card .track-b-button,
+.pricing-v2-plan-card .track-b-button {
+  width: fit-content;
+}
+
+.pricing-v2-plan-card a:focus-visible,
+.pricing-v2-plan-card button:focus-visible,
+.pricing-v2-pack-card a:focus-visible,
+.pricing-v2-trigger-card a:focus-visible,
+.pricing-v2-faq-item a:focus-visible,
+.pricing-v2-inline-link:focus-visible {
+  outline: var(--vlx-track-b-focus-outline);
+  outline-offset: 3px;
+  box-shadow: var(--vlx-track-b-focus-shadow);
+}
+
 @media (max-width: 980px) {
   .track-b-shell {
     grid-template-columns: 1fr;
@@ -2907,7 +3077,11 @@ select {
   .saved-v2-status-grid,
   .packs-v2-grid,
   .packs-v2-word-grid,
-  .packs-v2-detail-metrics {
+  .packs-v2-detail-metrics,
+  .pricing-v2-plan-grid,
+  .pricing-v2-pack-grid,
+  .pricing-v2-trigger-grid,
+  .pricing-v2-faq-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -3002,7 +3176,11 @@ select {
   .packs-v2-grid,
   .packs-v2-word-grid,
   .packs-v2-detail-metrics,
-  .packs-v2-state-strip {
+  .packs-v2-state-strip,
+  .pricing-v2-plan-grid,
+  .pricing-v2-pack-grid,
+  .pricing-v2-trigger-grid,
+  .pricing-v2-faq-list {
     grid-template-columns: 1fr;
   }
 

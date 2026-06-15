@@ -88,6 +88,7 @@ docs/TRACK_B_DASHBOARD_V2.md
 docs/TRACK_B_REVIEW_SESSION_V2.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
 docs/TRACK_B_PACKS_V2.md
+docs/TRACK_B_PRICING_PAYWALL_V2.md
 docs/PAID_BETA_READINESS_AUDIT.md
 docs/PAID_BETA_MANUAL_QA_CHECKLIST.md
 docs/PAID_BETA_MANUAL_QA.md
@@ -102,6 +103,7 @@ docs/PAID_BETA_PRIVATE_INVITE_SIGNOFF_2026-06-10.md
 - [Track B Review Session V2](docs/TRACK_B_REVIEW_SESSION_V2.md)
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)
+- [Track B Pricing / Paywall V2](docs/TRACK_B_PRICING_PAYWALL_V2.md)
 - [Paid Beta Readiness Audit](docs/PAID_BETA_READINESS_AUDIT.md)
 - [Paid Beta Manual QA Checklist](docs/PAID_BETA_MANUAL_QA_CHECKLIST.md)
 

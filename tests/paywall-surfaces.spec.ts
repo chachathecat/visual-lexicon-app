@@ -273,7 +273,10 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     const prompt = page.locator('[data-paywall-trigger="save_limit"]');
 
     await expect(prompt).toBeVisible();
-    await expect(prompt).toContainText('Keep every saved word in review');
+    await expect(prompt).toContainText('Keep new saved words in review');
+    await expect(
+      prompt.getByRole('link', { name: 'Compare plans' }),
+    ).toHaveAttribute('href', '/pricing');
 
     const savedWords = await readLocalJson<Record<string, unknown>>(
       page,

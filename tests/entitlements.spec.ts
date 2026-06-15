@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -13,6 +13,8 @@ const baseUrl =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
   'http://127.0.0.1:3006';
+
+const workspaceRoot = process.cwd();
 
 const originalWindowDescriptor = Object.getOwnPropertyDescriptor(
   globalThis,
@@ -64,6 +66,19 @@ function restoreWindow() {
   Reflect.deleteProperty(globalThis, 'window');
 }
 
+function listFilesRecursively(directory: string): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    const fullPath = join(directory, entry);
+    const stats = statSync(fullPath);
+
+    if (stats.isDirectory()) {
+      return listFilesRecursively(fullPath);
+    }
+
+    return [fullPath];
+  });
+}
+
 test.afterEach(() => {
   restoreWindow();
 });
@@ -107,7 +122,7 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     expect(readLocalPlanState().plan).toBe('guest');
   });
 
-  test('pricing page renders Free, Lite, and Pro outcome shells', async ({
+  test('pricing page renders Pricing v2 outcome plan cards', async ({
     page,
   }) => {
     await page.addInitScript(() => {
@@ -119,37 +134,39 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     });
 
     expect(response?.status()).toBe(200);
+    await expect(page.locator('.track-b-shell')).toBeVisible();
     await expect(
-      page.getByRole('heading', {
-        name: /Turn visual words into remembered words/i,
+      page.getByRole('heading', { level: 1, name: 'Pricing' }),
+    ).toBeVisible();
+    await expect(page.locator('body')).toContainText(
+      'Build a visual memory habit before words fade.',
+    );
+
+    const freePlan = page.locator('[data-plan-id="free"]');
+    const litePlan = page.locator('[data-plan-id="lite"]');
+    const proPlan = page.locator('[data-plan-id="pro"]');
+
+    await expect(freePlan).toBeVisible();
+    await expect(litePlan).toBeVisible();
+    await expect(proPlan).toBeVisible();
+    await expect(
+      freePlan.getByRole('heading', {
+        name: 'Start remembering your first words.',
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', {
-        name: 'Start remembering your first 50 words.',
+      litePlan.getByRole('heading', {
+        name: 'Build a daily visual memory habit.',
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Build a daily visual memory habit.' }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('heading', {
+      proPlan.getByRole('heading', {
         name: 'Fix weak words and prepare for exams.',
       }),
     ).toBeVisible();
-    await expect(page.getByText('Save words you meet')).toBeVisible();
-    await expect(page.getByText('Review before forgetting')).toBeVisible();
-    await expect(page.getByText('Repair weak words')).toBeVisible();
-    await expect(page.getByText('Continue exam packs')).toBeVisible();
-    const disclaimer = page.getByRole('region', {
-      name: 'Local MVP billing disclaimer',
-    });
-
-    await expect(disclaimer).toContainText('Billing is not connected.');
-    await expect(
-      disclaimer.getByText(/Upgrade clicks only record local interest/i),
-    ).toBeVisible();
-    await expect(disclaimer).toContainText('No real subscription is created.');
+    await expect(freePlan).toContainText('Save up to 50 visual words');
+    await expect(litePlan).toContainText('Due and weak review emphasis');
+    await expect(proPlan).toContainText('Exam Packs and Weak Sprint positioning');
     await expect(
       page.getByRole('button', { name: 'Preview Lite' }),
     ).toBeVisible();
@@ -159,6 +176,12 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     await expect(
       page.getByRole('link', { name: /checkout|subscribe|pay/i }),
     ).toHaveCount(0);
+
+    const bodyText = await page.locator('body').innerText();
+
+    expect(bodyText).not.toMatch(/paid access granted|subscription active/i);
+    expect(bodyText).not.toMatch(/fake mastery/i);
+    expect(bodyText).not.toMatch(/\bstreak\b/i);
 
     await page.getByRole('button', { name: 'Preview Pro' }).click();
     await expect(
@@ -188,7 +211,44 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
       .toBe(true);
   });
 
-  test('no payment route is created', () => {
+  test('pricing page links Exam Packs to existing safe pack routes', async ({
+    page,
+  }) => {
+    await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
+
+    await expect(
+      page.getByRole('heading', { name: 'Exam Packs' }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View all packs' })).toHaveAttribute(
+      'href',
+      '/packs',
+    );
+
+    const safePackLinks = [
+      ['Open Academic Vocabulary pack plan', '/packs/academic-vocabulary'],
+      ['Open IELTS Writing pack plan', '/packs/ielts-writing-vocabulary'],
+      ['Open GRE Visual Verbal pack plan', '/packs/gre-visual-verbal'],
+    ] as const;
+
+    for (const [name, href] of safePackLinks) {
+      await expect(page.getByRole('link', { name })).toHaveAttribute('href', href);
+    }
+  });
+
+  test('documents Pricing / Paywall v2 and links it from README', () => {
+    const docPath = join(workspaceRoot, 'docs', 'TRACK_B_PRICING_PAYWALL_V2.md');
+    const readme = readFileSync(join(workspaceRoot, 'README.md'), 'utf8');
+    const doc = readFileSync(docPath, 'utf8');
+
+    expect(existsSync(docPath)).toBe(true);
+    expect(readme).toContain('docs/TRACK_B_PRICING_PAYWALL_V2.md');
+    expect(doc).toContain('Start remembering your first words.');
+    expect(doc).toContain('Build a daily visual memory habit.');
+    expect(doc).toContain('Fix weak words and prepare for exams.');
+    expect(doc).toContain('Recommended next PR: **#79 Manual QA execution report**');
+  });
+
+  test('no payment SDK, checkout route, billing route, or route handler is created', () => {
     const disallowedRoutePaths = [
       'src/app/payment',
       'src/app/payments',
@@ -201,7 +261,34 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     ];
 
     for (const routePath of disallowedRoutePaths) {
-      expect(existsSync(join(process.cwd(), routePath))).toBe(false);
+      expect(existsSync(join(workspaceRoot, routePath))).toBe(false);
+    }
+
+    const packageJson = JSON.parse(
+      readFileSync(join(workspaceRoot, 'package.json'), 'utf8'),
+    ) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const dependencyNames = Object.keys({
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    });
+
+    for (const dependencyName of dependencyNames) {
+      expect(dependencyName.toLowerCase()).not.toMatch(
+        /stripe|paddle|portone|lemonsqueezy|lemon-squeezy/,
+      );
+    }
+
+    const appFiles = listFilesRecursively(join(workspaceRoot, 'src', 'app'));
+
+    for (const filePath of appFiles) {
+      const fileText = readFileSync(filePath, 'utf8');
+
+      expect(fileText, filePath).not.toMatch(
+        /\bexport\s+(async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)\b/,
+      );
     }
   });
 });
