@@ -283,7 +283,9 @@ test.describe('Visual Lexicon local MVP smoke', () => {
     await page.goto(`${baseUrl}/review`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('heading', { name: /Five cards/i }),
+      page.getByRole('heading', {
+        name: /A focused recall session for today's memory loop/i,
+      }),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(page.locator('.review-session')).toBeVisible({
@@ -301,6 +303,10 @@ test.describe('Visual Lexicon local MVP smoke', () => {
       }
 
       await firstChoice.click();
+      await expect(
+        page.getByRole('heading', { name: 'How did that recall feel?' }),
+      ).toBeVisible();
+      await page.getByRole('button', { name: /I knew it/i }).click();
       clickedChoices += 1;
 
       await expect

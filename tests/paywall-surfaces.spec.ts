@@ -153,6 +153,10 @@ async function completeReviewSession(page: Page) {
 
     await expect(firstChoice).toBeVisible();
     await firstChoice.click();
+    await expect(
+      page.getByRole('heading', { name: 'How did that recall feel?' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: /I knew it/i }).click();
 
     const nextButton = page.getByRole('button', {
       name: /Next card|View summary/i,

@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { PageHeader } from "@/components/page-header";
 import { PaywallPrompt } from "@/components/paywall-prompt";
+import {
+  TrackBMetricCard,
+  TrackBPageHeader,
+  TrackBStatusBadge,
+  type TrackBStatusTone
+} from "@/components/track-b";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import { mockQuizWords } from "@/lib/packs/mock-data";
@@ -33,6 +39,7 @@ import {
 import type {
   VlxMasteryLabel,
   VlxQuestionType,
+  VlxReviewConfidence,
   VlxReviewResult,
   VlxReviewStateItem,
   VlxReviewStateStore,
@@ -54,6 +61,7 @@ const visualCueSlugs = new Set([
 type ReviewMode = VlxReviewRouteMode;
 type ReviewSource = "due" | "weak" | "saved" | "starter" | "word" | "hub";
 type SessionStatus = "loading" | "empty" | "active" | "summary";
+type AnswerOptionSource = "confusable" | "same-hub" | "static-fallback";
 
 export type ReviewRouteSession = {
   label: string;
@@ -79,6 +87,8 @@ type ReviewableWord = {
 
 type ReviewQuestion = ReviewableWord & {
   options: string[];
+  optionSource: AnswerOptionSource;
+  optionSourceLabel: string;
   questionType: VlxQuestionType;
 };
 
@@ -89,6 +99,13 @@ type AvailabilityStats = {
   localCandidateCount: number;
 };
 
+type PendingSelection = {
+  selected: string;
+  result: VlxReviewResult;
+  responseMs: number;
+  selectedAt: string;
+};
+
 type SessionAnswer = {
   slug: string;
   word: string;
@@ -96,6 +113,7 @@ type SessionAnswer = {
   answer: string;
   result: VlxReviewResult;
   responseMs: number;
+  confidence: VlxReviewConfidence;
   questionType: VlxQuestionType;
   boxBefore: number;
   boxAfter: number;
@@ -104,6 +122,9 @@ type SessionAnswer = {
   weakAdded: boolean;
   weakImproved: boolean;
   movedForward: boolean;
+  masteryAfter: VlxMasteryLabel;
+  nextDueAt?: string;
+  explanation: string;
 };
 
 type SessionSummarySpotlight = {
@@ -123,6 +144,7 @@ type SessionSummary = {
   weakImproved: number;
   stillWeak: number;
   movedForward: number;
+  weakRemaining: number;
   weakSpotlight?: SessionSummarySpotlight;
   nextDueAt?: string;
   nextDueWord?: string;
@@ -133,78 +155,123 @@ type ReviewPaywallSurface = {
   userState: VlxPlanId;
 };
 
+type ReviewModeCopy = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  emptyTitle: string;
+  emptyBody: string;
+  sourceLabel: string;
+  sourceDetail: string;
+  modeLabel: string;
+};
+
 const modeCopy = {
   mixed: {
-    eyebrow: "Review",
-    title: "Five cards for today's memory loop.",
+    eyebrow: "Review Session",
+    title: "A focused recall session for today's memory loop.",
     description:
-      "A short recall session built from saved words, due reviews, and weak words.",
+      "One card at a time: answer, mark confidence, then see the real memory-state consequence.",
     emptyTitle: "No saved, due, or weak words yet",
     emptyBody:
-      "The review loop starts after a word is saved or a starter deck is opened.",
-    sourceLabel: "Saved, due, and weak queues"
+      "Save a word or open a pack before starting review. The app is not inventing review work.",
+    sourceLabel: "Saved, due, and weak queues",
+    sourceDetail: "Built from vlx_review_state_v1 and vlx_saved_words_v1",
+    modeLabel: "Saved Review"
   },
   saved: {
-    eyebrow: "Saved review",
-    title: "Review words from your saved library.",
+    eyebrow: "Saved Review",
+    title: "Recall words from your saved library.",
     description:
-      "Saved sessions use local saved words and continue to update memory state after each answer.",
+      "Saved sessions use local saved words and write review events only after confidence is recorded.",
     emptyTitle: "No saved words yet",
     emptyBody:
       "Saved words appear here after a word is added to the local review loop.",
-    sourceLabel: "Saved words"
+    sourceLabel: "Saved words",
+    sourceDetail: "Built from vlx_saved_words_v1",
+    modeLabel: "Saved Review"
   },
   due: {
-    eyebrow: "Due review",
-    title: "Review words due right now.",
+    eyebrow: "Due Review",
+    title: "Review the cards due now.",
     description:
-      "Due cards use the existing SRS schedule and update memory state after each answer.",
-    emptyTitle: "No words due right now",
+      "Due cards come from the existing SRS schedule and update memory state after each answer.",
+    emptyTitle: "No due words right now",
     emptyBody:
-      "Due words appear here when their next review time arrives. You can still try the starter deck.",
-    sourceLabel: "Due queue"
+      "No due words were found in vlx_review_state_v1. Return to Today or save more words to keep the loop moving.",
+    sourceLabel: "Due queue",
+    sourceDetail: "Due by nextDueAt from vlx_review_state_v1",
+    modeLabel: "Due Review"
   },
   weak: {
-    eyebrow: "Weak words",
-    title: "Practice words with fragile recall.",
+    eyebrow: "Weak Review",
+    title: "Repair fragile recall.",
     description:
-      "Weak sessions focus on words with repeated mistakes or high weakScore.",
+      "Weak sessions focus on real mistakes, weakScore, and low-confidence memory state.",
     emptyTitle: "No weak words right now",
     emptyBody:
-      "Weak words appear after missed answers. The starter deck can create real review state.",
-    sourceLabel: "Weak queue"
+      "Weak words appear after missed or fragile recall is stored locally. This page does not create fake weak work.",
+    sourceLabel: "Weak queue",
+    sourceDetail: "Selected from Weak mastery, weakScore, and misses",
+    modeLabel: "Weak Review"
   },
   "weak-sprint": {
-    eyebrow: "Weak sprint",
+    eyebrow: "Weak Sprint",
     title: "A five-card sprint for fragile recall.",
     description:
-      "Weak sprints use only real local memory state and prioritize high weakScore, misses, and low boxes.",
+      "Weak Sprint is short, state-driven, and limited to real local weak-word evidence.",
     emptyTitle: "No weak words right now.",
     emptyBody:
       "Weak sprints appear after missed or fragile recall is stored locally.",
-    sourceLabel: "Weak sprint"
+    sourceLabel: "Weak sprint",
+    sourceDetail: "Prioritized by weakScore, misses, and box",
+    modeLabel: "Weak Sprint"
   },
   word: {
-    eyebrow: "Focused review",
+    eyebrow: "Focused Review",
     title: "Review one word in focus.",
     description:
       "Focused sessions start from pack data and still write review events and memory state locally.",
     emptyTitle: "No focused word available",
-    emptyBody:
-      "This focused review link did not resolve to a pack word.",
-    sourceLabel: "Focused word"
+    emptyBody: "This focused review link did not resolve to a pack word.",
+    sourceLabel: "Focused word",
+    sourceDetail: "Static pack card with local SRS writeback",
+    modeLabel: "Saved Review"
   },
   hub: {
-    eyebrow: "Hub review",
+    eyebrow: "Hub Review",
     title: "Review a vocabulary hub.",
     description:
-      "Hub sessions use pack data for a deterministic short review set.",
+      "Hub sessions use static pack data for a deterministic short review set.",
     emptyTitle: "No hub cards available",
-    emptyBody:
-      "This hub review link did not resolve to any pack cards.",
-    sourceLabel: "Hub pack"
+    emptyBody: "This hub review link did not resolve to any pack cards.",
+    sourceLabel: "Hub pack",
+    sourceDetail: "Static hub pack with local SRS writeback",
+    modeLabel: "Saved Review"
   }
-} satisfies Record<ReviewMode, Record<string, string>>;
+} satisfies Record<ReviewMode, ReviewModeCopy>;
+
+const confidenceOptions = [
+  {
+    value: "knew",
+    label: "I knew it",
+    detail: "Confident recall can improve the box when it is fast enough."
+  },
+  {
+    value: "guessed",
+    label: "I guessed",
+    detail: "Guessed correct answers do not advance the box."
+  },
+  {
+    value: "forgot",
+    label: "I forgot",
+    detail: "Forgotten or wrong answers keep the card closer to review."
+  }
+] satisfies Array<{
+  value: VlxReviewConfidence;
+  label: string;
+  detail: string;
+}>;
 
 const packWordsBySlug = new Map(mockQuizWords.map((word) => [word.slug, word]));
 
@@ -247,18 +314,38 @@ function rotateDeterministically(options: string[], slug: string) {
   return [...options.slice(offset), ...options.slice(0, offset)];
 }
 
+function getOptionSourceLabel(source: AnswerOptionSource) {
+  if (source === "confusable") {
+    return "Static confusable and related candidates";
+  }
+
+  if (source === "same-hub") {
+    return "Static same-hub candidates";
+  }
+
+  return "Static pack fallback candidates";
+}
+
 function buildOptions(word: ReviewableWord) {
   const answer = toOptionLabel(word.word);
+  const confusableCandidates = [
+    ...(word.confusableWords ?? []),
+    ...(word.distractors ?? [])
+  ];
   const sameHubWords = mockQuizWords
     .filter((packWord) => packWord.slug !== word.slug && packWord.hub === word.hub)
     .map((packWord) => packWord.word);
   const fallbackWords = mockQuizWords
     .filter((packWord) => packWord.slug !== word.slug)
     .map((packWord) => packWord.word);
+  const optionSource: AnswerOptionSource = confusableCandidates.length
+    ? "confusable"
+    : sameHubWords.length
+      ? "same-hub"
+      : "static-fallback";
   const candidates = [
     answer,
-    ...(word.confusableWords ?? []),
-    ...(word.distractors ?? []),
+    ...confusableCandidates,
     ...sameHubWords,
     ...fallbackWords
   ];
@@ -279,7 +366,11 @@ function buildOptions(word: ReviewableWord) {
     }
   }
 
-  return rotateDeterministically(uniqueOptions, word.slug);
+  return {
+    options: rotateDeterministically(uniqueOptions, word.slug),
+    optionSource,
+    optionSourceLabel: getOptionSourceLabel(optionSource)
+  };
 }
 
 function getQuestionType(
@@ -334,7 +425,7 @@ function getPrompt(questionType: VlxQuestionType) {
     case "due_review":
       return "This card is due. Choose the word that matches the clue.";
     case "weak_review":
-      return "This card needs reinforcement. Choose the word that matches the clue.";
+      return "This card needs repair. Choose the word that matches the clue.";
     default:
       return "Choose the word that matches the clue.";
   }
@@ -599,7 +690,7 @@ function buildLocalWords(
 function buildQuestions(words: ReviewableWord[], mode: ReviewMode) {
   return words.map((word, index) => ({
     ...word,
-    options: buildOptions(word),
+    ...buildOptions(word),
     questionType: getQuestionType(word, mode, index)
   }));
 }
@@ -612,6 +703,34 @@ function getVisualClass(slug: string) {
   return visualCueSlugs.has(slug) ? ` word-card__visual--${slug}` : "";
 }
 
+function getVisualStyle(question: ReviewQuestion): CSSProperties | undefined {
+  return question.image
+    ? {
+        backgroundImage: `url(${question.image})`
+      }
+    : undefined;
+}
+
+function getMasteryTone(mastery?: VlxMasteryLabel): TrackBStatusTone {
+  if (mastery === "Weak") {
+    return "weak";
+  }
+
+  if (mastery === "Learning") {
+    return "learning";
+  }
+
+  if (mastery === "Strong") {
+    return "strong";
+  }
+
+  if (mastery === "Mastered") {
+    return "mastered";
+  }
+
+  return "new";
+}
+
 function getAnswerSummary(answers: SessionAnswer[]): SessionSummary {
   return {
     reviewed: answers.length,
@@ -620,7 +739,8 @@ function getAnswerSummary(answers: SessionAnswer[]): SessionSummary {
     weakAdded: answers.filter((answer) => answer.weakAdded).length,
     weakImproved: answers.filter((answer) => answer.weakImproved).length,
     stillWeak: answers.filter((answer) => answer.result === "wrong").length,
-    movedForward: answers.filter((answer) => answer.movedForward).length
+    movedForward: answers.filter((answer) => answer.movedForward).length,
+    weakRemaining: 0
   };
 }
 
@@ -688,6 +808,7 @@ function buildCompletedSummary(
   return {
     ...answerSummary,
     stillWeak,
+    weakRemaining: getWeakWords(reviewState).length,
     weakSpotlight: weakSpotlightCandidate
       ? {
           word: weakSpotlightCandidate.state.word,
@@ -730,6 +851,40 @@ function getNextReviewMessage(nextDueAt?: string, word?: string) {
   }
 
   return word ? `${word} is next due ${label}.` : `Next review is due ${label}.`;
+}
+
+function formatConfidence(confidence: VlxReviewConfidence) {
+  if (confidence === "knew") {
+    return "I knew it";
+  }
+
+  if (confidence === "guessed") {
+    return "I guessed";
+  }
+
+  return "I forgot";
+}
+
+function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function getFeedbackExplanation(question: ReviewQuestion, confidence: VlxReviewConfidence) {
+  const hook = question.memoryHook
+    ? `Memory hook: ${question.memoryHook}`
+    : question.definition
+      ? `Definition: ${question.definition}`
+      : "This feedback uses only the existing static card data.";
+
+  if (confidence === "guessed") {
+    return `${hook} Guessed correct answers are recorded, but they do not inflate the SRS box.`;
+  }
+
+  if (confidence === "forgot") {
+    return `${hook} Forgotten answers stay closer to review so the mistake record remains honest.`;
+  }
+
+  return hook;
 }
 
 function getReviewSummaryPaywallSurface({
@@ -815,7 +970,9 @@ export function ReviewSessionView({
   const [questions, setQuestions] = useState<ReviewQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sessionId, setSessionId] = useState("");
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(
+    null
+  );
   const [currentAnswer, setCurrentAnswer] = useState<SessionAnswer | null>(null);
   const [answers, setAnswers] = useState<SessionAnswer[]>([]);
   const [completedSummary, setCompletedSummary] = useState<SessionSummary | null>(
@@ -847,6 +1004,8 @@ export function ReviewSessionView({
         setStatus("empty");
         setCompletedSummary(null);
         setSummaryPaywallSurface(null);
+        setPendingSelection(null);
+        setCurrentAnswer(null);
         completionRecordedSessionId.current = null;
         return;
       }
@@ -860,7 +1019,7 @@ export function ReviewSessionView({
       setQuestions(nextQuestions);
       setCurrentIndex(0);
       setSessionId(nextSessionId);
-      setSelectedAnswer(null);
+      setPendingSelection(null);
       setCurrentAnswer(null);
       setAnswers([]);
       setCompletedSummary(null);
@@ -904,7 +1063,7 @@ export function ReviewSessionView({
         setCompletedSummary(null);
         setSummaryPaywallSurface(null);
         setCurrentAnswer(null);
-        setSelectedAnswer(null);
+        setPendingSelection(null);
         completionRecordedSessionId.current = null;
         return;
       }
@@ -922,7 +1081,7 @@ export function ReviewSessionView({
       setCompletedSummary(null);
       setSummaryPaywallSurface(null);
       setCurrentAnswer(null);
-      setSelectedAnswer(null);
+      setPendingSelection(null);
       completionRecordedSessionId.current = null;
       return;
     }
@@ -935,6 +1094,7 @@ export function ReviewSessionView({
   }, [loadLocalSession]);
 
   const currentQuestion = questions[currentIndex];
+  const selectedAnswer = currentAnswer?.selected ?? pendingSelection?.selected ?? null;
   const liveSummary = useMemo(() => getAnswerSummary(answers), [answers]);
   const summary = completedSummary ?? liveSummary;
   const nextReviewMessage = getNextReviewMessage(
@@ -942,30 +1102,26 @@ export function ReviewSessionView({
     summary.nextDueWord
   );
 
-  function startStarterDeck() {
-    startSession(
-      mockQuizWords.slice(0, SESSION_SIZE).map((word) => fromPackWord(word)),
-      "Mock starter deck",
-      availability
-    );
-  }
-
   function handleSelect(option: string) {
     if (!currentQuestion || currentAnswer) {
       return;
     }
 
-    const selectedAt = new Date().toISOString();
-    const responseMs = Math.max(
-      0,
-      Math.round(getNowMs() - cardStartedAt.current)
-    );
-    const result: VlxReviewResult = isCorrectSelection(
-      option,
-      currentQuestion.word
-    )
-      ? "correct"
-      : "wrong";
+    setPendingSelection({
+      selected: option,
+      selectedAt: new Date().toISOString(),
+      responseMs: Math.max(0, Math.round(getNowMs() - cardStartedAt.current)),
+      result: isCorrectSelection(option, currentQuestion.word)
+        ? "correct"
+        : "wrong"
+    });
+  }
+
+  function handleConfidence(confidence: VlxReviewConfidence) {
+    if (!currentQuestion || !pendingSelection || currentAnswer) {
+      return;
+    }
+
     const previousState = readReviewState()[currentQuestion.slug];
     const output = applyReviewAnswer({
       sessionId,
@@ -975,20 +1131,21 @@ export function ReviewSessionView({
       definition: currentQuestion.definition,
       hub: currentQuestion.hub,
       questionType: currentQuestion.questionType,
-      selected: option,
+      selected: pendingSelection.selected,
       answer: currentQuestion.word,
-      result,
-      responseMs,
-      confidence: result === "correct" ? "knew" : "forgot",
-      createdAt: selectedAt
+      result: pendingSelection.result,
+      responseMs: pendingSelection.responseMs,
+      confidence,
+      createdAt: pendingSelection.selectedAt
     });
     const answer: SessionAnswer = {
       slug: output.state.slug,
       word: output.state.word,
-      selected: option,
+      selected: pendingSelection.selected,
       answer: output.event.answer,
       result: output.event.result,
       responseMs: output.event.responseMs,
+      confidence: output.event.confidence ?? confidence,
       questionType: output.event.questionType,
       boxBefore: output.event.boxBefore,
       boxAfter: output.event.boxAfter,
@@ -999,10 +1156,12 @@ export function ReviewSessionView({
       weakImproved:
         output.event.weakScoreAfter < output.event.weakScoreBefore ||
         output.event.boxAfter > output.event.boxBefore,
-      movedForward: output.event.boxAfter > output.event.boxBefore
+      movedForward: output.event.boxAfter > output.event.boxBefore,
+      masteryAfter: output.state.mastery,
+      nextDueAt: output.state.nextDueAt,
+      explanation: getFeedbackExplanation(currentQuestion, confidence)
     };
 
-    setSelectedAnswer(option);
     setCurrentAnswer(answer);
     setAnswers((previousAnswers) => [...previousAnswers, answer]);
 
@@ -1045,8 +1204,7 @@ export function ReviewSessionView({
         reviewedCount: nextSummary.reviewed,
         correctCount: nextSummary.correct,
         wrongCount: nextSummary.wrong,
-        weakCount:
-          mode === "weak-sprint" ? nextSummary.stillWeak : nextSummary.weakAdded
+        weakCount: nextSummary.weakRemaining
       });
 
       if (packId && routeSource === "pack_preview") {
@@ -1071,14 +1229,16 @@ export function ReviewSessionView({
     }
 
     setCurrentIndex((index) => index + 1);
-    setSelectedAnswer(null);
+    setPendingSelection(null);
     setCurrentAnswer(null);
     resetCardTimer();
   }
 
   function getOptionClass(option: string) {
     if (!currentAnswer || !currentQuestion) {
-      return "review-option";
+      return selectedAnswer === option
+        ? "review-option review-option--selected"
+        : "review-option";
     }
 
     if (isCorrectSelection(option, currentQuestion.word)) {
@@ -1093,156 +1253,212 @@ export function ReviewSessionView({
   }
 
   return (
-    <div className="page">
-      <PageHeader
+    <div className="page review-v2-page">
+      <TrackBPageHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
         description={copy.description}
         actions={
           <>
-            <Link className="button" href="/review">
-              All Review
+            <Link className="track-b-button track-b-button--quiet" href="/dashboard">
+              Today
             </Link>
-            <Link className="button" href="/review/due">
+            <Link className="track-b-button track-b-button--quiet" href="/review/due">
               Due
             </Link>
-            <Link className="button" href="/review/weak">
+            <Link className="track-b-button track-b-button--quiet" href="/review/weak">
               Weak
-            </Link>
-            <Link className="button" href="/review/weak-sprint">
-              Weak Sprint
             </Link>
           </>
         }
+        meta={
+          <div className="review-v2-header-metrics" aria-label="Local review queues">
+            <span>{availability.dueCount} due</span>
+            <span>{availability.weakCount} weak</span>
+            <span>{availability.savedCount} new saved</span>
+          </div>
+        }
       />
 
-      <section className="section" aria-labelledby="review-availability">
-        <div className="section-heading">
-          <h2 className="section-title" id="review-availability">
-            Review queues
-          </h2>
-          <span className="section-note">
-            {availability.localCandidateCount} local cards ready
-          </span>
-        </div>
-        <div className="metric-grid">
-          <div className="metric-card">
-            <span className="metric-card__value">{availability.dueCount}</span>
-            <span className="metric-card__label">Due</span>
-          </div>
-          <div className="metric-card">
-            <span className="metric-card__value">{availability.weakCount}</span>
-            <span className="metric-card__label">Weak</span>
-          </div>
-          <div className="metric-card">
-            <span className="metric-card__value">{availability.savedCount}</span>
-            <span className="metric-card__label">New saved</span>
-          </div>
-        </div>
-      </section>
-
       {status === "loading" ? (
-        <section className="empty-state" aria-live="polite">
-          <h3>Loading review state</h3>
+        <section className="review-v2-empty" aria-live="polite">
+          <h2>Loading review state</h2>
           <p>Reading saved words and memory state from local storage.</p>
         </section>
       ) : null}
 
       {status === "empty" ? (
-        <section className="empty-state" aria-live="polite">
-          <h3>{emptyTitle}</h3>
+        <section className="review-v2-empty" aria-live="polite">
+          <p className="track-b-eyebrow">{copy.modeLabel}</p>
+          <h2>{emptyTitle}</h2>
           <p>{emptyBody}</p>
-          {mode === "weak-sprint" ? (
-            <div className="actions">
-              <Link className="button button--primary" href="/dashboard">
-                Dashboard
-              </Link>
-              <Link className="button button--quiet" href="/review">
-                All Review
-              </Link>
-            </div>
-          ) : (
-            <div className="actions">
-              <button className="button button--primary" onClick={startStarterDeck} type="button">
-                Start starter deck
-              </button>
-              <Link className="button button--quiet" href="/packs">
-                Browse packs
-              </Link>
-            </div>
-          )}
+          <div className="track-b-action-row">
+            <Link className="track-b-button track-b-button--primary" href="/dashboard">
+              Back to Today
+            </Link>
+            <Link className="track-b-button track-b-button--quiet" href="/saved">
+              Saved library
+            </Link>
+            <Link className="track-b-button track-b-button--quiet" href="/packs">
+              Browse packs
+            </Link>
+          </div>
         </section>
       ) : null}
 
       {status === "active" && currentQuestion ? (
-        <section className="review-session" aria-labelledby="review-session-title">
-          <div className="review-session__topline">
+        <section className="review-session review-v2-session" aria-labelledby="review-session-title">
+          <header className="review-session__topline review-v2-session__header">
             <div>
-              <span className="eyebrow">{queueLabel}</span>
-              <h2 className="section-title" id="review-session-title">
+              <p className="track-b-eyebrow">{copy.modeLabel}</p>
+              <h2 id="review-session-title">
                 Card {currentIndex + 1} of {questions.length}
               </h2>
+              <p>{queueLabel}. {copy.sourceDetail}.</p>
             </div>
-            <span className="tag">
-              {getQuestionTypeLabel(currentQuestion.questionType)}
-            </span>
-          </div>
+            <div className="review-v2-session__badges" aria-label="Current card state">
+              <span className="track-b-status-badge track-b-status-badge--due">
+                {getQuestionTypeLabel(currentQuestion.questionType)}
+              </span>
+              {currentQuestion.mastery ? (
+                <TrackBStatusBadge status={getMasteryTone(currentQuestion.mastery)} />
+              ) : null}
+            </div>
+          </header>
 
-          <div className="review-card">
+          <article className="review-card review-v2-card" aria-label="Review card">
             <div
               aria-label={`Visual cue for ${currentQuestion.word}`}
-              className={`word-card__visual review-card__visual${getVisualClass(
+              className={`word-card__visual review-card__visual review-v2-card__visual${getVisualClass(
                 currentQuestion.slug
-              )}`}
+              )}${currentQuestion.image ? " word-card__visual--image" : ""}`}
               role="img"
+              style={getVisualStyle(currentQuestion)}
             />
-            <div className="review-card__body">
-              <p className="review-card__prompt">
+            <div className="review-card__body review-v2-card__body">
+              <p className="track-b-eyebrow">
                 {getPrompt(currentQuestion.questionType)}
               </p>
               <p className="review-card__clue">{getClue(currentQuestion)}</p>
-              <div className="tag-row">
-                {currentQuestion.mastery ? (
-                  <span className="tag">{currentQuestion.mastery}</span>
-                ) : null}
+              <dl className="review-v2-card__state">
+                <div>
+                  <dt>Source</dt>
+                  <dd>{currentQuestion.source}</dd>
+                </div>
                 {typeof currentQuestion.box === "number" ? (
-                  <span className="tag">Box {currentQuestion.box}</span>
+                  <div>
+                    <dt>Box</dt>
+                    <dd>{currentQuestion.box}</dd>
+                  </div>
+                ) : null}
+                {typeof currentQuestion.weakScore === "number" ? (
+                  <div>
+                    <dt>Weak</dt>
+                    <dd>{formatPercent(currentQuestion.weakScore)}</dd>
+                  </div>
                 ) : null}
                 {currentQuestion.hub ? (
-                  <span className="tag">{currentQuestion.hub}</span>
+                  <div>
+                    <dt>Hub</dt>
+                    <dd>{currentQuestion.hub}</dd>
+                  </div>
                 ) : null}
-              </div>
+              </dl>
+            </div>
+          </article>
+
+          <div className="review-v2-answer-block">
+            <div className="review-v2-answer-heading">
+              <h3>Answer</h3>
+              <span>{currentQuestion.optionSourceLabel}</span>
+            </div>
+            <div className="review-options" aria-label="Answer choices">
+              {currentQuestion.options.map((option) => (
+                <button
+                  aria-pressed={selectedAnswer === option}
+                  className={getOptionClass(option)}
+                  disabled={Boolean(currentAnswer)}
+                  key={option}
+                  onClick={() => handleSelect(option)}
+                  type="button"
+                >
+                  {option}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="review-options" aria-label="Answer choices">
-            {currentQuestion.options.map((option) => (
-              <button
-                aria-pressed={selectedAnswer === option}
-                className={getOptionClass(option)}
-                disabled={Boolean(currentAnswer)}
-                key={option}
-                onClick={() => handleSelect(option)}
-                type="button"
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+          {pendingSelection && !currentAnswer ? (
+            <div className="review-v2-confidence" aria-labelledby="review-confidence-title">
+              <div>
+                <p className="track-b-eyebrow">Confidence</p>
+                <h3 id="review-confidence-title">How did that recall feel?</h3>
+              </div>
+              <div className="review-v2-confidence__buttons">
+                {confidenceOptions.map((option) => (
+                  <button
+                    className="review-v2-confidence-button"
+                    key={option.value}
+                    onClick={() => handleConfidence(option.value)}
+                    type="button"
+                  >
+                    <span>{option.label}</span>
+                    <small>{option.detail}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {currentAnswer ? (
-            <div className="review-feedback" aria-live="polite">
-              <div>
-                <span className="eyebrow">
+            <div className="review-feedback review-v2-feedback" aria-live="polite">
+              <div className="review-v2-feedback__copy">
+                <p className="track-b-eyebrow">
                   {currentAnswer.result === "correct" ? "Correct" : "Review again"}
-                </span>
-                <p>
-                  Answer: <strong>{currentAnswer.answer}</strong> | Response:{" "}
-                  {currentAnswer.responseMs} ms | Box {currentAnswer.boxBefore} to{" "}
-                  {currentAnswer.boxAfter}
                 </p>
+                <h3>
+                  {currentAnswer.result === "correct"
+                    ? "Answer recorded"
+                    : "Mistake recorded"}
+                </h3>
+                <p>{currentAnswer.explanation}</p>
+                <dl className="review-v2-feedback__state">
+                  <div>
+                    <dt>Answer</dt>
+                    <dd>{currentAnswer.answer}</dd>
+                  </div>
+                  <div>
+                    <dt>Confidence</dt>
+                    <dd>{formatConfidence(currentAnswer.confidence)}</dd>
+                  </div>
+                  <div>
+                    <dt>Box</dt>
+                    <dd>
+                      {currentAnswer.boxBefore} to {currentAnswer.boxAfter}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Weak score</dt>
+                    <dd>
+                      {formatPercent(currentAnswer.weakScoreBefore)} to{" "}
+                      {formatPercent(currentAnswer.weakScoreAfter)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Next due</dt>
+                    <dd>
+                      {currentAnswer.nextDueAt
+                        ? formatDateLabel(currentAnswer.nextDueAt)
+                        : "Not scheduled"}
+                    </dd>
+                  </div>
+                </dl>
               </div>
-              <button className="button button--primary" onClick={handleNext} type="button">
+              <button
+                className="track-b-button track-b-button--primary"
+                onClick={handleNext}
+                type="button"
+              >
                 {currentIndex + 1 >= questions.length ? "View summary" : "Next card"}
               </button>
             </div>
@@ -1251,70 +1467,45 @@ export function ReviewSessionView({
       ) : null}
 
       {status === "summary" ? (
-        <section className="section" aria-labelledby="session-summary">
-          <div className="section-heading">
-            <h2 className="section-title" id="session-summary">
-              Session summary
-            </h2>
-            <span className="section-note">{sessionId}</span>
+        <section className="review-v2-summary" aria-labelledby="session-summary">
+          <div className="review-v2-summary__header">
+            <div>
+              <p className="track-b-eyebrow">Memory state updated</p>
+              <h2 id="session-summary">Session summary</h2>
+            </div>
+            <span>{sessionId}</span>
           </div>
 
-          <div className="summary-grid">
-            <div className="metric-card">
-              <span className="metric-card__value">{summary.reviewed}</span>
-              <span className="metric-card__label">Cards reviewed</span>
-            </div>
-            <div className="metric-card">
-              <span className="metric-card__value">{summary.correct}</span>
-              <span className="metric-card__label">Correct</span>
-            </div>
-            <div className="metric-card">
-              <span className="metric-card__value">{summary.wrong}</span>
-              <span className="metric-card__label">Wrong</span>
-            </div>
-            {mode === "weak-sprint" ? (
-              <>
-                <div className="metric-card">
-                  <span className="metric-card__value">
-                    {summary.weakImproved}
-                  </span>
-                  <span className="metric-card__label">Weak words improved</span>
-                </div>
-                <div className="metric-card">
-                  <span className="metric-card__value">
-                    {summary.stillWeak}
-                  </span>
-                  <span className="metric-card__label">Still weak</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="metric-card">
-                  <span className="metric-card__value">{summary.weakAdded}</span>
-                  <span className="metric-card__label">Weak words added</span>
-                </div>
-                <div className="metric-card">
-                  <span className="metric-card__value">
-                    {summary.movedForward}
-                  </span>
-                  <span className="metric-card__label">Words moved forward</span>
-                </div>
-              </>
-            )}
+          <div className="summary-grid review-v2-summary__metrics">
+            <TrackBMetricCard label="Reviewed" value={summary.reviewed} />
+            <TrackBMetricCard label="Correct" value={summary.correct} tone="strong" />
+            <TrackBMetricCard label="Wrong" value={summary.wrong} tone="weak" />
+            <TrackBMetricCard
+              label="Improved"
+              value={summary.movedForward}
+              description="Words that moved to a higher SRS box."
+              tone="learning"
+            />
+            <TrackBMetricCard
+              label="Weak remaining"
+              value={summary.weakRemaining}
+              description="Real weak words still in local review state."
+              tone="weak"
+            />
           </div>
 
           {summary.weakSpotlight || nextReviewMessage ? (
             <div className="session-summary-insights">
               {summary.weakSpotlight ? (
                 <div className="session-summary-insight session-summary-insight--weak">
-                  <span className="eyebrow">Weak word spotlight</span>
+                  <span className="track-b-eyebrow">Weak word spotlight</span>
                   <h3>{summary.weakSpotlight.word}</h3>
                   <p>
                     {summary.weakSpotlight.result === "wrong"
                       ? "Missed in this session"
                       : "Still needs reinforcement"}{" "}
                     | {summary.weakSpotlight.mastery ?? "Learning"} | Weak score{" "}
-                    {summary.weakSpotlight.weakScore.toFixed(2)} |{" "}
+                    {formatPercent(summary.weakSpotlight.weakScore)} |{" "}
                     {summary.weakSpotlight.wrong} misses recorded
                   </p>
                 </div>
@@ -1322,7 +1513,7 @@ export function ReviewSessionView({
 
               {nextReviewMessage ? (
                 <div className="session-summary-insight">
-                  <span className="eyebrow">Next review</span>
+                  <span className="track-b-eyebrow">Next review</span>
                   <p>{nextReviewMessage}</p>
                 </div>
               ) : null}
@@ -1342,6 +1533,7 @@ export function ReviewSessionView({
                 <div>
                   <strong>{answer.word}</strong>
                   <span>{getQuestionTypeLabel(answer.questionType)}</span>
+                  <span>{formatConfidence(answer.confidence)}</span>
                 </div>
                 <div>
                   <span className={answer.result === "correct" ? "tag tag--strong" : "tag tag--weak"}>
@@ -1350,18 +1542,24 @@ export function ReviewSessionView({
                   <span className="tag">
                     Box {answer.boxBefore} to {answer.boxAfter}
                   </span>
+                  <span className="tag">{answer.masteryAfter}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="actions">
-            <button className="button button--primary" onClick={loadLocalSession} type="button">
+          <div className="track-b-action-row">
+            <Link className="track-b-button track-b-button--primary" href="/dashboard">
+              Back to Today
+            </Link>
+            {summary.weakRemaining > 0 ? (
+              <Link className="track-b-button track-b-button--quiet" href="/review/weak">
+                Review weak words
+              </Link>
+            ) : null}
+            <button className="track-b-button track-b-button--quiet" onClick={loadLocalSession} type="button">
               Start next session
             </button>
-            <Link className="button" href="/dashboard">
-              Dashboard
-            </Link>
           </div>
         </section>
       ) : null}
