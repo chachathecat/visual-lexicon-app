@@ -220,7 +220,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     ).toHaveCount(0);
   });
 
-  test('dashboard with weak words shows weak sprint locked prompt', async ({
+  test('dashboard with weak words keeps upgrade nudge visual-only', async ({
     page,
   }) => {
     await seedVlxLocalStorage(page, {
@@ -235,16 +235,24 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
 
-    const prompt = page.locator(
-      '[data-paywall-trigger="weak_words_sprint_locked"]',
-    );
-
-    await expect(prompt).toBeVisible();
-    await expect(prompt).toContainText('Work through weak words first');
-    await expect(prompt).toContainText('Weak Count');
+    await expect(
+      page.getByRole('link', { name: 'Start Weak Sprint' }),
+    ).toHaveAttribute('href', '/review/weak-sprint');
+    await expect(
+      page.locator('.track-b-upgrade-nudge[data-visual-only="true"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-paywall-trigger="weak_words_sprint_locked"]'),
+    ).toHaveCount(0);
     await expect(
       page.locator('[data-paywall-trigger="mastery_export_locked"]'),
     ).toHaveCount(0);
+    await expect(page.locator('[data-paywall-trigger]')).toHaveCount(0);
+    await expect(
+      page.locator('.track-b-upgrade-nudge[data-visual-only="true"]'),
+    ).toContainText(
+      'This is a visual-only upgrade note',
+    );
   });
 
   test('save limit prompt appears when saved count reaches free limit', async ({
