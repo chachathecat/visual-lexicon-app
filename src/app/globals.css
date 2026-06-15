@@ -2571,6 +2571,305 @@ select {
   box-shadow: var(--vlx-track-b-focus-shadow);
 }
 
+.packs-v2-grid,
+.packs-v2-word-grid,
+.packs-v2-queue-grid,
+.packs-v2-detail-metrics {
+  display: grid;
+  gap: var(--vlx-track-b-space-md);
+  min-width: 0;
+}
+
+.packs-v2-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.packs-v2-grid--featured {
+  align-items: stretch;
+}
+
+.packs-v2-word-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.packs-v2-queue-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.packs-v2-detail-metrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.packs-v2-card,
+.packs-v2-detail-hero,
+.packs-v2-word-card,
+.packs-v2-queue-panel {
+  min-width: 0;
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-md);
+  background: var(--vlx-track-b-surface);
+  box-shadow: var(--vlx-track-b-shadow-panel);
+}
+
+.packs-v2-card {
+  display: grid;
+  align-content: start;
+  gap: var(--vlx-track-b-space-md);
+  padding: var(--vlx-track-b-space-lg);
+}
+
+.packs-v2-card__topline,
+.packs-v2-word-card__topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vlx-track-b-space-sm);
+  min-width: 0;
+}
+
+.packs-v2-card__copy {
+  display: grid;
+  gap: var(--vlx-track-b-space-xs);
+  min-width: 0;
+}
+
+.packs-v2-card h3,
+.packs-v2-word-card h3,
+.packs-v2-queue-panel h3,
+.packs-v2-detail-hero h2 {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: 1.08rem;
+  font-weight: 760;
+  line-height: 1.18;
+}
+
+.packs-v2-card p,
+.packs-v2-word-card p,
+.packs-v2-detail-hero p,
+.packs-v2-inline-empty p {
+  margin: 0;
+  color: var(--vlx-track-b-ink-soft);
+  font-size: var(--vlx-track-b-type-body);
+  line-height: 1.5;
+}
+
+.packs-v2-status,
+.packs-v2-token {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 4px var(--vlx-track-b-space-xs);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-pill);
+  background: var(--vlx-track-b-surface-muted);
+  color: var(--vlx-track-b-ink-soft);
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.packs-v2-status--available {
+  border-color: rgba(49, 91, 74, 0.28);
+  background: var(--vlx-track-b-accent-soft);
+  color: var(--vlx-track-b-accent);
+}
+
+.packs-v2-status--empty,
+.packs-v2-status--placeholder {
+  border-color: rgba(143, 111, 47, 0.3);
+  background: rgba(143, 111, 47, 0.09);
+  color: var(--vlx-track-b-gold);
+}
+
+.packs-v2-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vlx-track-b-space-xs);
+  align-items: center;
+  min-width: 0;
+}
+
+.packs-v2-state-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--vlx-track-b-space-xs);
+  margin: 0;
+}
+
+.packs-v2-state-strip div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--vlx-track-b-space-xs);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-sm);
+  background: var(--vlx-track-b-surface-muted);
+}
+
+.packs-v2-state-strip dt,
+.packs-v2-progress-note small,
+.packs-v2-detail-facts dt,
+.packs-v2-queue-list small {
+  color: var(--vlx-track-b-ink-muted);
+  font-size: var(--vlx-track-b-type-small);
+}
+
+.packs-v2-state-strip dd {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: 1.12rem;
+  font-weight: 780;
+  line-height: 1;
+}
+
+.packs-v2-state-empty {
+  padding: var(--vlx-track-b-space-sm);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-sm);
+  background: var(--vlx-track-b-surface-muted);
+}
+
+.packs-v2-progress-note {
+  display: grid;
+  gap: 2px;
+  padding: var(--vlx-track-b-space-sm);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-sm);
+  background: #fbf7ef;
+}
+
+.packs-v2-progress-note span {
+  color: var(--vlx-track-b-ink);
+  font-weight: 760;
+}
+
+.packs-v2-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.72fr);
+  gap: var(--vlx-track-b-space-lg);
+  padding: var(--vlx-track-b-space-lg);
+}
+
+.packs-v2-detail-hero__copy {
+  display: grid;
+  align-content: start;
+  gap: var(--vlx-track-b-space-sm);
+  min-width: 0;
+}
+
+.packs-v2-detail-hero .packs-v2-progress-note {
+  grid-column: 1 / -1;
+}
+
+.packs-v2-detail-facts {
+  display: grid;
+  gap: var(--vlx-track-b-space-xs);
+  margin: 0;
+}
+
+.packs-v2-detail-facts div {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.48fr) minmax(0, 1fr);
+  gap: var(--vlx-track-b-space-sm);
+  padding-bottom: var(--vlx-track-b-space-xs);
+  border-bottom: var(--vlx-track-b-border-subtle);
+}
+
+.packs-v2-detail-facts dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  overflow-wrap: anywhere;
+}
+
+.packs-v2-queue-panel {
+  display: grid;
+  align-content: start;
+  gap: var(--vlx-track-b-space-md);
+  padding: var(--vlx-track-b-space-lg);
+}
+
+.packs-v2-queue-list {
+  display: grid;
+  gap: var(--vlx-track-b-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.packs-v2-queue-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--vlx-track-b-space-sm);
+  align-items: center;
+  min-width: 0;
+  padding: var(--vlx-track-b-space-sm);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-sm);
+  background: var(--vlx-track-b-surface-muted);
+}
+
+.packs-v2-queue-list span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.packs-v2-queue-list a {
+  color: var(--vlx-track-b-accent);
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 760;
+}
+
+.packs-v2-inline-empty {
+  display: grid;
+  gap: var(--vlx-track-b-space-xs);
+  padding: var(--vlx-track-b-space-md);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-sm);
+  background: var(--vlx-track-b-surface-muted);
+}
+
+.packs-v2-word-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--vlx-track-b-space-md);
+  padding: var(--vlx-track-b-space-md);
+}
+
+.packs-v2-word-card__image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  min-height: 138px;
+  overflow: hidden;
+  border-radius: var(--vlx-track-b-radius-md);
+  background-position: center;
+  background-size: cover;
+  color: var(--vlx-track-b-accent);
+  font-size: 1.7rem;
+  font-weight: 780;
+}
+
+.packs-v2-word-card__body {
+  display: grid;
+  align-content: start;
+  gap: var(--vlx-track-b-space-sm);
+  min-width: 0;
+}
+
+.packs-v2-card a:focus-visible,
+.packs-v2-word-card a:focus-visible,
+.packs-v2-queue-panel a:focus-visible {
+  outline: var(--vlx-track-b-focus-outline);
+  outline-offset: 3px;
+  box-shadow: var(--vlx-track-b-focus-shadow);
+}
+
 @media (max-width: 980px) {
   .track-b-shell {
     grid-template-columns: 1fr;
@@ -2605,8 +2904,16 @@ select {
   .dashboard-v2-status-grid,
   .dashboard-v2-word-grid,
   .dashboard-v2-pack-grid,
-  .saved-v2-status-grid {
+  .saved-v2-status-grid,
+  .packs-v2-grid,
+  .packs-v2-word-grid,
+  .packs-v2-detail-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .packs-v2-detail-hero,
+  .packs-v2-queue-grid {
+    grid-template-columns: 1fr;
   }
 
   .saved-v2-tabs {
@@ -2691,7 +2998,11 @@ select {
   .dashboard-v2-word-grid,
   .dashboard-v2-pack-grid,
   .saved-v2-status-grid,
-  .saved-v2-tabs {
+  .saved-v2-tabs,
+  .packs-v2-grid,
+  .packs-v2-word-grid,
+  .packs-v2-detail-metrics,
+  .packs-v2-state-strip {
     grid-template-columns: 1fr;
   }
 
@@ -2710,6 +3021,15 @@ select {
   }
 
   .saved-v2-word-card__image {
+    width: 76px;
+    min-height: 96px;
+  }
+
+  .packs-v2-word-card {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .packs-v2-word-card__image {
     width: 76px;
     min-height: 96px;
   }
@@ -2735,7 +3055,13 @@ select {
   [class^="saved-v2-"]::before,
   [class^="saved-v2-"]::after,
   [class*=" saved-v2-"]::before,
-  [class*=" saved-v2-"]::after {
+  [class*=" saved-v2-"]::after,
+  [class^="packs-v2-"],
+  [class*=" packs-v2-"],
+  [class^="packs-v2-"]::before,
+  [class^="packs-v2-"]::after,
+  [class*=" packs-v2-"]::before,
+  [class*=" packs-v2-"]::after {
     animation-duration: var(--vlx-track-b-motion-instant) !important;
     scroll-behavior: auto !important;
     transition-duration: var(--vlx-track-b-motion-instant) !important;
