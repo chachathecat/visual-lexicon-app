@@ -110,6 +110,7 @@ docs/PAID_BETA_PRIVATE_INVITE_SIGNOFF_2026-06-10.md
 - [Paid Beta Manual QA Execution Report](docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md)
 - [Private Beta Gate Prep](docs/PRIVATE_BETA_GATE_PREP.md)
 - [Paid Beta Manual QA Checklist](docs/PAID_BETA_MANUAL_QA_CHECKLIST.md)
+- [Manual Payment / Entitlement Policy](docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md)
 
 Release candidate docs:
 
