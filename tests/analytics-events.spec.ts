@@ -371,6 +371,10 @@ test.describe('Visual Lexicon paid beta analytics events', () => {
 
     await expect(firstChoice).toBeVisible();
     await firstChoice.click();
+    await expect(
+      page.getByRole('heading', { name: 'How did that recall feel?' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: /I knew it/i }).click();
     await waitForDataLayerEvent(page, 'vlx_review_answer');
 
     const answerEvents = await getDataLayerEvents(page, 'vlx_review_answer');

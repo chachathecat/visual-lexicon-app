@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
 import {
@@ -15,6 +17,8 @@ const baseUrl =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
   'http://127.0.0.1:3006';
+
+const workspaceRoot = process.cwd();
 
 const storageKeys = [
   'vlx_saved_words_v1',
@@ -116,13 +120,17 @@ async function readLocalJson<T = unknown>(
   }, key);
 }
 
-async function answerFirstCard(page: Page) {
+async function answerFirstCard(page: Page, confidence = /I knew it/i) {
   await expect(page.locator('.review-session')).toBeVisible({ timeout: 15000 });
 
   const firstChoice = page.locator('.review-option').first();
 
   await expect(firstChoice).toBeVisible();
   await firstChoice.click();
+  await expect(
+    page.getByRole('heading', { name: 'How did that recall feel?' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: confidence }).click();
   await expect(page.locator('.review-feedback')).toBeVisible();
 }
 
@@ -235,7 +243,9 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     expect(response?.status()).toBe(200);
     await expect(
-      page.getByRole('heading', { name: /Five cards for today's memory loop/i }),
+      page.getByRole('heading', {
+        name: /A focused recall session for today's memory loop/i,
+      }),
     ).toBeVisible();
     await expect(page.locator('body')).not.toContainText(
       'This page could not be found',
@@ -254,7 +264,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
     });
 
     await expect(
-      page.getByRole('heading', { name: /Review words from your saved library/i }),
+      page.getByRole('heading', { name: /Recall words from your saved library/i }),
     ).toBeVisible();
     await expect(page.locator('.review-session')).toBeVisible({
       timeout: 15000,
@@ -295,6 +305,33 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     expect(event.slug).toBe('obfuscate');
     expect(event.questionType).toBe('due_review');
+    expect(event.confidence).toBe('knew');
+  });
+
+  test('/review/due renders due mode from the direct route', async ({ page }) => {
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        obfuscate: makeReviewStateItem({
+          slug: 'obfuscate',
+          word: 'Obfuscate',
+          definition: 'To make something unclear or difficult to understand.',
+          box: 1,
+          mastery: 'Learning',
+          correct: 1,
+          nextDueAt: oneMinuteAgo(),
+        }),
+      },
+    });
+
+    const response = await page.goto(`${baseUrl}/review/due`, {
+      waitUntil: 'networkidle',
+    });
+
+    expect(response?.status()).toBe(200);
+    await expect(
+      page.getByRole('heading', { name: /Review the cards due now/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Card 1 of 1' })).toBeVisible();
   });
 
   test('/review?mode=due&source=extension renders and preserves source analytics', async ({
@@ -324,7 +361,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     expect(response?.status()).toBe(200);
     await expect(
-      page.getByRole('heading', { name: /Review words due right now/i }),
+      page.getByRole('heading', { name: /Review the cards due now/i }),
     ).toBeVisible();
     await expect(page.locator('.review-session')).toBeVisible({
       timeout: 15000,
@@ -418,6 +455,143 @@ test.describe('Visual Lexicon review route mode contract', () => {
     expect(event.questionType).toBe('weak_review');
   });
 
+  test('/review/weak renders weak mode from the direct route', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        abundance: makeReviewStateItem({
+          slug: 'abundance',
+          word: 'Abundance',
+          definition: 'A large quantity of something useful or valuable.',
+          mastery: 'Learning',
+          correct: 3,
+          wrong: 1,
+          weakScore: 0.2,
+          nextDueAt: oneDayFromNow(),
+        }),
+      },
+    });
+
+    const response = await page.goto(`${baseUrl}/review/weak`, {
+      waitUntil: 'networkidle',
+    });
+
+    expect(response?.status()).toBe(200);
+    await expect(
+      page.getByRole('heading', { name: /Repair fragile recall/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Card 1 of 1' })).toBeVisible();
+  });
+
+  test('confidence UI appears before feedback and persists on review events', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      savedWords: {
+        dissonance: makeSavedWord(),
+      },
+    });
+
+    await page.goto(`${baseUrl}/review?mode=saved`, {
+      waitUntil: 'networkidle',
+    });
+
+    await page.getByRole('button', { name: 'Dissonance' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'How did that recall feel?' }),
+    ).toBeVisible();
+    await expect(page.locator('.review-feedback')).toHaveCount(0);
+
+    const eventsBefore = await readLocalJson<unknown[]>(
+      page,
+      'vlx_review_events_v1',
+    );
+
+    expect(eventsBefore).toEqual([]);
+
+    await page.getByRole('button', { name: /I guessed/i }).click();
+    await expect(page.locator('.review-feedback')).toBeVisible();
+
+    const event = await expectLastReviewEvent(page);
+
+    expect(event).toMatchObject({
+      slug: 'dissonance',
+      selected: 'Dissonance',
+      result: 'correct',
+      confidence: 'guessed',
+      boxBefore: 0,
+      boxAfter: 0,
+    });
+  });
+
+  test('guessed correct answers do not inflate the SRS box', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        dissonance: makeReviewStateItem({
+          slug: 'dissonance',
+          word: 'Dissonance',
+          definition: 'A clash between sounds, ideas, or feelings.',
+          box: 2,
+          mastery: 'Learning',
+          correct: 2,
+          wrong: 0,
+          weakScore: 0.2,
+          nextDueAt: oneMinuteAgo(),
+        }),
+      },
+    });
+
+    await page.goto(`${baseUrl}/review/due`, {
+      waitUntil: 'networkidle',
+    });
+
+    await page.getByRole('button', { name: 'Dissonance' }).click();
+    await page.getByRole('button', { name: /I guessed/i }).click();
+
+    const event = await expectLastReviewEvent(page);
+    const reviewState = await readLocalJson<
+      Record<string, Record<string, unknown>>
+    >(page, 'vlx_review_state_v1');
+
+    expect(event).toMatchObject({
+      slug: 'dissonance',
+      confidence: 'guessed',
+      boxBefore: 2,
+      boxAfter: 2,
+    });
+    expect(reviewState?.dissonance?.box).toBe(2);
+    expect(reviewState?.dissonance?.mastery).not.toBe('Mastered');
+  });
+
+  test('fallback distractors are labeled when no confusable data exists', async ({
+    page,
+  }) => {
+    await seedVlxLocalStorage(page, {
+      savedWords: {
+        customword: makeSavedWord({
+          slug: 'customword',
+          word: 'Customword',
+          definition: 'A learner supplied word without pack distractors.',
+          hub: 'custom',
+        }),
+      },
+    });
+
+    await page.goto(`${baseUrl}/review?mode=saved`, {
+      waitUntil: 'networkidle',
+    });
+
+    await expect(page.locator('.review-session')).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator('.review-v2-answer-heading')).toContainText(
+      'Static pack fallback candidates',
+    );
+  });
+
   test('/review/weak-sprint renders real weak words and updates SRS state', async ({
     page,
   }) => {
@@ -468,6 +642,10 @@ test.describe('Visual Lexicon review route mode contract', () => {
     ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Card 1 of 3' })).toBeVisible();
     await page.getByRole('button', { name: 'Laconic' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'How did that recall feel?' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: /I knew it/i }).click();
     await expect(page.locator('.review-feedback')).toBeVisible();
 
     const event = await expectLastReviewEvent(page);
@@ -490,6 +668,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
       result: 'correct',
       selected: 'Laconic',
       answer: 'Laconic',
+      confidence: 'knew',
       weakScoreBefore: 0.8,
     });
     expect(typeof event.responseMs).toBe('number');
@@ -532,10 +711,10 @@ test.describe('Visual Lexicon review route mode contract', () => {
       page.getByRole('heading', { name: 'No weak words right now.' }),
     ).toBeVisible();
     await expect(
-      page.locator('.empty-state').getByRole('link', { name: 'Dashboard' }),
+      page.locator('.review-v2-empty').getByRole('link', { name: 'Back to Today' }),
     ).toBeVisible();
     await expect(
-      page.locator('.empty-state').getByRole('link', { name: 'All Review' }),
+      page.locator('.review-v2-empty').getByRole('link', { name: 'Browse packs' }),
     ).toBeVisible();
     await expect(page.locator('.review-session')).toHaveCount(0);
   });
@@ -658,5 +837,82 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     await expect(page.getByRole('heading', { name: /Word not found/i })).toBeVisible();
     await expect(page.locator('.review-session')).toHaveCount(0);
+  });
+
+  test('/review empty state does not use fake mastery or streak wording', async ({
+    page,
+  }) => {
+    await page.goto(`${baseUrl}/review`, {
+      waitUntil: 'networkidle',
+    });
+
+    const bodyText = await page.locator('body').innerText();
+
+    expect(bodyText).not.toMatch(/fake mastery/i);
+    expect(bodyText).not.toMatch(/\bstreak\b/i);
+    expect(bodyText).not.toMatch(/\bMastered\b/);
+  });
+});
+
+test.describe('Review Session v2 static contract', () => {
+  test('documents review session v2 and links it from README', () => {
+    const docPath = join(workspaceRoot, 'docs', 'TRACK_B_REVIEW_SESSION_V2.md');
+    const readme = readFileSync(join(workspaceRoot, 'README.md'), 'utf8');
+    const doc = readFileSync(docPath, 'utf8');
+
+    expect(existsSync(docPath)).toBe(true);
+    expect(readme).toContain('docs/TRACK_B_REVIEW_SESSION_V2.md');
+    expect(doc).toContain('Review Session v2');
+    expect(doc).toContain('confidence');
+    expect(doc).toContain('Static pack fallback candidates');
+    expect(doc).toContain('Recommended next PR: **#76 Saved Library v2**');
+  });
+
+  test('does not introduce forbidden review integrations', () => {
+    const reviewFiles = [
+      'src/app/review/page.tsx',
+      'src/app/review/due/page.tsx',
+      'src/app/review/weak/page.tsx',
+      'src/app/review/weak-sprint/page.tsx',
+      'src/components/views/review-session-view.tsx',
+    ];
+    const forbiddenPatterns = [
+      /\bNextRequest\b/,
+      /\bNextResponse\b/,
+      /\bexport\s+(async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)\b/,
+      /from ["']@supabase\//,
+      /from ["']@neondatabase\//,
+      /from ["']@vercel\/postgres/,
+      /from ["']firebase/,
+      /from ["']@firebase\//,
+      /from ["']prisma/,
+      /from ["']@prisma\//,
+      /from ["']drizzle/,
+      /from ["']drizzle-orm/,
+      /from ["']pg/,
+      /from ["']postgres/,
+      /from ["']mysql/,
+      /from ["']sqlite/,
+      /from ["']@clerk\//,
+      /from ["']@auth\//,
+      /from ["']next-auth/,
+      /from ["']better-auth/,
+      /from ["']stripe/,
+      /from ["']paddle/,
+      /from ["']openai/,
+      /from ["']ai/,
+      /\bprocess\.env\b/,
+      /\bmiddleware\b/,
+    ];
+
+    for (const relativePath of reviewFiles) {
+      const fileText = readFileSync(join(workspaceRoot, relativePath), 'utf8');
+
+      for (const forbiddenPattern of forbiddenPatterns) {
+        expect(fileText, `${relativePath} matched ${forbiddenPattern}`).not.toMatch(
+          forbiddenPattern,
+        );
+      }
+    }
   });
 });
