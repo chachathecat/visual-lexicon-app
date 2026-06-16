@@ -175,6 +175,7 @@ Production paid launch planning docs:
 - [Account Sync Runtime Validator Decision](docs/ACCOUNT_SYNC_RUNTIME_VALIDATOR_DECISION.md)
 - [Account Sync Implementation Spike Plan](docs/ACCOUNT_SYNC_IMPLEMENTATION_SPIKE_PLAN.md)
 - [Account Sync Route Skeleton Decision](docs/ACCOUNT_SYNC_ROUTE_SKELETON_DECISION.md)
+- [Account Sync Preview Digest Mock](docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md)
 - [Billing Entitlement Architecture](docs/BILLING_ENTITLEMENT_ARCHITECTURE.md)
 - [Billing Data Model Proposal](docs/BILLING_DATA_MODEL_PROPOSAL.md)
 - [Billing Provider Decision Record](docs/BILLING_PROVIDER_DECISION_RECORD.md)
