@@ -92,6 +92,7 @@ docs/TRACK_B_PRICING_PAYWALL_V2.md
 docs/PAID_BETA_READINESS_AUDIT.md
 docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md
 docs/PRIVATE_BETA_GATE_PREP.md
+docs/PRIVATE_BETA_READINESS_RERUN.md
 docs/PAID_BETA_MANUAL_QA_CHECKLIST.md
 docs/PAID_BETA_MANUAL_QA.md
 docs/PAID_BETA_QA_RERUN_2026-06-10.md
@@ -110,6 +111,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Paid Beta Readiness Audit](docs/PAID_BETA_READINESS_AUDIT.md)
 - [Paid Beta Manual QA Execution Report](docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md)
 - [Private Beta Gate Prep](docs/PRIVATE_BETA_GATE_PREP.md)
+- [Private Beta Readiness Rerun](docs/PRIVATE_BETA_READINESS_RERUN.md)
 - [Paid Beta Manual QA Checklist](docs/PAID_BETA_MANUAL_QA_CHECKLIST.md)
 - [Manual Payment / Entitlement Policy](docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md)
 - [Monitoring, Support, Privacy Beta Gate](docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md)
