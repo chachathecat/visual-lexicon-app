@@ -97,6 +97,7 @@ docs/PAID_BETA_MANUAL_QA.md
 docs/PAID_BETA_QA_RERUN_2026-06-10.md
 docs/PAID_BETA_QA_RUN_2026-06-09.md
 docs/PAID_BETA_PRIVATE_INVITE_SIGNOFF_2026-06-10.md
+docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 ```
 
 - [Track B Product/UI Readiness Audit](docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md)
@@ -111,6 +112,7 @@ docs/PAID_BETA_PRIVATE_INVITE_SIGNOFF_2026-06-10.md
 - [Private Beta Gate Prep](docs/PRIVATE_BETA_GATE_PREP.md)
 - [Paid Beta Manual QA Checklist](docs/PAID_BETA_MANUAL_QA_CHECKLIST.md)
 - [Manual Payment / Entitlement Policy](docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md)
+- [Monitoring, Support, Privacy Beta Gate](docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md)
 
 Release candidate docs:
 
