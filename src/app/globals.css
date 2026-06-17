@@ -2214,8 +2214,12 @@ select {
 
 .dashboard-v2-status-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--vlx-track-b-space-sm);
+}
+
+.dashboard-v2-section--deferred {
+  padding-top: var(--vlx-track-b-space-sm);
 }
 
 .dashboard-v2-mini-list {
@@ -2359,6 +2363,12 @@ select {
 .dashboard-v2-continue-panel {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+}
+
+.dashboard-v2-continue-panel--quiet {
+  border-color: rgba(122, 103, 78, 0.2);
+  background: var(--vlx-track-b-surface-muted);
+  box-shadow: none;
 }
 
 .dashboard-v2-loading {
