@@ -828,7 +828,7 @@ function SavedLibraryLoading() {
   return (
     <TrackBAppShell activeItemId="saved" currentPath="/saved">
       <TrackBPageHeader
-        description="Saved words become review cards."
+        description="Saved is a review queue, not bookmarks. Saved words are waiting to be reviewed."
         eyebrow="Saved"
         title="Saved Library"
       />
@@ -878,7 +878,10 @@ export function SavedLibraryView() {
       <TrackBPageHeader
         actions={
           <>
-            <Link className="track-b-button track-b-button--primary" href="/review/due">
+            <Link className="track-b-button track-b-button--primary" href="/review?mode=saved">
+              Review now
+            </Link>
+            <Link className="track-b-button track-b-button--quiet" href="/review/due">
               Review due
             </Link>
             <Link className="track-b-button track-b-button--quiet" href="/review/weak">
@@ -889,7 +892,7 @@ export function SavedLibraryView() {
             </Link>
           </>
         }
-        description="Saved words become review cards."
+        description="Saved is a review queue, not bookmarks. Saved words are waiting to be reviewed."
         eyebrow="Saved"
         meta={
           <span>
@@ -911,8 +914,9 @@ export function SavedLibraryView() {
             </h2>
           </div>
           <p className="saved-v2-section__description">
-            Counts are read from saved words and existing review state. Mastered
-            requires box 5 and Mastered state.
+            Counts are read from saved words and existing review state so saved
+            words move toward review, not a bookmark shelf. Mastered requires
+            box 5 and Mastered state.
           </p>
         </div>
         <div className="saved-v2-status-grid">
@@ -937,8 +941,8 @@ export function SavedLibraryView() {
             </h2>
           </div>
           <p className="saved-v2-section__description">
-            Due sorts by scheduled date, Weak by weakScore evidence, and New or
-            All by saved date when available.
+            Review now starts the saved-word queue. Due, Weak, New, Learning,
+            Mastered, and All are secondary views of that queue.
           </p>
         </div>
         <SavedLibraryTabs

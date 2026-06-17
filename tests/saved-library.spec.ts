@@ -166,8 +166,14 @@ test.describe("Saved Library v2", () => {
       page.getByRole("heading", { name: "Saved Library" })
     ).toBeVisible();
     await expect(page.locator("body")).toContainText(
-      "Saved words become review cards."
+      "Saved is a review queue, not bookmarks."
     );
+    await expect(page.locator("body")).toContainText(
+      "Saved words are waiting to be reviewed."
+    );
+    await expect(
+      page.getByRole("link", { exact: true, name: "Review now" })
+    ).toHaveAttribute("href", "/review?mode=saved");
 
     for (const tabName of ["Due", "Weak", "New", "Learning", "Mastered", "All"]) {
       await expect(
@@ -612,6 +618,9 @@ test.describe("Saved Library v2", () => {
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
 
+    await expect(
+      page.getByRole("link", { exact: true, name: "Review now" })
+    ).toHaveAttribute("href", "/review?mode=saved");
     await expect(
       page.getByRole("link", { name: "Review due" })
     ).toHaveAttribute("href", "/review/due");
