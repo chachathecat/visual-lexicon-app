@@ -96,6 +96,7 @@ docs/PRIVATE_BETA_READINESS_RERUN.md
 docs/OWNER_RUN_PRIVATE_BETA_LAUNCH_CHECKLIST.md
 docs/PRIVATE_BETA_INVITE_PACKET.md
 docs/PRIVATE_BETA_ISSUE_LOG_TEMPLATE.md
+docs/PRIVATE_BETA_FINAL_OWNER_SIGNOFF.md
 docs/PAID_BETA_MANUAL_QA_CHECKLIST.md
 docs/PAID_BETA_MANUAL_QA.md
 docs/PAID_BETA_QA_RERUN_2026-06-10.md
@@ -118,6 +119,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Owner-Run Private Beta Launch Checklist](docs/OWNER_RUN_PRIVATE_BETA_LAUNCH_CHECKLIST.md)
 - [Private Beta Invite Packet](docs/PRIVATE_BETA_INVITE_PACKET.md)
 - [Private Beta Issue Log Template](docs/PRIVATE_BETA_ISSUE_LOG_TEMPLATE.md)
+- [Private Beta Final Owner Signoff](docs/PRIVATE_BETA_FINAL_OWNER_SIGNOFF.md)
 - [Paid Beta Manual QA Checklist](docs/PAID_BETA_MANUAL_QA_CHECKLIST.md)
 - [Manual Payment / Entitlement Policy](docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md)
 - [Monitoring, Support, Privacy Beta Gate](docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md)
