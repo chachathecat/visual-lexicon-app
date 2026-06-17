@@ -17,7 +17,7 @@ const baseUrl =
   'http://127.0.0.1:3006';
 
 async function openAliasSearch(page: Page) {
-  await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
+  await page.goto(baseUrl, { waitUntil: 'networkidle' });
 
   return page.getByRole('region', { name: 'Alias search' });
 }

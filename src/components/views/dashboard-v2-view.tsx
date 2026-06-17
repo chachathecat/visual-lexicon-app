@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { MultilingualAliasSearch } from "@/components/multilingual-alias-search";
 import {
   TrackBAppShell,
   TrackBEmptyState,
@@ -22,15 +21,12 @@ import {
 } from "@/lib/packs/progress";
 import {
   getDueToday,
-  getMastered,
   getNewSaved,
-  getReviewedToday,
   getSavedLibrary,
   getWeakWords,
   getWeeklyReviewedWords
 } from "@/lib/srs/selectors";
 import {
-  readDailyStats,
   readReviewEvents,
   readReviewState,
   readSavedWords
@@ -63,10 +59,7 @@ type DashboardV2Snapshot = {
   dueToday: VlxReviewStateItem[];
   weakWords: VlxReviewStateItem[];
   newSaved: VlxSavedWord[];
-  learning: VlxReviewStateItem[];
-  mastered: VlxReviewStateItem[];
   savedLibrary: VlxSavedWord[];
-  reviewedToday: number;
   weeklyReviewedWords: number;
   visiblePackProgress: VlxPackProgressItem[];
   hasAnyLocalData: boolean;
@@ -83,12 +76,6 @@ type DashboardV2Word = {
   weakScore?: number;
   detail?: string;
   secondaryDetail?: string;
-};
-
-type ActionLink = {
-  href: string;
-  label: string;
-  ariaLabel?: string;
 };
 
 function hasKeys(value: Record<string, unknown>) {
@@ -130,7 +117,6 @@ function readDashboardV2Snapshot(): DashboardV2Snapshot {
   const savedWords = readSavedWords();
   const reviewState = readReviewState();
   const reviewEvents = readReviewEvents();
-  const dailyStats = readDailyStats();
   const visiblePackProgress = getVisiblePackProgress(readPackProgressStore());
 
   return {
@@ -139,19 +125,13 @@ function readDashboardV2Snapshot(): DashboardV2Snapshot {
     dueToday: getDueToday(reviewState, now),
     weakWords: getWeakWords(reviewState),
     newSaved: getNewSaved(savedWords, reviewState),
-    learning: Object.values(reviewState).filter(
-      (item) => item.mastery === "Learning"
-    ),
-    mastered: getMastered(reviewState),
     savedLibrary: getSavedLibrary(savedWords),
-    reviewedToday: getReviewedToday(dailyStats, now),
     weeklyReviewedWords: getWeeklyReviewedWords(reviewEvents, now),
     visiblePackProgress,
     hasAnyLocalData:
       hasKeys(savedWords) ||
       hasKeys(reviewState) ||
       reviewEvents.length > 0 ||
-      hasKeys(dailyStats) ||
       visiblePackProgress.length > 0
   };
 }
@@ -187,18 +167,6 @@ function formatShortDate(value?: string) {
 
 function formatCount(value: number, singular: string, plural = `${singular}s`) {
   return `${value.toLocaleString()} ${value === 1 ? singular : plural}`;
-}
-
-function formatPackStatus(status: DashboardV2PackPreview["status"]) {
-  if (status === "available") {
-    return "Preview ready";
-  }
-
-  if (status === "empty") {
-    return "No words yet";
-  }
-
-  return "Data pending";
 }
 
 function getMasteryTone(mastery?: VlxMasteryLabel): TrackBStatusTone {
@@ -273,46 +241,12 @@ function fromSavedWord(
   };
 }
 
-function getMissionSecondaryAction(
-  snapshot: DashboardV2Snapshot
-): ActionLink | undefined {
-  if (snapshot.weakWords.length > 0) {
-    return {
-      href: "/review/weak",
-      label: "Review weak words",
-      ariaLabel: "Review weak words from real local memory state"
-    };
-  }
-
-  if (snapshot.dueToday.length === 0 && snapshot.newSaved.length > 0) {
-    return {
-      href: "/review?mode=saved",
-      label: "Review saved words",
-      ariaLabel: "Review saved words that are ready to enter memory state"
-    };
-  }
-
-  if (
-    snapshot.dueToday.length === 0 &&
-    snapshot.weakWords.length === 0 &&
-    snapshot.savedLibrary.length === 0
-  ) {
-    return {
-      href: "/packs",
-      label: "Save new words",
-      ariaLabel: "Open packs to find words to save"
-    };
-  }
-
-  return undefined;
-}
-
 function getMissionTitle(snapshot: DashboardV2Snapshot) {
   if (snapshot.dueToday.length > 0) {
-    return "Today's Memory Mission";
+    return "Start with the words due now";
   }
 
-  return "No words are due right now";
+  return "Due queue is clear";
 }
 
 function getMissionBody(snapshot: DashboardV2Snapshot) {
@@ -320,14 +254,14 @@ function getMissionBody(snapshot: DashboardV2Snapshot) {
     return `${formatCount(
       snapshot.dueToday.length,
       "word"
-    )} should be reviewed before browsing packs or saved words.`;
+    )} should be reviewed before browsing packs or saved words. Saved words become review queue items, every answer updates memory state, and returning tomorrow keeps the schedule honest.`;
   }
 
   if (!snapshot.hasAnyLocalData) {
-    return "No local memory state exists yet. Start with a due review check or save a word from a pack to create the first review item. The dashboard is not inventing extra review work.";
+    return "No local memory state exists yet. Save a word to create the first review queue item; reviews will update memory state, then tomorrow's queue comes from that state.";
   }
 
-  return "Your scheduled due queue is clear. The dashboard is not inventing extra review work, so use weak repair or add new words when it helps the learning loop.";
+  return "Your scheduled due queue is clear from local SRS state. Weak repair and new saves can wait until the mission is done; return tomorrow for the next scheduled recall.";
 }
 
 function MiniDueQueue({ words }: { words: DashboardV2Word[] }) {
@@ -361,23 +295,18 @@ function MiniDueQueue({ words }: { words: DashboardV2Word[] }) {
 }
 
 function TodayMissionCard({ snapshot }: { snapshot: DashboardV2Snapshot }) {
-  const dueWords = snapshot.dueToday.slice(0, 3).map(fromStateItem);
+  const dueWords = snapshot.dueToday.slice(0, 5).map(fromStateItem);
 
   return (
     <TrackBPrimaryActionCard
       action={{
         href: "/review/due",
-        label: "Start due review",
-        ariaLabel: "Start due review from the dashboard"
+        label: "Review 5 words before you forget",
+        ariaLabel: "Review 5 words before you forget"
       }}
       body={getMissionBody(snapshot)}
       className="dashboard-v2-mission"
       eyebrow="Memory mission"
-      metric={{
-        label: "due today",
-        value: snapshot.dueToday.length
-      }}
-      secondaryAction={getMissionSecondaryAction(snapshot)}
       status="due"
       title={getMissionTitle(snapshot)}
     >
@@ -400,17 +329,17 @@ function MemoryStatusRow({ snapshot }: { snapshot: DashboardV2Snapshot }) {
             className="dashboard-v2-section__title"
             id="dashboard-v2-status-heading"
           >
-            Status from real review state
+            Today&apos;s review picture
           </h2>
         </div>
         <p className="dashboard-v2-section__description">
-          Due, Weak, New, Learning, and Mastered are read from local SRS state
-          and review events.
+          These counts come from local review state and review events, not pack
+          promises or fake progress.
         </p>
       </div>
       <div className="dashboard-v2-status-grid">
         <TrackBMetricCard
-          description="Scheduled by nextDueAt through today."
+          description="Scheduled through today."
           label="Due"
           tone="due"
           value={snapshot.dueToday.length}
@@ -422,22 +351,16 @@ function MemoryStatusRow({ snapshot }: { snapshot: DashboardV2Snapshot }) {
           value={snapshot.weakWords.length}
         />
         <TrackBMetricCard
-          description="Saved words before a first review."
+          description="Saved before first review."
           label="New"
           tone="new"
           value={snapshot.newSaved.length}
         />
         <TrackBMetricCard
-          description="Reviewed words still building recall."
-          label="Learning"
-          tone="learning"
-          value={snapshot.learning.length}
-        />
-        <TrackBMetricCard
-          description="Only box 5 with Mastered state."
-          label="Mastered"
-          tone="mastered"
-          value={snapshot.mastered.length}
+          description="Unique words reviewed in the last 7 days."
+          label="Reviewed this week"
+          tone="strong"
+          value={snapshot.weeklyReviewedWords}
         />
       </div>
     </section>
@@ -579,8 +502,8 @@ function ContinueActivePack({
         </div>
       </div>
       <div className="track-b-action-row">
-        <Link className="track-b-button track-b-button--primary" href={continueHref}>
-          Continue pack
+        <Link className="track-b-button track-b-button--quiet" href={continueHref}>
+          Continue deck
         </Link>
         <Link
           className="track-b-button track-b-button--quiet"
@@ -593,48 +516,20 @@ function ContinueActivePack({
   );
 }
 
-function PackPreviewCard({ pack }: { pack: DashboardV2PackPreview }) {
+function QuietQueueBuilderPanel() {
   return (
-    <article className="dashboard-v2-pack-card">
-      <div className="dashboard-v2-pack-card__topline">
-        <span className="track-b-eyebrow">
-          {pack.kind === "exam" ? "Exam preview" : "Learning deck"}
-        </span>
-        <span className="dashboard-v2-token">{formatPackStatus(pack.status)}</span>
-      </div>
-      <h3>{pack.title}</h3>
-      <p>{pack.description}</p>
-      <div className="dashboard-v2-token-row">
-        {typeof pack.wordCount === "number" ? (
-          <span className="dashboard-v2-token">
-            {formatCount(pack.wordCount, "word")}
-          </span>
-        ) : (
-          <span className="dashboard-v2-token">Word count pending</span>
-        )}
-        {typeof pack.previewCount === "number" ? (
-          <span className="dashboard-v2-token">
-            {formatCount(pack.previewCount, "preview word")}
-          </span>
-        ) : null}
-        {pack.targetLabel ? (
-          <span className="dashboard-v2-token">{pack.targetLabel}</span>
-        ) : null}
+    <article className="dashboard-v2-continue-panel dashboard-v2-continue-panel--quiet">
+      <div className="dashboard-v2-continue-panel__copy">
+        <p className="track-b-eyebrow">Queue builder</p>
+        <h3>Add words after review</h3>
+        <p>
+          Packs can feed tomorrow&apos;s review queue, but today&apos;s memory mission
+          comes first.
+        </p>
       </div>
       <div className="track-b-action-row">
-        {pack.status === "available" ? (
-          <Link
-            className="track-b-button track-b-button--primary"
-            href={pack.reviewHref}
-          >
-            Start preview
-          </Link>
-        ) : null}
-        <Link
-          className="track-b-button track-b-button--quiet"
-          href={`/packs/${pack.packId}`}
-        >
-          View pack
+        <Link className="track-b-button track-b-button--quiet" href="/packs">
+          Browse packs
         </Link>
       </div>
     </article>
@@ -653,28 +548,25 @@ function ContinueSection({
     [packs]
   );
   const activePackProgress = snapshot.visiblePackProgress[0];
-  const previewPacks = packs
-    .filter((pack) => pack.status === "available")
-    .slice(0, 3);
-  const fallbackPacks = previewPacks.length ? previewPacks : packs.slice(0, 3);
 
   return (
     <section
       aria-labelledby="dashboard-v2-continue-heading"
-      className="dashboard-v2-section"
+      className="dashboard-v2-section dashboard-v2-section--deferred"
     >
       <div className="dashboard-v2-section__header">
         <div>
-          <p className="track-b-eyebrow">Continue</p>
+          <p className="track-b-eyebrow">After review</p>
           <h2
             className="dashboard-v2-section__title"
             id="dashboard-v2-continue-heading"
           >
-            Keep the learning loop moving
+            Queue builders
           </h2>
         </div>
         <p className="dashboard-v2-section__description">
-          Pack progress appears only when local pack activity exists.
+          Packs stay below the daily review mission and appear as local progress
+          only when that progress exists.
         </p>
       </div>
       {activePackProgress ? (
@@ -682,18 +574,8 @@ function ContinueSection({
           pack={packById.get(activePackProgress.packId)}
           progress={activePackProgress}
         />
-      ) : fallbackPacks.length ? (
-        <div className="dashboard-v2-pack-grid">
-          {fallbackPacks.map((pack) => (
-            <PackPreviewCard key={pack.packId} pack={pack} />
-          ))}
-        </div>
       ) : (
-        <TrackBEmptyState
-          action={{ href: "/packs", label: "Open packs" }}
-          body="No pack previews are available from the current pack reader data."
-          title="No pack previews ready"
-        />
+        <QuietQueueBuilderPanel />
       )}
     </section>
   );
@@ -705,11 +587,11 @@ function WeakSpotlight({ snapshot }: { snapshot: DashboardV2Snapshot }) {
   return (
     <section
       aria-labelledby="dashboard-v2-weak-heading"
-      className="dashboard-v2-section"
+      className="dashboard-v2-section dashboard-v2-section--deferred"
     >
       <div className="dashboard-v2-section__header">
         <div>
-          <p className="track-b-eyebrow">Weak spotlight</p>
+          <p className="track-b-eyebrow">After due review</p>
           <h2
             className="dashboard-v2-section__title"
             id="dashboard-v2-weak-heading"
@@ -719,7 +601,7 @@ function WeakSpotlight({ snapshot }: { snapshot: DashboardV2Snapshot }) {
         </div>
         {snapshot.weakWords.length > 0 ? (
           <div className="track-b-action-row">
-            <Link className="track-b-button track-b-button--primary" href="/review/weak">
+            <Link className="track-b-button track-b-button--quiet" href="/review/weak">
               Review weak words
             </Link>
             <Link
@@ -735,7 +617,6 @@ function WeakSpotlight({ snapshot }: { snapshot: DashboardV2Snapshot }) {
         <WordCardList ariaLabel="Weak words from review state" words={weakWords} />
       ) : (
         <TrackBEmptyState
-          action={{ href: "/review/due", label: "Check due review" }}
           body="Weak words appear after missed recall, repeated mistakes, Weak mastery, or a high weakScore. Nothing is shown here until that evidence exists."
           title="No weak words yet"
         />
@@ -752,16 +633,16 @@ function RecentlySaved({ snapshot }: { snapshot: DashboardV2Snapshot }) {
   return (
     <section
       aria-labelledby="dashboard-v2-saved-heading"
-      className="dashboard-v2-section"
+      className="dashboard-v2-section dashboard-v2-section--deferred"
     >
       <div className="dashboard-v2-section__header">
         <div>
-          <p className="track-b-eyebrow">Recently saved</p>
+          <p className="track-b-eyebrow">Saved queue</p>
           <h2
             className="dashboard-v2-section__title"
             id="dashboard-v2-saved-heading"
           >
-            Words waiting for review
+            Saved words entering review
           </h2>
         </div>
         <Link className="track-b-button track-b-button--quiet" href="/saved">
@@ -772,9 +653,7 @@ function RecentlySaved({ snapshot }: { snapshot: DashboardV2Snapshot }) {
         <WordCardList ariaLabel="Recently saved words" words={savedWords} />
       ) : (
         <TrackBEmptyState
-          action={{ href: "/packs", label: "Save your first word" }}
           body="Saved words appear here only after this browser has local saved-word state."
-          secondaryAction={{ href: "/saved", label: "Open saved library" }}
           title="Save your first word"
         />
       )}
@@ -788,7 +667,7 @@ function DashboardLoading() {
       <TrackBPageHeader
         description="Reading local saved words, review state, review events, and pack progress."
         eyebrow="Today"
-        title="Today"
+        title="Today's Memory Mission"
       />
       <TrackBEmptyState
         body="The dashboard uses browser-local learning state and does not write to it."
@@ -817,20 +696,13 @@ export function DashboardV2View({
   return (
     <TrackBAppShell activeItemId="today" currentPath="/dashboard">
       <TrackBPageHeader
-        description="Review what is due first, then repair weak words or continue a pack. The dashboard stays anchored to real local memory state."
+        description="Save turns words into review queue items. Reviews update local memory state. Return tomorrow before the next words fade."
         eyebrow="Today"
-        meta={
-          <span>
-            Weekly Reviewed Words: {snapshot.weeklyReviewedWords} | Reviewed today:{" "}
-            {snapshot.reviewedToday}
-          </span>
-        }
-        title="Today"
+        title="Today's Memory Mission"
       />
       <TodayMissionCard snapshot={snapshot} />
       <MemoryStatusRow snapshot={snapshot} />
       <ContinueSection packs={packs} snapshot={snapshot} />
-      <MultilingualAliasSearch />
       <WeakSpotlight snapshot={snapshot} />
       <RecentlySaved snapshot={snapshot} />
       <TrackBUpgradeNudge
@@ -839,7 +711,7 @@ export function DashboardV2View({
           label: "View pricing"
         }}
         badgeLabel="Beta"
-        body="This is a visual-only upgrade note. It links to the existing pricing page and does not grant paid access from the dashboard."
+        body="This is a visual-only upgrade note. Public paid beta remains No-Go; upgrade interest is local only and does not grant paid access from the dashboard."
         title="Want a larger review habit later?"
       />
     </TrackBAppShell>
