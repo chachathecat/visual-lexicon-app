@@ -383,31 +383,27 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     ).toBe(true);
   });
 
-  test('configured pricing CTA exposes an external paid beta href when available', async ({
+  test('pricing CTAs stay local interest-only buttons', async ({
     page,
   }) => {
     await clearVlxLocalStorage(page);
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
-    const liteLink = page.getByRole('link', { name: 'Preview Lite' });
-
-    test.skip(
-      (await liteLink.count()) === 0,
-      'No paid beta upgrade URL is configured for the running app.',
+    await expect(
+      page.getByRole('button', { name: 'Preview Lite' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Preview Pro' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Preview Lite' }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Preview Pro' }),
+    ).toHaveCount(0);
+    await expect(page.locator('body')).toContainText(
+      'Buttons record local interest only.',
     );
-
-    await expect(liteLink).toHaveAttribute('target', '_blank');
-    await expect(liteLink).toHaveAttribute('rel', /noopener noreferrer/);
-
-    const href = await liteLink.getAttribute('href');
-
-    expect(href).toBeTruthy();
-
-    const url = new URL(href as string);
-
-    expect(url.protocol).toMatch(/^https?:$/);
-    expect(url.searchParams.get('plan')).toBe('lite');
-    expect(url.searchParams.get('source')).toBe('pricing_page');
   });
 
   test('no prompt appears for Lite or Pro local plan when access already exists', async ({

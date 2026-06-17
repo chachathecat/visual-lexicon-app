@@ -22,27 +22,47 @@ const pricingPlanIds = ["free", "lite", "pro"] as const satisfies readonly VlxPl
 const planSupportCopy = {
   free: {
     badge: "Start",
+    heading: "Start the local memory loop.",
     supportingValue:
-      "For trying the visual memory loop before words fade.",
+      "Save a word, review it, and keep memory state in this browser.",
+    memoryBullets: [
+      "Saved words become review items",
+      "Short local review sessions",
+      "No paid access or account sync"
+    ],
     ctaLabel: "Continue local review"
   },
   lite: {
     badge: "Habit",
+    heading: "Daily memory habit.",
     supportingValue:
-      "For keeping saved words in due and weak review more consistently.",
+      "Lite is for returning each day before saved words fade.",
+    memoryBullets: [
+      "Daily due review positioning",
+      "Saved-word queue management",
+      "Interest capture only in this beta"
+    ],
     ctaLabel: "Preview Lite"
   },
   pro: {
     badge: "Exam",
+    heading: "Weak-word repair and exam prep.",
     supportingValue:
-      "For weak-word repair, guided exam packs, and supporting export tools.",
+      "Pro is for repairing repeated misses and preparing exam vocabulary from real review state.",
+    memoryBullets: [
+      "Weak-word repair from mistakes",
+      "Exam prep guided by review state",
+      "No fake paid access or checkout"
+    ],
     ctaLabel: "Preview Pro"
   }
 } as const satisfies Record<
   (typeof pricingPlanIds)[number],
   {
     badge: string;
+    heading: string;
     supportingValue: string;
+    memoryBullets: readonly string[];
     ctaLabel: string;
   }
 >;
@@ -88,33 +108,21 @@ const paywallTriggers = [
     title: "Pack preview end",
     plan: "Pro",
     body:
-      "Exam Pack previews lead back to Pro positioning for guided visual vocabulary plans."
+      "Exam Pack previews lead back to Pro positioning for exam prep managed through review state."
   },
   {
     title: "Weak Sprint tools",
     plan: "Pro",
     body:
-      "Advanced weak-word repair belongs with Pro. Local review state still decides which words are weak."
-  },
-  {
-    title: "No-watermark download",
-    plan: "Pro",
-    body:
-      "No-watermark, high-res download, and export are supporting values, not the core product promise."
-  },
-  {
-    title: "AI mistake explanation",
-    plan: "Pro later",
-    body:
-      "AI explanations are planned later, after the SRS loop works. No AI feature is connected now."
+      "Weak-word repair belongs with Pro positioning. Local review state still decides which words are weak."
   }
 ] as const;
 
 const trustNotes = [
   "Progress is based on review history, not saved-only counts.",
   "Due, Weak, and Mastered depend on local SRS state and answer events.",
-  "Upgrade actions record local interest or use an existing configured paid beta placeholder URL.",
-  "Support, refund, and cancellation copy remain a future requirement before any real payment flow is enabled."
+  "Upgrade actions collect interest only and never grant paid access.",
+  "No checkout, billing, subscription, payment provider, entitlement mutation, account sync, or AI call is connected."
 ] as const;
 
 const faqs = [
@@ -126,7 +134,7 @@ const faqs = [
   {
     question: "What is the difference between Free, Lite, and Pro?",
     answer:
-      "Free starts the memory loop, Lite is positioned around a daily visual memory habit, and Pro is positioned around weak-word repair and exam preparation."
+      "Free starts the memory loop, Lite is the daily memory habit plan, and Pro is weak-word repair and exam prep."
   },
   {
     question: "Are downloads watermarked?",
@@ -159,12 +167,11 @@ function PlanCard({ planId }: { planId: (typeof pricingPlanIds)[number] }) {
       </div>
       <div className="pricing-v2-plan-card__copy">
         <p className="track-b-eyebrow">{plan.label}</p>
-        <h2>{plan.outcome}</h2>
-        <p>{plan.summary}</p>
+        <h2>{support.heading}</h2>
         <p>{support.supportingValue}</p>
       </div>
       <ul className="pricing-v2-feature-list">
-        {plan.featureBullets.map((note) => (
+        {support.memoryBullets.map((note) => (
           <li key={note}>{note}</li>
         ))}
       </ul>
@@ -174,6 +181,7 @@ function PlanCard({ planId }: { planId: (typeof pricingPlanIds)[number] }) {
           className="track-b-button track-b-button--primary"
           label={support.ctaLabel}
           plan={paidPreviewPlan}
+          interestOnly
           source="pricing_page"
         />
       ) : (
@@ -199,16 +207,16 @@ export default function PricingPage() {
       }
     >
       <TrackBPageHeader
-        description="Build a visual memory habit before words fade."
+        description="Collect upgrade interest only for memory management. No checkout, no paid access, and no subscription is connected."
         eyebrow="Pricing"
-        meta={<span>No checkout, billing, or subscription logic is connected.</span>}
+        meta={<span>Interest-only. Public paid beta remains No-Go.</span>}
         title="Pricing"
       />
 
       <TrackBSection
-        description="Each plan is framed around the learning outcome it supports. Limits remain local MVP copy until real account sync and billing are explicitly approved."
+        description="Lite = daily memory habit. Pro = weak-word repair and exam prep. Buttons record local interest only."
         id="pricing-v2-plans"
-        title="Choose the memory outcome"
+        title="Choose the memory habit"
       >
         <div className="pricing-v2-plan-grid" aria-label="Pricing plans">
           {pricingPlanIds.map((planId) => (

@@ -227,6 +227,16 @@ test.describe('Visual Lexicon local MVP smoke', () => {
       { timeout: 15000 },
     );
 
+    await expect(page.locator('body')).toContainText(
+      'This word is now in your review queue.',
+    );
+    await expect(
+      page.getByRole('link', { name: 'Review now' }),
+    ).toHaveAttribute('href', `/review?mode=word&slug=${testSlug}&limit=5`);
+    await expect(
+      page.getByRole('link', { name: 'Go to dashboard' }),
+    ).toHaveAttribute('href', '/dashboard');
+
     await page.waitForFunction(
       (slug) => {
         const dataLayer = (window as Window & { dataLayer?: unknown[] })

@@ -340,6 +340,55 @@ test.describe("Track B simplicity reset", () => {
     }
   });
 
+  test("core simplification surfaces do not introduce forbidden integrations", () => {
+    const targetFiles = [
+      "src/app/save/page.tsx",
+      "src/components/views/save-landing-view.tsx",
+      "src/app/review/page.tsx",
+      "src/components/views/review-session-view.tsx",
+      "src/app/saved/page.tsx",
+      "src/components/views/saved-library-view.tsx",
+      "src/app/pricing/page.tsx",
+      "src/components/upgrade-placeholder-button.tsx"
+    ];
+    const forbiddenPatterns = [
+      /\bNextRequest\b/,
+      /\bNextResponse\b/,
+      /\bexport\s+(async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)\b/,
+      /from ["']@webflow\//,
+      /from ["']@cloudflare\//,
+      /from ["']@supabase\//,
+      /from ["']@neondatabase\//,
+      /from ["']@vercel\/postgres/,
+      /from ["']firebase/,
+      /from ["']@firebase\//,
+      /from ["']prisma/,
+      /from ["']@prisma\//,
+      /from ["']drizzle/,
+      /from ["']drizzle-orm/,
+      /from ["']@clerk\//,
+      /from ["']@auth\//,
+      /from ["']next-auth/,
+      /from ["']better-auth/,
+      /from ["']stripe/,
+      /from ["']paddle/,
+      /from ["']openai/,
+      /from ["']ai/,
+      /\bprocess\.env\b/,
+      /\bmiddleware\b/
+    ];
+
+    for (const relativePath of targetFiles) {
+      const fileText = readFileSync(join(workspaceRoot, relativePath), "utf8");
+
+      for (const forbiddenPattern of forbiddenPatterns) {
+        expect(fileText, `${relativePath} matched ${forbiddenPattern}`).not.toMatch(
+          forbiddenPattern
+        );
+      }
+    }
+  });
+
   test("simplicity reset module files contain no runtime integration patterns", () => {
     const forbiddenPatterns = [
       /\bNextRequest\b/,

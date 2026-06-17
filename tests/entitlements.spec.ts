@@ -139,7 +139,10 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
       page.getByRole('heading', { level: 1, name: 'Pricing' }),
     ).toBeVisible();
     await expect(page.locator('body')).toContainText(
-      'Build a visual memory habit before words fade.',
+      'Collect upgrade interest only for memory management.',
+    );
+    await expect(page.locator('body')).toContainText(
+      'No checkout, no paid access, and no subscription is connected.',
     );
 
     const freePlan = page.locator('[data-plan-id="free"]');
@@ -151,22 +154,22 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     await expect(proPlan).toBeVisible();
     await expect(
       freePlan.getByRole('heading', {
-        name: 'Start remembering your first words.',
+        name: 'Start the local memory loop.',
       }),
     ).toBeVisible();
     await expect(
       litePlan.getByRole('heading', {
-        name: 'Build a daily visual memory habit.',
+        name: 'Daily memory habit.',
       }),
     ).toBeVisible();
     await expect(
       proPlan.getByRole('heading', {
-        name: 'Fix weak words and prepare for exams.',
+        name: 'Weak-word repair and exam prep.',
       }),
     ).toBeVisible();
-    await expect(freePlan).toContainText('Save up to 50 visual words');
-    await expect(litePlan).toContainText('Due and weak review emphasis');
-    await expect(proPlan).toContainText('Exam Packs and Weak Sprint positioning');
+    await expect(freePlan).toContainText('Saved words become review items');
+    await expect(litePlan).toContainText('Interest capture only in this beta');
+    await expect(proPlan).toContainText('No fake paid access or checkout');
     await expect(
       page.getByRole('button', { name: 'Preview Lite' }),
     ).toBeVisible();
@@ -175,6 +178,12 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     ).toBeVisible();
     await expect(
       page.getByRole('link', { name: /checkout|subscribe|pay/i }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Preview Lite' }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Preview Pro' }),
     ).toHaveCount(0);
 
     const bodyText = await page.locator('body').innerText();

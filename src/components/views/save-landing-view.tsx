@@ -389,15 +389,15 @@ export function SaveLandingView({
     <div className="page">
       <PageHeader
         eyebrow="Save"
-        title="Saved to review"
-        description="This word is saved locally and ready for the memory loop."
+        title="This word is now in your review queue."
+        description="Saved words become review items, so the next step is active recall."
         actions={
           <>
             <Link className="button button--primary" href={reviewHref}>
-              Start 5-card review
+              Review now
             </Link>
             <Link className="button" href="/dashboard">
-              View dashboard
+              Go to dashboard
             </Link>
           </>
         }
@@ -437,8 +437,8 @@ export function SaveLandingView({
               </div>
               <p className="save-panel__note">
                 {outcome.alreadyQueued
-                  ? "The review item was already present, so no duplicate queue entry was created."
-                  : "A new review item was created from the saved word."}
+                  ? "The review item was already present, so this save keeps the same memory state."
+                  : "A review item was created from the saved word and is waiting for recall."}
               </p>
             </div>
           </>

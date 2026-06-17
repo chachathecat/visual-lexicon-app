@@ -171,7 +171,7 @@ const modeCopy = {
     eyebrow: "Review Session",
     title: "A focused recall session for today's memory loop.",
     description:
-      "One card at a time: answer, mark confidence, then see the real memory-state consequence.",
+      "One card, one question, one answer, confidence, feedback, next card, then summary.",
     emptyTitle: "No saved, due, or weak words yet",
     emptyBody:
       "Save a word or open a pack before starting review. The app is not inventing review work.",
@@ -183,7 +183,7 @@ const modeCopy = {
     eyebrow: "Saved Review",
     title: "Recall words from your saved library.",
     description:
-      "Saved sessions use local saved words and write review events only after confidence is recorded.",
+      "One saved card at a time. Confidence is required before memory state updates.",
     emptyTitle: "No saved words yet",
     emptyBody:
       "Saved words appear here after a word is added to the local review loop.",
@@ -195,7 +195,7 @@ const modeCopy = {
     eyebrow: "Due Review",
     title: "Review the cards due now.",
     description:
-      "Due cards come from the existing SRS schedule and update memory state after each answer.",
+      "One due card at a time. Each answer records confidence and updates memory state.",
     emptyTitle: "No due words right now",
     emptyBody:
       "No due words were found in vlx_review_state_v1. Return to Today or save more words to keep the loop moving.",
@@ -207,7 +207,7 @@ const modeCopy = {
     eyebrow: "Weak Review",
     title: "Repair fragile recall.",
     description:
-      "Weak sessions focus on real mistakes, weakScore, and low-confidence memory state.",
+      "One weak card at a time, using real mistake evidence from memory state.",
     emptyTitle: "No weak words right now",
     emptyBody:
       "Weak words appear after missed or fragile recall is stored locally. This page does not create fake weak work.",
@@ -219,7 +219,7 @@ const modeCopy = {
     eyebrow: "Weak Sprint",
     title: "A five-card sprint for fragile recall.",
     description:
-      "Weak Sprint is short, state-driven, and limited to real local weak-word evidence.",
+      "One weak card at a time, limited to real local weak-word evidence.",
     emptyTitle: "No weak words right now.",
     emptyBody:
       "Weak sprints appear after missed or fragile recall is stored locally.",
@@ -231,7 +231,7 @@ const modeCopy = {
     eyebrow: "Focused Review",
     title: "Review one word in focus.",
     description:
-      "Focused sessions start from pack data and still write review events and memory state locally.",
+      "One focused card. Answer, mark confidence, and update memory state locally.",
     emptyTitle: "No focused word available",
     emptyBody: "This focused review link did not resolve to a pack word.",
     sourceLabel: "Focused word",
@@ -242,7 +242,7 @@ const modeCopy = {
     eyebrow: "Hub Review",
     title: "Review a vocabulary hub.",
     description:
-      "Hub sessions use static pack data for a deterministic short review set.",
+      "One hub card at a time from static pack data with local memory-state writeback.",
     emptyTitle: "No hub cards available",
     emptyBody: "This hub review link did not resolve to any pack cards.",
     sourceLabel: "Hub pack",
@@ -981,12 +981,6 @@ export function ReviewSessionView({
   const [summaryPaywallSurface, setSummaryPaywallSurface] =
     useState<ReviewPaywallSurface | null>(null);
   const [queueLabel, setQueueLabel] = useState(copy.sourceLabel);
-  const [availability, setAvailability] = useState<AvailabilityStats>({
-    dueCount: 0,
-    weakCount: 0,
-    savedCount: 0,
-    localCandidateCount: 0
-  });
 
   const resetCardTimer = useCallback(() => {
     cardStartedAt.current = getNowMs();
@@ -1047,8 +1041,6 @@ export function ReviewSessionView({
     const savedWords = readSavedWords();
     const reviewState = readReviewState();
     const nextAvailability = getAvailability(savedWords, reviewState);
-
-    setAvailability(nextAvailability);
 
     if (routeSession) {
       const source = mode === "hub" ? "hub" : "word";
@@ -1258,26 +1250,6 @@ export function ReviewSessionView({
         eyebrow={copy.eyebrow}
         title={copy.title}
         description={copy.description}
-        actions={
-          <>
-            <Link className="track-b-button track-b-button--quiet" href="/dashboard">
-              Today
-            </Link>
-            <Link className="track-b-button track-b-button--quiet" href="/review/due">
-              Due
-            </Link>
-            <Link className="track-b-button track-b-button--quiet" href="/review/weak">
-              Weak
-            </Link>
-          </>
-        }
-        meta={
-          <div className="review-v2-header-metrics" aria-label="Local review queues">
-            <span>{availability.dueCount} due</span>
-            <span>{availability.weakCount} weak</span>
-            <span>{availability.savedCount} new saved</span>
-          </div>
-        }
       />
 
       {status === "loading" ? (
@@ -1421,6 +1393,7 @@ export function ReviewSessionView({
                     ? "Answer recorded"
                     : "Mistake recorded"}
                 </h3>
+                <p>Memory state updated from this answer and confidence.</p>
                 <p>{currentAnswer.explanation}</p>
                 <dl className="review-v2-feedback__state">
                   <div>

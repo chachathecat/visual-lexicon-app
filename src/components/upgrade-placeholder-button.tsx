@@ -14,18 +14,20 @@ type UpgradePlaceholderButtonProps = {
   label: string;
   source: string;
   className?: string;
+  interestOnly?: boolean;
   trigger?: string;
 };
 
 export function UpgradePlaceholderButton({
   className = "button button--quiet",
+  interestOnly = false,
   plan,
   label,
   source,
   trigger
 }: UpgradePlaceholderButtonProps) {
   const [clicked, setClicked] = useState(false);
-  const upgradeTarget = getUpgradeTarget(plan, source);
+  const upgradeTarget = interestOnly ? null : getUpgradeTarget(plan, source);
 
   function recordUpgradeClick() {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.pricingInterest, {

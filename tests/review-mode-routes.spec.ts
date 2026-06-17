@@ -501,7 +501,14 @@ test.describe('Visual Lexicon review route mode contract', () => {
     await expect(
       page.getByRole('heading', { name: 'How did that recall feel?' }),
     ).toBeVisible();
+    await expect(page.locator('body')).toContainText(
+      'One saved card at a time. Confidence is required before memory state updates.',
+    );
+    await expect(page.locator('.track-b-page-header__aside')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /I knew it/i })).toBeVisible();
     await expect(page.locator('.review-feedback')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /I guessed/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /I forgot/i })).toBeVisible();
 
     const eventsBefore = await readLocalJson<unknown[]>(
       page,
@@ -512,6 +519,9 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     await page.getByRole('button', { name: /I guessed/i }).click();
     await expect(page.locator('.review-feedback')).toBeVisible();
+    await expect(page.locator('.review-feedback')).toContainText(
+      'Memory state updated from this answer and confidence.',
+    );
 
     const event = await expectLastReviewEvent(page);
 
