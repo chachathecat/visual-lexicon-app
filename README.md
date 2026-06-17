@@ -123,6 +123,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Paid Beta Manual QA Checklist](docs/PAID_BETA_MANUAL_QA_CHECKLIST.md)
 - [Manual Payment / Entitlement Policy](docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md)
 - [Monitoring, Support, Privacy Beta Gate](docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md)
+- [Private Beta Dry-Run Smoke Evidence](docs/PRIVATE_BETA_DRY_RUN_SMOKE_EVIDENCE.md)
 
 Release candidate docs:
 

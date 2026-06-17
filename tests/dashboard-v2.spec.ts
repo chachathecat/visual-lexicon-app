@@ -119,7 +119,11 @@ test.describe("Dashboard v2 Today's Memory Mission", () => {
 
     expect(response?.status()).toBe(200);
     await expect(page.locator(".track-b-shell")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
+    await expect(
+      page
+        .locator(".track-b-page-header")
+        .getByRole("heading", { name: "Today" })
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: /No words are due right now|Today's Memory Mission/ })
     ).toBeVisible();
