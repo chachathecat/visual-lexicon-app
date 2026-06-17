@@ -227,9 +227,9 @@ test.describe('Visual Lexicon local MVP smoke', () => {
       { timeout: 15000 },
     );
 
-    await expect(page.locator('body')).toContainText(
-      'This word is now in your review queue.',
-    );
+    await expect(
+      page.getByText('This word is now in your review queue.', { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Review now' }),
     ).toHaveAttribute('href', `/review?mode=word&slug=${testSlug}&limit=5`);
