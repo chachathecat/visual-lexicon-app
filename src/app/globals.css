@@ -1663,6 +1663,7 @@ select {
 }
 
 .track-b-shell {
+  --vlx-track-b-bottom-nav-reserved: 0px;
   display: grid;
   grid-template-columns: minmax(236px, 276px) minmax(0, 1fr);
   min-height: 100vh;
@@ -3058,8 +3059,11 @@ select {
 
 @media (max-width: 980px) {
   .track-b-shell {
+    --vlx-track-b-bottom-nav-reserved: calc(
+      92px + env(safe-area-inset-bottom, 0px)
+    );
     grid-template-columns: 1fr;
-    padding-bottom: 72px;
+    padding-bottom: var(--vlx-track-b-bottom-nav-reserved);
   }
 
   .track-b-shell__sidebar {
@@ -3076,6 +3080,12 @@ select {
   .track-b-shell__main {
     padding-left: var(--vlx-track-b-space-md);
     padding-right: var(--vlx-track-b-space-md);
+  }
+
+  .track-b-shell__main {
+    padding-bottom: calc(
+      var(--vlx-track-b-space-xl) + var(--vlx-track-b-bottom-nav-reserved)
+    );
   }
 
   .track-b-page-header,
@@ -3119,7 +3129,9 @@ select {
     position: fixed;
     left: var(--vlx-track-b-space-sm);
     right: var(--vlx-track-b-space-sm);
-    bottom: var(--vlx-track-b-space-sm);
+    bottom: calc(
+      var(--vlx-track-b-space-sm) + env(safe-area-inset-bottom, 0px)
+    );
     z-index: 10;
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));

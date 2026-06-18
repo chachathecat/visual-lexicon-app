@@ -56,6 +56,22 @@ const trackBModuleFiles = [
   "src/components/track-b/utils.ts"
 ];
 
+const trackBAppShellOwnedRoutes = [
+  "/dashboard",
+  "/packs",
+  "/pricing",
+  "/saved"
+] as const;
+
+const requiredAccessibleRoutes = [
+  "/",
+  "/dashboard",
+  "/save?slug=dissonance&source=word_page",
+  "/review",
+  "/saved",
+  "/pricing"
+] as const;
+
 test.describe("Track B app shell v2 foundation", () => {
   test("exports the required component and contract surface", () => {
     expect(TRACK_B_APP_SHELL_V2_VERSION).toBe(1);
@@ -189,14 +205,44 @@ test.describe("Track B app shell v2 foundation", () => {
     expect(globalsCss).toContain(
       "--vlx-track-b-focus-outline: 2px solid var(--vlx-track-b-coral-deep);"
     );
+    expect(globalsCss).toContain("--vlx-track-b-bottom-nav-reserved");
+    expect(globalsCss).toContain("env(safe-area-inset-bottom, 0px)");
+    expect(globalsCss).toContain(
+      "padding-bottom: var(--vlx-track-b-bottom-nav-reserved);"
+    );
     expect(globalsCss).toContain(".track-b-shell__skip-link:focus");
     expect(globalsCss).toContain(":focus-visible");
     expect(globalsCss).toContain("@media (prefers-reduced-motion: reduce)");
     expect(globalsCss).toContain(".track-b-bottom-nav");
   });
 
+  test("keeps the legacy root shell out of routes that already own TrackBAppShell", () => {
+    const rootLayout = readFileSync(
+      join(workspaceRoot, "src", "app", "layout.tsx"),
+      "utf8"
+    );
+    const legacyShell = readFileSync(
+      join(workspaceRoot, "src", "components", "app-shell.tsx"),
+      "utf8"
+    );
+
+    expect(rootLayout).toContain("<AppShell>{children}</AppShell>");
+    expect(legacyShell).toContain("trackBAppShellRoutePrefixes");
+    expect(legacyShell).toContain("return <>{children}</>;");
+    expect(legacyShell).toContain("pathname.startsWith(`${prefix}/`)");
+
+    for (const route of trackBAppShellOwnedRoutes) {
+      expect(legacyShell).toContain(`"${route}"`);
+    }
+  });
+
   test("documents the foundation and links it from README", () => {
     const docPath = join(workspaceRoot, "docs", "TRACK_B_APP_SHELL_V2.md");
+    const cleanupDocPath = join(
+      workspaceRoot,
+      "docs",
+      "TRACK_B_SHELL_NAVIGATION_CLEANUP.md"
+    );
     const salmonDocPath = join(
       workspaceRoot,
       "docs",
@@ -211,17 +257,23 @@ test.describe("Track B app shell v2 foundation", () => {
     );
     const readme = readFileSync(join(workspaceRoot, "README.md"), "utf8");
     const doc = readFileSync(docPath, "utf8");
+    const cleanupDoc = readFileSync(cleanupDocPath, "utf8");
     const salmonDoc = readFileSync(salmonDocPath, "utf8");
     const componentReadme = readFileSync(componentReadmePath, "utf8");
 
     expect(existsSync(docPath)).toBe(true);
+    expect(existsSync(cleanupDocPath)).toBe(true);
     expect(existsSync(salmonDocPath)).toBe(true);
     expect(existsSync(componentReadmePath)).toBe(true);
     expect(readme).toContain("docs/TRACK_B_APP_SHELL_V2.md");
+    expect(readme).toContain("docs/TRACK_B_SHELL_NAVIGATION_CLEANUP.md");
     expect(readme).toContain("docs/TRACK_B_SALMON_BRAND_TOKENS.md");
     expect(doc).toContain("Today -> Review -> Weak -> Packs -> Saved -> Progress");
     expect(doc).toContain("No payment, billing, subscription");
     expect(doc).toContain("#74 should use this foundation");
+    expect(cleanupDoc).toContain("skip link is the first meaningful tab stop");
+    expect(cleanupDoc).toContain("one `main` landmark");
+    expect(cleanupDoc).toContain("Public paid beta remains **No-Go**");
     expect(salmonDoc).toContain("--vlx-track-b-coral-deep");
     expect(salmonDoc).toContain("Do not use light salmon");
     expect(salmonDoc).toContain("Shell/navigation cleanup");
@@ -269,5 +321,118 @@ test.describe("Track B app shell v2 foundation", () => {
         );
       }
     }
+  });
+});
+
+test.describe("Track B shell navigation cleanup runtime contract", () => {
+  for (const route of trackBAppShellOwnedRoutes) {
+    test(`${route} renders one Track B shell without the legacy primary nav`, async ({
+      page
+    }) => {
+      const response = await page.goto(route, { waitUntil: "networkidle" });
+
+      expect(response?.status(), route).toBeLessThan(400);
+      await expect(page.locator(".track-b-shell")).toHaveCount(1);
+      await expect(page.locator(".app-shell")).toHaveCount(0);
+      await expect(page.getByRole("main")).toHaveCount(1);
+      await expect(
+        page.getByRole("navigation", { name: "Primary" })
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("navigation", {
+          name: "Track B learning navigation"
+        })
+      ).toHaveCount(1);
+    });
+  }
+
+  test("makes the Track B skip link the first meaningful tab stop", async ({
+    page
+  }) => {
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+
+    await page.keyboard.press("Tab");
+
+    await expect(page.locator(".track-b-shell__skip-link")).toBeFocused();
+  });
+
+  test("keeps mobile bottom navigation from consuming the main content padding", async ({
+    page
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+
+    await expect(page.locator(".track-b-bottom-nav")).toBeVisible();
+
+    const mobileSpacing = await page.evaluate(() => {
+      const main = document.querySelector<HTMLElement>("#track-b-main");
+      const bottomNav =
+        document.querySelector<HTMLElement>(".track-b-bottom-nav");
+
+      if (!main || !bottomNav) {
+        return null;
+      }
+
+      const navRect = bottomNav.getBoundingClientRect();
+      const mainStyles = window.getComputedStyle(main);
+
+      return {
+        mainPaddingBottom: Number.parseFloat(mainStyles.paddingBottom),
+        navBottom: navRect.bottom,
+        navHeight: navRect.height,
+        viewportHeight: window.innerHeight
+      };
+    });
+
+    expect(mobileSpacing).not.toBeNull();
+    expect(mobileSpacing!.mainPaddingBottom).toBeGreaterThan(
+      mobileSpacing!.navHeight
+    );
+    expect(mobileSpacing!.navBottom).toBeLessThanOrEqual(
+      mobileSpacing!.viewportHeight
+    );
+  });
+
+  test("keeps the required Track B routes accessible with one main landmark", async ({
+    page
+  }) => {
+    for (const route of requiredAccessibleRoutes) {
+      const response = await page.goto(route, { waitUntil: "networkidle" });
+
+      expect(response?.status(), route).toBeLessThan(400);
+      await expect(page.getByRole("main"), route).toHaveCount(1);
+      await expect(page.locator("body"), route).not.toContainText(
+        "This page could not be found"
+      );
+    }
+  });
+
+  test("keeps the approved dashboard, save, and pricing shell CTAs intact", async ({
+    page
+  }) => {
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await expect(
+      page.getByRole("link", {
+        name: "Review 5 words before you forget"
+      })
+    ).toHaveCount(1);
+
+    await page.goto("/save?slug=dissonance&source=word_page", {
+      waitUntil: "networkidle"
+    });
+    await expect(page.getByRole("link", { name: "Review now" })).toHaveAttribute(
+      "href",
+      "/review?mode=word&slug=dissonance&limit=5"
+    );
+    await expect(
+      page.getByRole("link", { name: "Go to dashboard" })
+    ).toHaveAttribute("href", "/dashboard");
+
+    await page.goto("/pricing", { waitUntil: "networkidle" });
+    await expect(
+      page.getByText("Interest-only. Public paid beta remains No-Go.")
+    ).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Checkout");
+    await expect(page.locator("body")).not.toContainText("Subscribe now");
   });
 });
