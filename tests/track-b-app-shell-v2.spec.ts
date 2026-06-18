@@ -165,6 +165,11 @@ test.describe("Track B app shell v2 foundation", () => {
       "--vlx-track-b-space-xs",
       "--vlx-track-b-radius-md",
       "--vlx-track-b-type-display",
+      "--vlx-track-b-canvas",
+      "--vlx-track-b-salmon",
+      "--vlx-track-b-coral-deep",
+      "--vlx-track-b-salmon-mist",
+      "--vlx-track-b-warm-border",
       "--vlx-track-b-border-subtle",
       "--vlx-track-b-shadow-panel",
       "--vlx-track-b-focus-outline",
@@ -178,6 +183,12 @@ test.describe("Track B app shell v2 foundation", () => {
       expect(globalsCss, cssToken).toContain(cssToken);
     }
 
+    expect(globalsCss).toContain(
+      "--vlx-track-b-accent: var(--vlx-track-b-coral-deep);"
+    );
+    expect(globalsCss).toContain(
+      "--vlx-track-b-focus-outline: 2px solid var(--vlx-track-b-coral-deep);"
+    );
     expect(globalsCss).toContain(".track-b-shell__skip-link:focus");
     expect(globalsCss).toContain(":focus-visible");
     expect(globalsCss).toContain("@media (prefers-reduced-motion: reduce)");
@@ -186,6 +197,11 @@ test.describe("Track B app shell v2 foundation", () => {
 
   test("documents the foundation and links it from README", () => {
     const docPath = join(workspaceRoot, "docs", "TRACK_B_APP_SHELL_V2.md");
+    const salmonDocPath = join(
+      workspaceRoot,
+      "docs",
+      "TRACK_B_SALMON_BRAND_TOKENS.md"
+    );
     const componentReadmePath = join(
       workspaceRoot,
       "src",
@@ -195,14 +211,21 @@ test.describe("Track B app shell v2 foundation", () => {
     );
     const readme = readFileSync(join(workspaceRoot, "README.md"), "utf8");
     const doc = readFileSync(docPath, "utf8");
+    const salmonDoc = readFileSync(salmonDocPath, "utf8");
     const componentReadme = readFileSync(componentReadmePath, "utf8");
 
     expect(existsSync(docPath)).toBe(true);
+    expect(existsSync(salmonDocPath)).toBe(true);
     expect(existsSync(componentReadmePath)).toBe(true);
     expect(readme).toContain("docs/TRACK_B_APP_SHELL_V2.md");
+    expect(readme).toContain("docs/TRACK_B_SALMON_BRAND_TOKENS.md");
     expect(doc).toContain("Today -> Review -> Weak -> Packs -> Saved -> Progress");
     expect(doc).toContain("No payment, billing, subscription");
     expect(doc).toContain("#74 should use this foundation");
+    expect(salmonDoc).toContain("--vlx-track-b-coral-deep");
+    expect(salmonDoc).toContain("Do not use light salmon");
+    expect(salmonDoc).toContain("Shell/navigation cleanup");
+    expect(salmonDoc).toContain("Public paid beta remains **No-Go**");
     expect(componentReadme).toContain("TrackBAppShell");
     expect(componentReadme).toContain("Status badges communicate text labels");
   });

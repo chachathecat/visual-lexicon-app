@@ -1,17 +1,18 @@
 :root {
-  --background: #f7f2ea;
-  --surface: #fffaf2;
-  --surface-strong: #ffffff;
-  --ink: #2d2925;
-  --muted: #766d62;
-  --line: #e6dccc;
+  --background: #fbf2eb;
+  --surface: #fff8f2;
+  --surface-strong: #fffdf8;
+  --ink: #2b211d;
+  --muted: #6d625b;
+  --line: #ead8cc;
   --sage: #5f7a68;
   --sage-dark: #3f5d4c;
-  --clay: #b46b4a;
+  --clay: #b64639;
   --blue: #476f85;
   --gold: #b58a3d;
-  --rose: #a65f64;
-  --shadow: 0 18px 45px rgba(52, 43, 32, 0.08);
+  --rose: #9f3b31;
+  --salmon-mist: #fde8df;
+  --shadow: 0 18px 45px rgba(55, 38, 30, 0.09);
 }
 
 * {
@@ -114,7 +115,7 @@ select {
 }
 
 .nav-link[aria-current="page"] .nav-link__marker {
-  background: var(--sage);
+  background: var(--rose);
 }
 
 .app-main {
@@ -145,7 +146,7 @@ select {
 }
 
 .eyebrow {
-  color: var(--sage-dark);
+  color: var(--rose);
   font-size: 0.78rem;
   font-weight: 760;
   text-transform: uppercase;
@@ -190,9 +191,9 @@ select {
 }
 
 .button--primary {
-  border-color: var(--sage-dark);
-  background: var(--sage-dark);
-  color: #fffaf2;
+  border-color: var(--rose);
+  background: var(--rose);
+  color: var(--surface-strong);
 }
 
 .button--quiet {
@@ -200,9 +201,9 @@ select {
 }
 
 .button:focus-visible {
-  outline: var(--vlx-track-b-focus-outline, 2px solid #315b4a);
+  outline: var(--vlx-track-b-focus-outline, 2px solid #9f3b31);
   outline-offset: 3px;
-  box-shadow: var(--vlx-track-b-focus-shadow, 0 0 0 4px rgba(49, 91, 74, 0.18));
+  box-shadow: var(--vlx-track-b-focus-shadow, 0 0 0 4px rgba(159, 59, 49, 0.2));
 }
 
 .mission-panel {
@@ -339,8 +340,8 @@ select {
 }
 
 .alias-search__input:focus {
-  border-color: var(--sage-dark);
-  box-shadow: 0 0 0 3px rgba(95, 122, 104, 0.14);
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px rgba(159, 59, 49, 0.16);
 }
 
 .alias-search__results {
@@ -365,7 +366,7 @@ select {
 .alias-search__alias {
   display: block;
   margin-bottom: 4px;
-  color: var(--sage-dark);
+  color: var(--rose);
   font-size: 0.9rem;
   font-weight: 760;
 }
@@ -1346,7 +1347,7 @@ select {
 .review-option--selected,
 .review-option--selected[aria-pressed="true"] {
   border-color: var(--vlx-track-b-accent);
-  background: rgba(49, 91, 74, 0.1);
+  background: rgba(159, 59, 49, 0.1);
 }
 
 .review-v2-confidence,
@@ -1584,14 +1585,19 @@ select {
 }
 
 :root {
-  --vlx-track-b-canvas: #f5f0e8;
+  --vlx-track-b-canvas: #fbf2eb;
   --vlx-track-b-surface: #fffdf8;
-  --vlx-track-b-surface-muted: #f7f1e7;
-  --vlx-track-b-ink: #25221e;
-  --vlx-track-b-ink-soft: #5f584f;
-  --vlx-track-b-ink-muted: #81776a;
-  --vlx-track-b-accent: #315b4a;
-  --vlx-track-b-accent-soft: #e4eee8;
+  --vlx-track-b-surface-muted: #fff5ee;
+  --vlx-track-b-ink: #2b211d;
+  --vlx-track-b-ink-soft: #625850;
+  --vlx-track-b-ink-muted: #7a6d63;
+  --vlx-track-b-salmon: #d95f4f;
+  --vlx-track-b-coral: #b64639;
+  --vlx-track-b-coral-deep: #9f3b31;
+  --vlx-track-b-salmon-mist: #fde8df;
+  --vlx-track-b-warm-border: #ead8cc;
+  --vlx-track-b-accent: var(--vlx-track-b-coral-deep);
+  --vlx-track-b-accent-soft: var(--vlx-track-b-salmon-mist);
   --vlx-track-b-blue: #335f76;
   --vlx-track-b-clay: #9d573d;
   --vlx-track-b-gold: #8f6f2f;
@@ -1612,18 +1618,18 @@ select {
   --vlx-track-b-type-title: 1.45rem;
   --vlx-track-b-type-display: 2.35rem;
   --vlx-track-b-type-metric: 2rem;
-  --vlx-track-b-border-subtle: 1px solid rgba(64, 55, 45, 0.14);
-  --vlx-track-b-border-strong: 1px solid rgba(49, 91, 74, 0.38);
-  --vlx-track-b-shadow-raised: 0 18px 42px rgba(37, 34, 30, 0.09);
-  --vlx-track-b-shadow-panel: 0 1px 0 rgba(37, 34, 30, 0.04), 0 12px 34px rgba(37, 34, 30, 0.07);
-  --vlx-track-b-focus-outline: 2px solid #315b4a;
-  --vlx-track-b-focus-shadow: 0 0 0 4px rgba(49, 91, 74, 0.18);
+  --vlx-track-b-border-subtle: 1px solid rgba(105, 78, 65, 0.18);
+  --vlx-track-b-border-strong: 1px solid rgba(159, 59, 49, 0.42);
+  --vlx-track-b-shadow-raised: 0 18px 42px rgba(55, 38, 30, 0.1);
+  --vlx-track-b-shadow-panel: 0 1px 0 rgba(55, 38, 30, 0.04), 0 12px 34px rgba(55, 38, 30, 0.08);
+  --vlx-track-b-focus-outline: 2px solid var(--vlx-track-b-coral-deep);
+  --vlx-track-b-focus-shadow: 0 0 0 4px rgba(159, 59, 49, 0.2);
   --vlx-track-b-status-due-bg: #e4edf1;
   --vlx-track-b-status-due-ink: #254f63;
-  --vlx-track-b-status-weak-bg: #f4e4dc;
-  --vlx-track-b-status-weak-ink: #7d3f2e;
-  --vlx-track-b-status-new-bg: #e8edf6;
-  --vlx-track-b-status-new-ink: #334f7a;
+  --vlx-track-b-status-weak-bg: #fae1d8;
+  --vlx-track-b-status-weak-ink: #8f332b;
+  --vlx-track-b-status-new-bg: var(--vlx-track-b-salmon-mist);
+  --vlx-track-b-status-new-ink: var(--vlx-track-b-coral-deep);
   --vlx-track-b-status-learning-bg: #f2ead5;
   --vlx-track-b-status-learning-ink: #72581f;
   --vlx-track-b-status-strong-bg: #e5eee8;
@@ -1693,7 +1699,7 @@ select {
   height: 100vh;
   padding: var(--vlx-track-b-space-xl) var(--vlx-track-b-space-md);
   border-right: var(--vlx-track-b-border-subtle);
-  background: rgba(255, 253, 248, 0.9);
+  background: rgba(255, 253, 248, 0.92);
 }
 
 .track-b-shell__brand {
@@ -1764,7 +1770,7 @@ select {
 
 .track-b-nav-link:hover,
 .track-b-nav-link[aria-current="page"] {
-  border-color: rgba(49, 91, 74, 0.2);
+  border-color: rgba(159, 59, 49, 0.22);
   background: var(--vlx-track-b-surface);
   color: var(--vlx-track-b-ink);
 }
@@ -1786,7 +1792,7 @@ select {
   gap: var(--vlx-track-b-space-md);
   padding: 0 var(--vlx-track-b-space-xl);
   border-bottom: var(--vlx-track-b-border-subtle);
-  background: rgba(245, 240, 232, 0.82);
+  background: rgba(251, 242, 235, 0.84);
 }
 
 .track-b-shell__topbar-actions {
@@ -1968,7 +1974,7 @@ select {
 }
 
 .track-b-button:hover {
-  border-color: rgba(49, 91, 74, 0.42);
+  border-color: rgba(159, 59, 49, 0.42);
 }
 
 .track-b-primary-action-card {
@@ -2688,7 +2694,7 @@ select {
 }
 
 .packs-v2-status--available {
-  border-color: rgba(49, 91, 74, 0.28);
+  border-color: rgba(159, 59, 49, 0.28);
   background: var(--vlx-track-b-accent-soft);
   color: var(--vlx-track-b-accent);
 }
@@ -2959,7 +2965,7 @@ select {
 }
 
 .pricing-v2-plan-card__badge {
-  border-color: rgba(49, 91, 74, 0.28);
+  border-color: rgba(159, 59, 49, 0.28);
   background: var(--vlx-track-b-accent-soft);
   color: var(--vlx-track-b-accent);
 }
