@@ -10,6 +10,7 @@ const trackBAppShellRoutePrefixes = [
   "/dashboard",
   "/packs",
   "/pricing",
+  "/review",
   "/saved"
 ] as const;
 

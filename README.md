@@ -86,6 +86,7 @@ docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md
 docs/TRACK_B_SALMON_BRAND_TOKENS.md
 docs/TRACK_B_APP_SHELL_V2.md
 docs/TRACK_B_SHELL_NAVIGATION_CLEANUP.md
+docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md
 docs/TRACK_B_DASHBOARD_V2.md
 docs/TRACK_B_REVIEW_SESSION_V2.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
@@ -116,6 +117,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B Simplicity Reset](docs/TRACK_B_SIMPLICITY_RESET.md)
 - [Track B App Shell V2](docs/TRACK_B_APP_SHELL_V2.md)
 - [Track B Shell Navigation Cleanup](docs/TRACK_B_SHELL_NAVIGATION_CLEANUP.md)
+- [Track B Review Shell Consistency](docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md)
 - [Track B Dashboard V2](docs/TRACK_B_DASHBOARD_V2.md)
 - [Track B Review Session V2](docs/TRACK_B_REVIEW_SESSION_V2.md)
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)

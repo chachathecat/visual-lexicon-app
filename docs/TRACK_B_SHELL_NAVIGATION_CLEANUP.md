@@ -11,7 +11,8 @@ launch-readiness PR.
 ## Cleanup Contract
 
 - Track B v2 shell-owned routes bypass the legacy root `AppShell`.
-- `/dashboard`, `/packs`, `/pricing`, and `/saved` render one `TrackBAppShell`.
+- `/dashboard`, `/packs`, `/pricing`, `/review`, and `/saved` render one
+  `TrackBAppShell`.
 - V2 shell routes expose one `main` landmark.
 - V2 shell routes expose one visible primary navigation at a time:
   desktop learning navigation on desktop, mobile bottom navigation on mobile.
@@ -83,6 +84,6 @@ npm.cmd run test -- --workers=1
 git diff --check
 ```
 
-Recommended next PR: review-route shell consistency after this cleanup, limited
-to whether `/review`, `/review/due`, and `/review/weak` should move from the
-legacy shell into `TrackBAppShell` without changing review behavior.
+Follow-up completed by `docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md`: `/review`,
+`/review/due`, `/review/weak`, and `/review/weak-sprint` move from the legacy
+shell into `TrackBAppShell` without changing review behavior.

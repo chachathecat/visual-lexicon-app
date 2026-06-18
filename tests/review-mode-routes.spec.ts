@@ -29,6 +29,13 @@ const storageKeys = [
   'vlx_plan_state_v1',
 ] as const;
 
+const reviewShellRoutes = [
+  '/review',
+  '/review/due',
+  '/review/weak',
+  '/review/weak-sprint',
+] as const;
+
 const oneMinuteAgo = () => new Date(Date.now() - 60_000).toISOString();
 const oneHourAgo = () => new Date(Date.now() - 60 * 60_000).toISOString();
 const oneDayFromNow = () =>
@@ -156,6 +163,23 @@ async function expectLastReviewEvent(page: Page) {
   return events?.[events.length - 1] ?? {};
 }
 
+async function expectReviewRouteShell(page: Page, route: string) {
+  await expect(page.locator('.track-b-shell'), route).toHaveCount(1);
+  await expect(page.locator('.app-shell'), route).toHaveCount(0);
+  await expect(page.getByRole('main'), route).toHaveCount(1);
+  await expect(
+    page.getByRole('navigation', { name: 'Primary' }),
+    route,
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('navigation', {
+      name: 'Track B learning navigation',
+    }),
+    route,
+  ).toHaveCount(1);
+  await expect(page.locator('.track-b-shell__skip-link'), route).toHaveCount(1);
+}
+
 test.describe('Visual Lexicon review route mode contract', () => {
   test.beforeEach(async ({ page }) => {
     await clearVlxLocalStorage(page);
@@ -249,6 +273,68 @@ test.describe('Visual Lexicon review route mode contract', () => {
     ).toBeVisible();
     await expect(page.locator('body')).not.toContainText(
       'This page could not be found',
+    );
+  });
+
+  test('review routes use the Track B shell without duplicate primary navigation', async ({
+    page,
+  }) => {
+    for (const route of reviewShellRoutes) {
+      const response = await page.goto(`${baseUrl}${route}`, {
+        waitUntil: 'networkidle',
+      });
+
+      expect(response?.status(), route).toBeLessThan(400);
+      await expectReviewRouteShell(page, route);
+    }
+  });
+
+  test('review shell skip link remains the first meaningful tab stop', async ({
+    page,
+  }) => {
+    await page.goto(`${baseUrl}/review/due`, { waitUntil: 'networkidle' });
+
+    await page.keyboard.press('Tab');
+
+    await expect(page.locator('.track-b-shell__skip-link')).toBeFocused();
+  });
+
+  test('review routes reserve mobile bottom-navigation spacing', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${baseUrl}/review/weak-sprint`, {
+      waitUntil: 'networkidle',
+    });
+
+    await expect(page.locator('.track-b-bottom-nav')).toBeVisible();
+
+    const mobileSpacing = await page.evaluate(() => {
+      const main = document.querySelector<HTMLElement>('#track-b-main');
+      const bottomNav =
+        document.querySelector<HTMLElement>('.track-b-bottom-nav');
+
+      if (!main || !bottomNav) {
+        return null;
+      }
+
+      const navRect = bottomNav.getBoundingClientRect();
+      const mainStyles = window.getComputedStyle(main);
+
+      return {
+        mainPaddingBottom: Number.parseFloat(mainStyles.paddingBottom),
+        navBottom: navRect.bottom,
+        navHeight: navRect.height,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(mobileSpacing).not.toBeNull();
+    expect(mobileSpacing!.mainPaddingBottom).toBeGreaterThan(
+      mobileSpacing!.navHeight,
+    );
+    expect(mobileSpacing!.navBottom).toBeLessThanOrEqual(
+      mobileSpacing!.viewportHeight,
     );
   });
 
@@ -867,15 +953,26 @@ test.describe('Visual Lexicon review route mode contract', () => {
 test.describe('Review Session v2 static contract', () => {
   test('documents review session v2 and links it from README', () => {
     const docPath = join(workspaceRoot, 'docs', 'TRACK_B_REVIEW_SESSION_V2.md');
+    const shellDocPath = join(
+      workspaceRoot,
+      'docs',
+      'TRACK_B_REVIEW_SHELL_CONSISTENCY.md',
+    );
     const readme = readFileSync(join(workspaceRoot, 'README.md'), 'utf8');
     const doc = readFileSync(docPath, 'utf8');
+    const shellDoc = readFileSync(shellDocPath, 'utf8');
 
     expect(existsSync(docPath)).toBe(true);
+    expect(existsSync(shellDocPath)).toBe(true);
     expect(readme).toContain('docs/TRACK_B_REVIEW_SESSION_V2.md');
+    expect(readme).toContain('docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md');
     expect(doc).toContain('Review Session v2');
     expect(doc).toContain('confidence');
     expect(doc).toContain('Static pack fallback candidates');
     expect(doc).toContain('Recommended next PR: **#76 Saved Library v2**');
+    expect(shellDoc).toContain('Review routes bypass the legacy root `AppShell`');
+    expect(shellDoc).toContain('one `main` landmark');
+    expect(shellDoc).toContain('Confidence still appears before feedback');
   });
 
   test('does not introduce forbidden review integrations', () => {
