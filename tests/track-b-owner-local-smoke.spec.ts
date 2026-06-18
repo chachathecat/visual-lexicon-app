@@ -22,7 +22,7 @@ test.describe("Track B owner local smoke after simplification record", () => {
     const docPath = "docs/TRACK_B_OWNER_LOCAL_SMOKE_AFTER_SIMPLIFICATION.md";
 
     expect(readme).toContain(docPath);
-    expect(doc).toContain("Date of run | 2026-06-17");
+    expect(doc).toContain("Date of run | 2026-06-18");
     expect(doc).toContain("Local base URL used | `http://127.0.0.1:3007`");
     expect(doc).toContain("Save -> Review -> Memory state -> Return tomorrow");
     expect(doc).toContain(

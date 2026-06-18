@@ -12,7 +12,7 @@ settings, DNS, deployment settings, or AI features.
 
 | Field | Value |
 | --- | --- |
-| Date of run | 2026-06-17 |
+| Date of run | 2026-06-18 |
 | Repository | `chachathecat/visual-lexicon-app` |
 | Branch | `release/owner-local-smoke-after-simplification` |
 | Local base URL used | `http://127.0.0.1:3007` |
@@ -41,6 +41,7 @@ npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run build
 npm.cmd run test -- tests/track-b-owner-local-smoke.spec.ts --workers=1
+npm.cmd run test -- tests/dashboard-v2.spec.ts --workers=1
 npm.cmd run test -- tests/mvp-smoke.spec.ts tests/review-mode-routes.spec.ts tests/saved-library.spec.ts tests/paywall-surfaces.spec.ts tests/dashboard-v2.spec.ts --workers=1
 git diff --check
 ```
@@ -52,10 +53,10 @@ Validation results:
 | `npm.cmd run typecheck` | Passed. |
 | `npm.cmd run lint` | Passed. |
 | `npm.cmd run build` | Passed. |
-| `npm.cmd run test -- tests/track-b-owner-local-smoke.spec.ts --workers=1` | Passed: 3 tests. |
-| `npm.cmd run test -- tests/mvp-smoke.spec.ts tests/review-mode-routes.spec.ts tests/saved-library.spec.ts tests/paywall-surfaces.spec.ts tests/dashboard-v2.spec.ts --workers=1` | Timed out after about 422 seconds when run exactly as listed because the default `3006` server was still occupied by another local worktree. Partial output showed multiple browser failures against that wrong server. |
-| `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3007 npm.cmd run test -- tests/mvp-smoke.spec.ts tests/review-mode-routes.spec.ts tests/saved-library.spec.ts tests/paywall-surfaces.spec.ts tests/dashboard-v2.spec.ts --workers=1` | Completed against this worktree: 55 passed, 1 skipped, 1 failed. The remaining failure was `dashboard-v2.spec.ts` supporting-stats assertion expecting `Due`, `Weak`, `New`, and `Reviewed this week` labels from `.track-b-metric-card`; this was outside the `/save` blocker fix scope. |
-| `git diff --check` | Passed. Git emitted line-ending warnings for `README.md`, `src/components/views/save-landing-view.tsx`, and `tests/mvp-smoke.spec.ts`: `LF will be replaced by CRLF the next time Git touches it`. |
+| `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3007 npm.cmd run test -- tests/track-b-owner-local-smoke.spec.ts --workers=1` | Passed: 3 tests. |
+| `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3007 npm.cmd run test -- tests/dashboard-v2.spec.ts --workers=1` | Passed: 14 tests. |
+| `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3007 npm.cmd run test -- tests/mvp-smoke.spec.ts tests/review-mode-routes.spec.ts tests/saved-library.spec.ts tests/paywall-surfaces.spec.ts tests/dashboard-v2.spec.ts --workers=1` | Passed: 57 tests. |
+| `git diff --check` | Passed. Git emitted line-ending warnings for `docs/TRACK_B_OWNER_LOCAL_SMOKE_AFTER_SIMPLIFICATION.md`, `src/components/views/save-landing-view.tsx`, `tests/dashboard-v2.spec.ts`, `tests/mvp-smoke.spec.ts`, and `tests/track-b-owner-local-smoke.spec.ts`: `LF will be replaced by CRLF the next time Git touches it`. |
 
 ## Browser Route Checklist
 
@@ -134,6 +135,21 @@ The original owner smoke blocker rendered:
 This PR fixed that blocker by changing the saved-success `/save` visible copy
 and CTA labels while preserving the existing review and dashboard destinations.
 The underlying save-to-review-state behavior continued to pass.
+
+### Resolved - dashboard supporting-stat label test
+
+Dashboard v0 already rendered the four supporting stats:
+
+- `Due`
+- `Weak`
+- `New`
+- `Reviewed this week`
+
+The failing test read labels before the client-rendered metric cards had
+settled and coupled the assertion to an internal label class. The test now waits
+for exactly four metric cards in the `Today's review picture` region and derives
+labels from their accessible `aria-label` values. Dashboard product behavior was
+not changed.
 
 ### P2 - Local dev port and root inference need attention during owner smoke
 

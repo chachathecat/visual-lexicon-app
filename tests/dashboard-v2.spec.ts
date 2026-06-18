@@ -178,16 +178,20 @@ test.describe("Dashboard v0 Today's Memory Mission", () => {
 
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
 
-    const statusGrid = page.locator(".dashboard-v2-status-grid");
-    const labels = await statusGrid
-      .locator(".track-b-metric-card__label")
-      .allTextContents();
+    const statusGrid = page.getByRole("region", {
+      name: "Today's review picture"
+    });
+    const metricCards = statusGrid.locator("article[aria-label]");
+    await expect(metricCards).toHaveCount(4);
+
+    const labels = await metricCards.evaluateAll((cards) =>
+      cards.map((card) => card.getAttribute("aria-label")?.split(":")[0] ?? "")
+    );
 
     expect(labels).toEqual(["Due", "Weak", "New", "Reviewed this week"]);
-    await expect(statusGrid.locator(".track-b-metric-card")).toHaveCount(4);
     await expect(statusGrid).toContainText("Reviewed this week");
     await expect(
-      statusGrid.locator('.track-b-metric-card[aria-label="Reviewed this week: 2"]')
+      statusGrid.locator('article[aria-label="Reviewed this week: 2"]')
     ).toBeVisible();
     await expect(statusGrid).not.toContainText("Learning");
     await expect(statusGrid).not.toContainText("Mastered");
