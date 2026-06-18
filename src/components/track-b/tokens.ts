@@ -182,6 +182,7 @@ export function getTrackBNavItemIsActive({
   if (item.id === "weak") {
     return (
       currentPath === "/review/weak" ||
+      currentPath === "/review/weak-sprint" ||
       currentPath.startsWith("/review/weak/")
     );
   }

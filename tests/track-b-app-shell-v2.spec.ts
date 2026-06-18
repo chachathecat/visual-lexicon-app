@@ -60,7 +60,15 @@ const trackBAppShellOwnedRoutes = [
   "/dashboard",
   "/packs",
   "/pricing",
+  "/review",
   "/saved"
+] as const;
+
+const trackBAppShellRuntimeRoutes = [
+  ...trackBAppShellOwnedRoutes,
+  "/review/due",
+  "/review/weak",
+  "/review/weak-sprint"
 ] as const;
 
 const requiredAccessibleRoutes = [
@@ -169,6 +177,12 @@ test.describe("Track B app shell v2 foundation", () => {
         item: weakItem!
       })
     ).toBe(true);
+    expect(
+      getTrackBNavItemIsActive({
+        currentPath: "/review/weak-sprint",
+        item: weakItem!
+      })
+    ).toBe(true);
   });
 
   test("adds namespaced CSS variables, focus states, and reduced-motion handling", () => {
@@ -243,6 +257,11 @@ test.describe("Track B app shell v2 foundation", () => {
       "docs",
       "TRACK_B_SHELL_NAVIGATION_CLEANUP.md"
     );
+    const reviewShellDocPath = join(
+      workspaceRoot,
+      "docs",
+      "TRACK_B_REVIEW_SHELL_CONSISTENCY.md"
+    );
     const salmonDocPath = join(
       workspaceRoot,
       "docs",
@@ -258,15 +277,18 @@ test.describe("Track B app shell v2 foundation", () => {
     const readme = readFileSync(join(workspaceRoot, "README.md"), "utf8");
     const doc = readFileSync(docPath, "utf8");
     const cleanupDoc = readFileSync(cleanupDocPath, "utf8");
+    const reviewShellDoc = readFileSync(reviewShellDocPath, "utf8");
     const salmonDoc = readFileSync(salmonDocPath, "utf8");
     const componentReadme = readFileSync(componentReadmePath, "utf8");
 
     expect(existsSync(docPath)).toBe(true);
     expect(existsSync(cleanupDocPath)).toBe(true);
+    expect(existsSync(reviewShellDocPath)).toBe(true);
     expect(existsSync(salmonDocPath)).toBe(true);
     expect(existsSync(componentReadmePath)).toBe(true);
     expect(readme).toContain("docs/TRACK_B_APP_SHELL_V2.md");
     expect(readme).toContain("docs/TRACK_B_SHELL_NAVIGATION_CLEANUP.md");
+    expect(readme).toContain("docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md");
     expect(readme).toContain("docs/TRACK_B_SALMON_BRAND_TOKENS.md");
     expect(doc).toContain("Today -> Review -> Weak -> Packs -> Saved -> Progress");
     expect(doc).toContain("No payment, billing, subscription");
@@ -274,6 +296,9 @@ test.describe("Track B app shell v2 foundation", () => {
     expect(cleanupDoc).toContain("skip link is the first meaningful tab stop");
     expect(cleanupDoc).toContain("one `main` landmark");
     expect(cleanupDoc).toContain("Public paid beta remains **No-Go**");
+    expect(reviewShellDoc).toContain("Review routes bypass the legacy root `AppShell`");
+    expect(reviewShellDoc).toContain("Confidence still appears before feedback");
+    expect(reviewShellDoc).toContain("Public paid beta remains **No-Go**");
     expect(salmonDoc).toContain("--vlx-track-b-coral-deep");
     expect(salmonDoc).toContain("Do not use light salmon");
     expect(salmonDoc).toContain("Shell/navigation cleanup");
@@ -325,7 +350,7 @@ test.describe("Track B app shell v2 foundation", () => {
 });
 
 test.describe("Track B shell navigation cleanup runtime contract", () => {
-  for (const route of trackBAppShellOwnedRoutes) {
+  for (const route of trackBAppShellRuntimeRoutes) {
     test(`${route} renders one Track B shell without the legacy primary nav`, async ({
       page
     }) => {

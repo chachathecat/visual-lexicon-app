@@ -6,9 +6,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PaywallPrompt } from "@/components/paywall-prompt";
 import {
+  TrackBAppShell,
   TrackBMetricCard,
   TrackBPageHeader,
   TrackBStatusBadge,
+  type TrackBNavigationItemId,
   type TrackBStatusTone
 } from "@/components/track-b";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
@@ -941,6 +943,26 @@ function getReviewSummaryPaywallSurface({
   return mistakePrompt ? { prompt: mistakePrompt, userState } : null;
 }
 
+function getReviewShellActiveItem(mode: ReviewMode): TrackBNavigationItemId {
+  return mode === "weak" || mode === "weak-sprint" ? "weak" : "review";
+}
+
+function getReviewShellPath(mode: ReviewMode) {
+  if (mode === "due") {
+    return "/review/due";
+  }
+
+  if (mode === "weak") {
+    return "/review/weak";
+  }
+
+  if (mode === "weak-sprint") {
+    return "/review/weak-sprint";
+  }
+
+  return "/review";
+}
+
 export function ReviewSessionView({
   limit = SESSION_SIZE,
   mode,
@@ -1245,7 +1267,11 @@ export function ReviewSessionView({
   }
 
   return (
-    <div className="page review-v2-page">
+    <TrackBAppShell
+      activeItemId={getReviewShellActiveItem(mode)}
+      currentPath={getReviewShellPath(mode)}
+    >
+      <div className="page review-v2-page">
       <TrackBPageHeader
         eyebrow={copy.eyebrow}
         title={copy.title}
@@ -1536,6 +1562,7 @@ export function ReviewSessionView({
           </div>
         </section>
       ) : null}
-    </div>
+      </div>
+    </TrackBAppShell>
   );
 }
