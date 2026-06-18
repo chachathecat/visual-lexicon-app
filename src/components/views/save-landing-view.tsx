@@ -332,7 +332,7 @@ export function SaveLandingView({
         />
         <EmptyState
           actionHref="/dashboard"
-          actionLabel="View dashboard"
+          actionLabel="Go to dashboard"
           body="Open a save link with a word slug, for example /save?slug=dissonance&source=word_page."
           title="Missing save target"
         />
@@ -350,7 +350,7 @@ export function SaveLandingView({
         />
         <EmptyState
           actionHref="/dashboard"
-          actionLabel="View dashboard"
+          actionLabel="Go to dashboard"
           body="No saved word or review state was created for this link."
           title="Unknown save target"
         />
@@ -371,7 +371,7 @@ export function SaveLandingView({
         />
         <EmptyState
           actionHref="/dashboard"
-          actionLabel="View dashboard"
+          actionLabel="Go to dashboard"
           body="Try again in a browser context where local storage is available."
           title="Local save failed"
         />

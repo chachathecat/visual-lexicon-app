@@ -89,6 +89,7 @@ docs/TRACK_B_REVIEW_SESSION_V2.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
 docs/TRACK_B_PACKS_V2.md
 docs/TRACK_B_PRICING_PAYWALL_V2.md
+docs/TRACK_B_OWNER_LOCAL_SMOKE_AFTER_SIMPLIFICATION.md
 docs/PAID_BETA_READINESS_AUDIT.md
 docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md
 docs/PRIVATE_BETA_GATE_PREP.md
@@ -116,6 +117,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)
 - [Track B Pricing / Paywall V2](docs/TRACK_B_PRICING_PAYWALL_V2.md)
+- [Track B Owner Local Smoke After Simplification](docs/TRACK_B_OWNER_LOCAL_SMOKE_AFTER_SIMPLIFICATION.md)
 - [Paid Beta Readiness Audit](docs/PAID_BETA_READINESS_AUDIT.md)
 - [Paid Beta Manual QA Execution Report](docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md)
 - [Private Beta Gate Prep](docs/PRIVATE_BETA_GATE_PREP.md)
