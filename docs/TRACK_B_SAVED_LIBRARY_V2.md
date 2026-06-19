@@ -5,7 +5,7 @@ PR: `#76 Saved Library v2`
 
 ## Purpose
 
-Saved Library v2 rebuilds `/saved` as a review queue, not a bookmark list.
+Saved Library v2 rebuilds `/saved` as a Memory queue, not a bookmark list.
 
 North Star Metric: **Weekly Reviewed Words**.
 
@@ -59,8 +59,8 @@ that should write review events and advance SRS state.
 
 1. Track B app shell with Saved active.
 2. Page header:
-   - `Saved Library`
-   - `Saved words become review cards.`
+   - `Memory queue`
+   - `Saved is a review queue, not bookmarks.`
 3. Summary cards:
    - Due now
    - Weak words

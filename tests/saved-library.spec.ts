@@ -162,9 +162,7 @@ test.describe("Saved Library v2", () => {
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
 
     await expect(page.locator(".track-b-shell")).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Saved Library" })
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Memory queue" })).toBeVisible();
     await expect(page.locator("body")).toContainText(
       "Saved is a review queue, not bookmarks."
     );

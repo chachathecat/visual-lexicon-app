@@ -741,7 +741,7 @@ function SavedLibraryTabs({
 
   return (
     <div
-      aria-label="Saved Library status tabs"
+      aria-label="Memory queue status tabs"
       className="saved-v2-tabs"
       role="tablist"
     >
@@ -829,12 +829,12 @@ function SavedLibraryLoading() {
     <TrackBAppShell activeItemId="saved" currentPath="/saved">
       <TrackBPageHeader
         description="Saved is a review queue, not bookmarks. Saved words are waiting to be reviewed."
-        eyebrow="Saved"
-        title="Saved Library"
+        eyebrow="Memory queue"
+        title="Memory queue"
       />
       <TrackBEmptyState
         body="Reading local saved words, review state, and review events without writing to them."
-        title="Loading Saved Library"
+        title="Loading memory queue"
       />
     </TrackBAppShell>
   );
@@ -893,13 +893,13 @@ export function SavedLibraryView() {
           </>
         }
         description="Saved is a review queue, not bookmarks. Saved words are waiting to be reviewed."
-        eyebrow="Saved"
+        eyebrow="Memory queue"
         meta={
           <span>
             {snapshot.savedLibrary.length} saved | {snapshot.reviewEventCount} review events
           </span>
         }
-        title="Saved Library"
+        title="Memory queue"
       />
 
       <section
