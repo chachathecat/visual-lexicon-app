@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
 import { PaywallPrompt } from "@/components/paywall-prompt";
+import {
+  TrackBAppShell,
+  TrackBEmptyState,
+  TrackBPageHeader
+} from "@/components/track-b";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import type { VlxSaveWordResult } from "@/lib/analytics";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
@@ -192,6 +195,22 @@ function emitSaveWordAnalytics(input: {
   });
 }
 
+function SaveShell({ children }: { children: ReactNode }) {
+  return (
+    <TrackBAppShell
+      activeItemId="saved"
+      currentPath="/save"
+      topActions={
+        <Link className="track-b-button track-b-button--quiet" href="/dashboard">
+          Back to Today
+        </Link>
+      }
+    >
+      {children}
+    </TrackBAppShell>
+  );
+}
+
 export function SaveLandingView({
   slug,
   source,
@@ -308,53 +327,51 @@ export function SaveLandingView({
 
   if (outcome.status === "checking") {
     return (
-      <div className="page">
-        <PageHeader
+      <SaveShell>
+        <TrackBPageHeader
           eyebrow="Save"
           title="Preparing save."
           description="The app is checking the pack word and local review state."
         />
-        <section className="empty-state" aria-live="polite">
-          <h3>Reading local memory state</h3>
-          <p>Saved words and review state are stored in this browser.</p>
-        </section>
-      </div>
+        <TrackBEmptyState
+          body="Saved words and review state are stored in this browser."
+          title="Reading local memory state"
+        />
+      </SaveShell>
     );
   }
 
   if (outcome.status === "missing_slug") {
     return (
-      <div className="page">
-        <PageHeader
+      <SaveShell>
+        <TrackBPageHeader
           eyebrow="Save"
           title="No word selected."
           description="This save link is missing a slug, so the app cannot add a word to the review queue."
         />
-        <EmptyState
-          actionHref="/dashboard"
-          actionLabel="Go to dashboard"
+        <TrackBEmptyState
+          action={{ href: "/dashboard", label: "Go to dashboard" }}
           body="Open a save link with a word slug, for example /save?slug=dissonance&source=word_page."
           title="Missing save target"
         />
-      </div>
+      </SaveShell>
     );
   }
 
   if (outcome.status === "unknown_word") {
     return (
-      <div className="page">
-        <PageHeader
+      <SaveShell>
+        <TrackBPageHeader
           eyebrow="Save"
           title="Word not found."
           description={`The app could not find "${normalizedSlug}" in the current pack data.`}
         />
-        <EmptyState
-          actionHref="/dashboard"
-          actionLabel="Go to dashboard"
+        <TrackBEmptyState
+          action={{ href: "/dashboard", label: "Go to dashboard" }}
           body="No saved word or review state was created for this link."
           title="Unknown save target"
         />
-      </div>
+      </SaveShell>
     );
   }
 
@@ -363,19 +380,18 @@ export function SaveLandingView({
     outcome.status === "storage_error"
   ) {
     return (
-      <div className="page">
-        <PageHeader
+      <SaveShell>
+        <TrackBPageHeader
           eyebrow="Save"
           title="Save unavailable."
           description="The app could not write to local storage, so this word was not added to review."
         />
-        <EmptyState
-          actionHref="/dashboard"
-          actionLabel="Go to dashboard"
+        <TrackBEmptyState
+          action={{ href: "/dashboard", label: "Go to dashboard" }}
           body="Try again in a browser context where local storage is available."
           title="Local save failed"
         />
-      </div>
+      </SaveShell>
     );
   }
 
@@ -386,24 +402,25 @@ export function SaveLandingView({
     : "/review";
 
   return (
-    <div className="page">
-      <PageHeader
+    <SaveShell>
+      <TrackBPageHeader
         eyebrow="Save"
         title="This word is now in your review queue."
-        description="Saved words become review items, so the next step is active recall."
+        description="Save is complete. Review five words now, then return tomorrow before they fade."
+        meta={<span>{"Save -> Review 5 words -> Return tomorrow"}</span>}
         actions={
           <>
-            <Link className="button button--primary" href={reviewHref}>
+            <Link className="track-b-button track-b-button--primary" href={reviewHref}>
               Review now
             </Link>
-            <Link className="button" href="/dashboard">
+            <Link className="track-b-button track-b-button--quiet" href="/dashboard">
               Go to dashboard
             </Link>
           </>
         }
       />
 
-      <section className="save-panel" aria-live="polite">
+      <section className="save-panel save-panel--v2" aria-live="polite">
         {savedWord ? (
           <>
             <div
@@ -415,12 +432,29 @@ export function SaveLandingView({
             />
             <div className="save-panel__body">
               <div>
-                <span className="eyebrow">
+                <span className="track-b-eyebrow">
                   {outcome.alreadySaved ? "Already saved" : "Local save complete"}
                 </span>
                 <h2>{savedWord.word}</h2>
                 {savedWord.definition ? <p>{savedWord.definition}</p> : null}
               </div>
+              <ol
+                aria-label="Save to review handoff"
+                className="save-panel__handoff"
+              >
+                <li>
+                  <span>Save</span>
+                  <strong>Queued locally</strong>
+                </li>
+                <li>
+                  <span>Review</span>
+                  <strong>5 words now</strong>
+                </li>
+                <li>
+                  <span>Return</span>
+                  <strong>Tomorrow</strong>
+                </li>
+              </ol>
               <div className="tag-row">
                 <span className="tag">{formatHubLabel(savedWord.hub)}</span>
                 <span className="tag">
@@ -453,6 +487,6 @@ export function SaveLandingView({
           userState={paywallSurface.userState}
         />
       ) : null}
-    </div>
+    </SaveShell>
   );
 }

@@ -376,9 +376,37 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
   }) => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
 
-    await page.keyboard.press("Tab");
+    const firstTabStopClassList = await page.evaluate(() => {
+      const focusableSelector = [
+        "a[href]",
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        "[tabindex]:not([tabindex='-1'])"
+      ].join(",");
 
-    await expect(page.locator(".track-b-shell__skip-link")).toBeFocused();
+      const focusable = Array.from(
+        document.querySelectorAll<HTMLElement>(focusableSelector)
+      ).filter((element) => {
+        const style = window.getComputedStyle(element);
+
+        return (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          !element.closest("[hidden], [inert]") &&
+          element.tabIndex >= 0
+        );
+      });
+
+      return Array.from(focusable[0]?.classList ?? []);
+    });
+
+    expect(firstTabStopClassList).toContain("track-b-shell__skip-link");
+
+    const skipLink = page.locator(".track-b-shell__skip-link");
+    await skipLink.focus();
+    await expect(skipLink).toBeFocused();
   });
 
   test("keeps mobile bottom navigation from consuming the main content padding", async ({

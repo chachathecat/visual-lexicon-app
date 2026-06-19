@@ -21,7 +21,7 @@ const pricingPlanIds = ["free", "lite", "pro"] as const satisfies readonly VlxPl
 
 const planSupportCopy = {
   free: {
-    badge: "Start",
+    badge: "Free Preview",
     heading: "Start the local memory loop.",
     supportingValue:
       "Save a word, review it, and keep memory state in this browser.",
@@ -33,7 +33,7 @@ const planSupportCopy = {
     ctaLabel: "Continue local review"
   },
   lite: {
-    badge: "Habit",
+    badge: "Lite Beta",
     heading: "Daily memory habit.",
     supportingValue:
       "Lite is for returning each day before saved words fade.",
@@ -45,7 +45,7 @@ const planSupportCopy = {
     ctaLabel: "Preview Lite"
   },
   pro: {
-    badge: "Exam",
+    badge: "Pro Beta",
     heading: "Weak-word repair and exam prep.",
     supportingValue:
       "Pro is for repairing repeated misses and preparing exam vocabulary from real review state.",

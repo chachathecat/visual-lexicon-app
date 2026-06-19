@@ -646,7 +646,7 @@ function RecentlySaved({ snapshot }: { snapshot: DashboardV2Snapshot }) {
           </h2>
         </div>
         <Link className="track-b-button track-b-button--quiet" href="/saved">
-          View saved library
+          Open memory queue
         </Link>
       </div>
       {savedWords.length ? (
