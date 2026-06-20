@@ -242,11 +242,7 @@ function fromSavedWord(
 }
 
 function getMissionTitle(snapshot: DashboardV2Snapshot) {
-  if (snapshot.dueToday.length > 0) {
-    return "Start with the words due now";
-  }
-
-  return "Due queue is clear";
+  return "Review 5 words before they fade";
 }
 
 function getMissionBody(snapshot: DashboardV2Snapshot) {
@@ -267,9 +263,10 @@ function getMissionBody(snapshot: DashboardV2Snapshot) {
 function MiniDueQueue({ words }: { words: DashboardV2Word[] }) {
   if (!words.length) {
     return (
-      <p className="dashboard-v2-note">
-        No due words were found in vlx_review_state_v1.
-      </p>
+      <div className="dashboard-v2-empty-mission">
+        <strong>Due queue is clear</strong>
+        <p>No due words were found in vlx_review_state_v1.</p>
+      </div>
     );
   }
 
@@ -277,6 +274,7 @@ function MiniDueQueue({ words }: { words: DashboardV2Word[] }) {
     <ul className="dashboard-v2-mini-list" aria-label="Due words preview">
       {words.map((word) => (
         <li className="dashboard-v2-mini-list__item" key={word.slug}>
+          <span className="dashboard-v2-mini-list__marker" aria-hidden="true" />
           <span>
             <strong>{word.word}</strong>
             {word.detail ? <span>{word.detail}</span> : null}
@@ -296,17 +294,26 @@ function MiniDueQueue({ words }: { words: DashboardV2Word[] }) {
 
 function TodayMissionCard({ snapshot }: { snapshot: DashboardV2Snapshot }) {
   const dueWords = snapshot.dueToday.slice(0, 5).map(fromStateItem);
+  const startReviewHref = snapshot.dueToday.length ? "/review/due" : "/review";
 
   return (
     <TrackBPrimaryActionCard
       action={{
-        href: "/review/due",
-        label: "Review 5 words before you forget",
-        ariaLabel: "Review 5 words before you forget"
+        href: startReviewHref,
+        label: "Review now",
+        ariaLabel: "Review 5 words before they fade"
       }}
       body={getMissionBody(snapshot)}
       className="dashboard-v2-mission"
-      eyebrow="Memory mission"
+      eyebrow="Today's Memory Mission"
+      metric={{
+        label: "due now",
+        value: snapshot.dueToday.length
+      }}
+      secondaryAction={{
+        href: "/saved",
+        label: "Open memory queue"
+      }}
       status="due"
       title={getMissionTitle(snapshot)}
     >
@@ -337,7 +344,7 @@ function MemoryStatusRow({ snapshot }: { snapshot: DashboardV2Snapshot }) {
           promises or fake progress.
         </p>
       </div>
-      <div className="dashboard-v2-status-grid">
+      <div className="dashboard-v2-status-grid dashboard-v2-status-grid--quiet">
         <TrackBMetricCard
           description="Scheduled through today."
           label="Due"

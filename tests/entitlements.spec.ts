@@ -136,13 +136,13 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     expect(response?.status()).toBe(200);
     await expect(page.locator('.track-b-shell')).toBeVisible();
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Pricing' }),
+      page.getByRole('heading', { level: 1, name: 'Visual Lexicon paid beta' }),
     ).toBeVisible();
     await expect(page.locator('body')).toContainText(
-      'Collect upgrade interest only for memory management.',
+      'Paid beta is invite-only.',
     );
     await expect(page.locator('body')).toContainText(
-      'No checkout, no paid access, and no subscription is connected.',
+      'does not create checkout, billing, paid access, or external validation.',
     );
 
     const freePlan = page.locator('[data-plan-id="free"]');
@@ -171,19 +171,19 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     await expect(litePlan).toContainText('Interest capture only in this beta');
     await expect(proPlan).toContainText('No fake paid access or checkout');
     await expect(
-      page.getByRole('button', { name: 'Preview Lite' }),
+      page.getByRole('button', { name: 'Join paid beta' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Preview Pro' }),
+      page.getByRole('button', { name: 'Request early access' }),
     ).toBeVisible();
     await expect(
       page.getByRole('link', { name: /checkout|subscribe|pay/i }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Preview Lite' }),
+      page.getByRole('link', { name: 'Join paid beta' }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Preview Pro' }),
+      page.getByRole('link', { name: 'Request early access' }),
     ).toHaveCount(0);
 
     const bodyText = await page.locator('body').innerText();
@@ -192,7 +192,7 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     expect(bodyText).not.toMatch(/fake mastery/i);
     expect(bodyText).not.toMatch(/\bstreak\b/i);
 
-    await page.getByRole('button', { name: 'Preview Pro' }).click();
+    await page.getByRole('button', { name: 'Request early access' }).click();
     await expect(
       page.getByText('Paid beta interest noted locally. Billing is not connected.'),
     ).toBeVisible();

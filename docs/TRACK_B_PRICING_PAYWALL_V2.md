@@ -6,8 +6,8 @@ monetization surface for the Track B learning app.
 Header copy:
 
 ```txt
-Pricing
-Build a visual memory habit before words fade.
+Paid beta
+Visual Lexicon paid beta.
 ```
 
 ## Product Role
@@ -33,6 +33,8 @@ repeat review behavior.
 Pricing v2 uses the Track B app shell and includes:
 
 - outcome-based Free / Lite / Pro plan cards
+- invite-only paid beta framing with `Join paid beta` and
+  `Request early access` local-interest CTAs
 - Exam Pack links for Academic Vocabulary, IELTS Writing, and GRE Visual Verbal
 - paywall trigger explanations for save limit, review limit, pack preview end,
   Weak Sprint tools, no-watermark download, and AI mistake explanation later

@@ -311,7 +311,7 @@ Visit:
 http://127.0.0.1:3006/pricing
 ```
 
-Click `Preview Lite`, then click `Preview Pro`.
+Click `Join paid beta`, then click `Request early access`.
 
 Expected:
 
