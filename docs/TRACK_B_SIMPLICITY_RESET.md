@@ -80,7 +80,7 @@ real checkout, and external validation require separate readiness work.
 The dashboard has one dominant CTA:
 
 ```txt
-Review 5 words before you forget
+Review 5 words before they fade
 ```
 
 Supporting stats are limited to:

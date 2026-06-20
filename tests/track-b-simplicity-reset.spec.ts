@@ -243,7 +243,7 @@ test.describe("Track B simplicity reset", () => {
     const dashboardRules = getDashboardV0Rules();
 
     expect(dashboardRules.dominantCtaRules).toEqual([
-      "Review 5 words before you forget"
+      "Review 5 words before they fade"
     ]);
     expect(dashboardRules.dominantCtaRules).toHaveLength(1);
     expect(dashboardRules.supportingStats).toEqual([
@@ -459,7 +459,7 @@ test.describe("Track B simplicity reset", () => {
     expect(value).toEqual({
       routes: [...TRACK_B_SIMPLICITY_REQUIRED_APPROVED_V0_ROUTES],
       mentalModel: [...TRACK_B_SIMPLICITY_REQUIRED_MENTAL_MODEL],
-      dominantCta: "Review 5 words before you forget",
+      dominantCta: "Review 5 words before they fade",
       confidenceValues: [...TRACK_B_SIMPLICITY_REQUIRED_CONFIDENCE_VALUES],
       pricingInterestOnly: true
     });
@@ -492,7 +492,7 @@ test.describe("Track B simplicity reset", () => {
       "Private beta: **owner-controlled/manual-only/conditional**"
     );
     expect(doc).toContain("External participant validation: **Not Started**");
-    expect(doc).toContain("Review 5 words before you forget");
+    expect(doc).toContain("Review 5 words before they fade");
     expect(doc).toContain("#94 Dashboard v0 simplification");
     expect(doc).toContain("Recommended next PR: **#94 Dashboard v0 simplification**");
     expect(doc).toContain("no runtime UI implementation");

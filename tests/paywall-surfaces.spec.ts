@@ -350,8 +350,8 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     const pricingUrl = page.url();
 
-    await page.getByRole('button', { name: 'Preview Lite' }).click();
-    await page.getByRole('button', { name: 'Preview Pro' }).click();
+    await page.getByRole('button', { name: 'Join paid beta' }).click();
+    await page.getByRole('button', { name: 'Request early access' }).click();
 
     await expect(page).toHaveURL(pricingUrl);
     await expect(
@@ -390,19 +390,19 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('button', { name: 'Preview Lite' }),
+      page.getByRole('button', { name: 'Join paid beta' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Preview Pro' }),
+      page.getByRole('button', { name: 'Request early access' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'Preview Lite' }),
+      page.getByRole('link', { name: 'Join paid beta' }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Preview Pro' }),
+      page.getByRole('link', { name: 'Request early access' }),
     ).toHaveCount(0);
     await expect(page.locator('body')).toContainText(
-      'Buttons record local interest only.',
+      'records local interest only',
     );
   });
 
