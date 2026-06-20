@@ -411,7 +411,7 @@ test.describe('Visual Lexicon paid beta analytics events', () => {
     await clearVlxLocalStorage(page);
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
-    await page.getByRole('button', { name: 'Request early access' }).click();
+    await page.getByRole('button', { name: 'Preview Pro' }).click();
     await waitForDataLayerEvent(page, 'vlx_pricing_interest');
 
     const events = await getDataLayerEvents(page, 'vlx_pricing_interest');

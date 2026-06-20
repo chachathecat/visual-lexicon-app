@@ -411,7 +411,7 @@ export function SaveLandingView({
         actions={
           <>
             <Link className="track-b-button track-b-button--primary" href={reviewHref}>
-              Review this word
+              Review now
             </Link>
             <Link className="track-b-button track-b-button--quiet" href="/dashboard">
               Go to dashboard
@@ -429,10 +429,7 @@ export function SaveLandingView({
                 savedWord.slug
               )}`}
               role="img"
-            >
-              <span className="save-panel__visual-kicker">Visual memory card</span>
-              <strong>{savedWord.word}</strong>
-            </div>
+            />
             <div className="save-panel__body">
               <div>
                 <span className="track-b-eyebrow">
@@ -458,18 +455,6 @@ export function SaveLandingView({
                   <strong>Tomorrow</strong>
                 </li>
               </ol>
-              <div className="save-panel__primary-handoff">
-                <div>
-                  <span>Next best action</span>
-                  <strong>Review now while the image is fresh.</strong>
-                </div>
-                <Link
-                  className="track-b-button track-b-button--primary"
-                  href={reviewHref}
-                >
-                  Review now
-                </Link>
-              </div>
               <div className="tag-row">
                 <span className="tag">{formatHubLabel(savedWord.hub)}</span>
                 <span className="tag">

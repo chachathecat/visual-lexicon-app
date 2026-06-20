@@ -471,42 +471,6 @@ function getSummaryMetrics(snapshot: SavedLibrarySnapshot): SavedLibraryMetric[]
   ];
 }
 
-function SavedQueueHero({ snapshot }: { snapshot: SavedLibrarySnapshot }) {
-  const reviewHref = snapshot.dueItems.length > 0 ? "/review/due" : "/review?mode=saved";
-  const reviewLabel =
-    snapshot.dueItems.length > 0 ? "Start due queue" : "Start saved review";
-
-  return (
-    <section className="saved-v2-queue-hero" aria-labelledby="saved-v2-hero-heading">
-      <div className="saved-v2-queue-hero__copy">
-        <p className="track-b-eyebrow">Memory queue</p>
-        <h2 id="saved-v2-hero-heading">Saved words waiting for recall</h2>
-        <p>
-          Due cards go first, weak cards stay visible, and saved-only words wait
-          for their first review state.
-        </p>
-      </div>
-      <div className="saved-v2-queue-hero__stats" aria-label="Queue snapshot">
-        <span>
-          <strong>{snapshot.dueItems.length}</strong>
-          Due now
-        </span>
-        <span>
-          <strong>{snapshot.weakItems.length}</strong>
-          Weak
-        </span>
-        <span>
-          <strong>{snapshot.newSaved.length}</strong>
-          New saved
-        </span>
-      </div>
-      <Link className="track-b-button track-b-button--primary" href={reviewHref}>
-        {reviewLabel}
-      </Link>
-    </section>
-  );
-}
-
 function getEmptyState(
   activeTab: SavedLibraryTabId,
   snapshot: SavedLibrarySnapshot
@@ -671,11 +635,6 @@ function SavedWordCard({
   const weakScoreLabel = formatWeakScore(word.weakScore);
   const reviewCountLabel = formatReviewCount(word.correct, word.wrong);
   const dueLabel = getDueLabel(word);
-  const memoryHint =
-    dueLabel ??
-    (word.hasReviewState
-      ? `${word.mastery ?? "Learning"} memory state`
-      : "First review needed");
 
   return (
     <article className="saved-v2-word-card">
@@ -688,17 +647,6 @@ function SavedWordCard({
         {word.definition ? (
           <p className="saved-v2-word-card__definition">{word.definition}</p>
         ) : null}
-        <div className="saved-v2-word-card__memory">
-          <span>{status.detail}</span>
-          <strong>{memoryHint}</strong>
-          <Link
-            aria-label={primaryAction.ariaLabel}
-            className="track-b-button track-b-button--primary"
-            href={primaryAction.href}
-          >
-            {primaryAction.label}
-          </Link>
-        </div>
         <div className="saved-v2-token-row">
           {typeof word.box === "number" ? (
             <span className="saved-v2-token">Box {word.box}</span>
@@ -725,6 +673,13 @@ function SavedWordCard({
           ) : null}
         </div>
         <div className="track-b-action-row saved-v2-word-card__actions">
+          <Link
+            aria-label={primaryAction.ariaLabel}
+            className="track-b-button track-b-button--primary"
+            href={primaryAction.href}
+          >
+            {primaryAction.label}
+          </Link>
           <Link
             aria-label={secondaryAction.ariaLabel}
             className="track-b-button track-b-button--quiet"
@@ -946,8 +901,6 @@ export function SavedLibraryView() {
         }
         title="Memory queue"
       />
-
-      <SavedQueueHero snapshot={snapshot} />
 
       <section
         aria-labelledby="saved-v2-summary-heading"

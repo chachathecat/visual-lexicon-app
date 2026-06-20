@@ -126,7 +126,7 @@ test.describe("Dashboard v0 Today's Memory Mission", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("heading", {
-        name: "Review 5 words before they fade"
+        name: /Due queue is clear|Start with the words due now/
       })
     ).toBeVisible();
     await expect(page.locator(".track-b-primary-action-card")).toBeVisible();
@@ -137,11 +137,11 @@ test.describe("Dashboard v0 Today's Memory Mission", () => {
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
 
     const dueReviewLink = page.getByRole("link", {
-      name: "Review 5 words before they fade"
+      name: "Review 5 words before you forget"
     });
 
     await expect(dueReviewLink).toBeVisible();
-    await expect(dueReviewLink).toHaveAttribute("href", "/review");
+    await expect(dueReviewLink).toHaveAttribute("href", "/review/due");
   });
 
   test("shows only the four approved supporting stats", async ({ page }) => {
@@ -229,14 +229,16 @@ test.describe("Dashboard v0 Today's Memory Mission", () => {
     );
 
     await expect(primaryActions).toHaveCount(1);
-    await expect(primaryActions).toHaveText("Review now");
+    await expect(primaryActions).toHaveText("Review 5 words before you forget");
   });
 
   test("renders an honest empty state when no words are due", async ({ page }) => {
     await clearVlxLocalStorage(page);
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
 
-    await expect(page.locator("body")).toContainText("Due queue is clear");
+    await expect(
+      page.getByRole("heading", { name: "Due queue is clear" })
+    ).toBeVisible();
     await expect(page.locator("body")).toContainText(
       "No due words were found in vlx_review_state_v1."
     );

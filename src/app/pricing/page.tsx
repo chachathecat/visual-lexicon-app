@@ -24,37 +24,37 @@ const planSupportCopy = {
     badge: "Free Preview",
     heading: "Start the local memory loop.",
     supportingValue:
-      "Save a word, review it, and keep memory state in this browser while beta access stays invite-only.",
+      "Save a word, review it, and keep memory state in this browser.",
     memoryBullets: [
       "Saved words become review items",
       "Short local review sessions",
       "No paid access or account sync"
     ],
-    ctaLabel: "Continue preview"
+    ctaLabel: "Continue local review"
   },
   lite: {
     badge: "Lite Beta",
     heading: "Daily memory habit.",
     supportingValue:
-      "Lite Beta is an invite-only daily review habit for returning before saved words fade.",
+      "Lite is for returning each day before saved words fade.",
     memoryBullets: [
       "Daily due review positioning",
       "Saved-word queue management",
       "Interest capture only in this beta"
     ],
-    ctaLabel: "Join paid beta"
+    ctaLabel: "Preview Lite"
   },
   pro: {
     badge: "Pro Beta",
     heading: "Weak-word repair and exam prep.",
     supportingValue:
-      "Pro Beta is invite-only exam prep and weak-word repair from real review state.",
+      "Pro is for repairing repeated misses and preparing exam vocabulary from real review state.",
     memoryBullets: [
       "Weak-word repair from mistakes",
       "Exam prep guided by review state",
       "No fake paid access or checkout"
     ],
-    ctaLabel: "Request early access"
+    ctaLabel: "Preview Pro"
   }
 } as const satisfies Record<
   (typeof pricingPlanIds)[number],
@@ -196,25 +196,6 @@ function PlanCard({ planId }: { planId: (typeof pricingPlanIds)[number] }) {
   );
 }
 
-function PaidBetaHero() {
-  return (
-    <section className="pricing-v2-beta-hero" aria-labelledby="pricing-v2-beta-heading">
-      <div>
-        <p className="track-b-eyebrow">Paid beta / invite-only</p>
-        <h2 id="pricing-v2-beta-heading">Request access to the memory habit.</h2>
-        <p>
-          Visual Lexicon is collecting paid beta interest only. The buttons below
-          do not open checkout, grant access, validate payment, or change billing.
-        </p>
-      </div>
-      <div className="pricing-v2-beta-hero__seal" aria-label="Beta status">
-        <strong>Invite-only</strong>
-        <span>No live checkout</span>
-      </div>
-    </section>
-  );
-}
-
 export default function PricingPage() {
   return (
     <TrackBAppShell
@@ -226,18 +207,16 @@ export default function PricingPage() {
       }
     >
       <TrackBPageHeader
-        description="Paid beta is invite-only. This page records local interest only and does not create checkout, billing, paid access, or external validation."
-        eyebrow="Paid beta"
-        meta={<span>Invite-only. No live checkout.</span>}
-        title="Visual Lexicon paid beta"
+        description="Collect upgrade interest only for memory management. No checkout, no paid access, and no subscription is connected."
+        eyebrow="Pricing"
+        meta={<span>Interest-only. Public paid beta remains No-Go.</span>}
+        title="Pricing"
       />
 
-      <PaidBetaHero />
-
       <TrackBSection
-        description="Free Preview starts the local loop. Lite Beta and Pro Beta are invite-only interest requests."
+        description="Lite = daily memory habit. Pro = weak-word repair and exam prep. Buttons record local interest only."
         id="pricing-v2-plans"
-        title="Beta tiers"
+        title="Choose the memory habit"
       >
         <div className="pricing-v2-plan-grid" aria-label="Pricing plans">
           {pricingPlanIds.map((planId) => (

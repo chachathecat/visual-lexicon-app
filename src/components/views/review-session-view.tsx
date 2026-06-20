@@ -855,18 +855,6 @@ function getNextReviewMessage(nextDueAt?: string, word?: string) {
   return word ? `${word} is next due ${label}.` : `Next review is due ${label}.`;
 }
 
-function formatWordCount(value: number) {
-  return `${value} ${value === 1 ? "word" : "words"}`;
-}
-
-function getSessionSummaryHeadline(summary: SessionSummary) {
-  const reviewed = formatWordCount(summary.reviewed);
-  const moved = `${summary.movedForward} moved closer to memory`;
-  const anotherPassVerb = summary.wrong === 1 ? "needs" : "need";
-
-  return `You reviewed ${reviewed}. ${moved}. ${summary.wrong} ${anotherPassVerb} another pass tomorrow.`;
-}
-
 function formatConfidence(confidence: VlxReviewConfidence) {
   if (confidence === "knew") {
     return "I knew it";
@@ -1336,30 +1324,6 @@ export function ReviewSessionView({
             </div>
           </header>
 
-          <div className="review-v2-stage-strip" aria-label="Review progress">
-            <span className="review-v2-stage-strip__item review-v2-stage-strip__item--active">
-              Visual cue
-            </span>
-            <span
-              className={
-                selectedAnswer
-                  ? "review-v2-stage-strip__item review-v2-stage-strip__item--active"
-                  : "review-v2-stage-strip__item"
-              }
-            >
-              Active recall
-            </span>
-            <span
-              className={
-                currentAnswer
-                  ? "review-v2-stage-strip__item review-v2-stage-strip__item--active"
-                  : "review-v2-stage-strip__item"
-              }
-            >
-              Memory state
-            </span>
-          </div>
-
           <article className="review-card review-v2-card" aria-label="Review card">
             <div
               aria-label={`Visual cue for ${currentQuestion.word}`}
@@ -1445,21 +1409,15 @@ export function ReviewSessionView({
           ) : null}
 
           {currentAnswer ? (
-            <div
-              className={`review-feedback review-v2-feedback review-v2-feedback--${currentAnswer.result}`}
-              aria-live="polite"
-            >
-              <span className="review-v2-feedback__mark" aria-hidden="true">
-                {currentAnswer.result === "correct" ? "OK" : "SOON"}
-              </span>
+            <div className="review-feedback review-v2-feedback" aria-live="polite">
               <div className="review-v2-feedback__copy">
                 <p className="track-b-eyebrow">
                   {currentAnswer.result === "correct" ? "Correct" : "Review again"}
                 </p>
                 <h3>
                   {currentAnswer.result === "correct"
-                    ? "You recalled it."
-                    : "Almost. This word will return sooner."}
+                    ? "Answer recorded"
+                    : "Mistake recorded"}
                 </h3>
                 <p>Memory state updated from this answer and confidence.</p>
                 <p>{currentAnswer.explanation}</p>
@@ -1516,10 +1474,6 @@ export function ReviewSessionView({
             </div>
             <span>{sessionId}</span>
           </div>
-
-          <p className="review-v2-summary__headline">
-            {getSessionSummaryHeadline(summary)}
-          </p>
 
           <div className="summary-grid review-v2-summary__metrics">
             <TrackBMetricCard label="Reviewed" value={summary.reviewed} />

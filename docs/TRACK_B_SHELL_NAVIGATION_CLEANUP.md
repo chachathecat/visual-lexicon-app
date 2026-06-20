@@ -36,7 +36,7 @@ The shell cleanup keeps these existing routes accessible:
 The dashboard keeps one dominant CTA:
 
 ```txt
-Review 5 words before they fade
+Review 5 words before you forget
 ```
 
 The save confirmation keeps:

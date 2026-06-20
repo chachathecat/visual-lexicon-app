@@ -466,7 +466,7 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect(
       page.getByRole("link", {
-        name: "Review 5 words before they fade"
+        name: "Review 5 words before you forget"
       })
     ).toHaveCount(1);
 
@@ -483,7 +483,7 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
 
     await page.goto("/pricing", { waitUntil: "networkidle" });
     await expect(
-      page.getByText("Invite-only. No live checkout.")
+      page.getByText("Interest-only. Public paid beta remains No-Go.")
     ).toBeVisible();
     await expect(page.locator("body")).not.toContainText("Checkout");
     await expect(page.locator("body")).not.toContainText("Subscribe now");

@@ -63,7 +63,7 @@ export type TrackBSimplicityDeferredFeature = {
 };
 
 export type TrackBSimplicityDashboardV0Rules = {
-  dominantCtaRules: readonly ["Review 5 words before they fade"];
+  dominantCtaRules: readonly ["Review 5 words before you forget"];
   supportingStats: readonly ["Due", "Weak", "New", "Reviewed this week"];
   noisyParallelActionGridAllowed: false;
   todayFirst: true;
@@ -256,7 +256,7 @@ export const TRACK_B_SIMPLICITY_DEFERRED_FEATURES = [
 ] as const satisfies readonly TrackBSimplicityDeferredFeature[];
 
 export const TRACK_B_SIMPLICITY_DASHBOARD_V0_RULES = {
-  dominantCtaRules: ["Review 5 words before they fade"],
+  dominantCtaRules: ["Review 5 words before you forget"],
   supportingStats: ["Due", "Weak", "New", "Reviewed this week"],
   noisyParallelActionGridAllowed: false,
   todayFirst: true
