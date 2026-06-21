@@ -10,11 +10,12 @@ export type TrackBStatusTone =
 
 export type TrackBNavigationItemId =
   | "today"
+  | "save"
   | "review"
   | "weak"
   | "packs"
   | "saved"
-  | "progress";
+  | "pricing";
 
 export type TrackBNavigationItem = {
   id: TrackBNavigationItemId;
@@ -22,6 +23,7 @@ export type TrackBNavigationItem = {
   href: string;
   description: string;
   ariaLabel: string;
+  icon?: "home" | "layers" | "book" | "clock";
 };
 
 export const trackBDesignTokens = {
@@ -108,10 +110,17 @@ export const trackBDesignTokens = {
 export const trackBNavigationItems: readonly TrackBNavigationItem[] = [
   {
     id: "today",
-    label: "Today",
+    label: "Dashboard",
     href: "/dashboard",
     description: "Today's Memory Mission and the next best review action.",
-    ariaLabel: "Today memory mission"
+    ariaLabel: "Dashboard memory mission"
+  },
+  {
+    id: "save",
+    label: "Save Word",
+    href: "/save",
+    description: "Turn a word into a visual review card.",
+    ariaLabel: "Save Word"
   },
   {
     id: "review",
@@ -121,34 +130,66 @@ export const trackBNavigationItems: readonly TrackBNavigationItem[] = [
     ariaLabel: "Review words"
   },
   {
-    id: "weak",
-    label: "Weak",
-    href: "/review/weak",
-    description: "Repair fragile words from mistakes and weak scores.",
-    ariaLabel: "Practice weak words"
+    id: "saved",
+    label: "Queue",
+    href: "/saved",
+    description: "Saved words organized around review readiness.",
+    ariaLabel: "Open memory queue"
   },
   {
-    id: "packs",
-    label: "Packs",
-    href: "/packs",
-    description: "Course paths and visual vocabulary packs.",
-    ariaLabel: "Open packs"
+    id: "pricing",
+    label: "Early Access",
+    href: "/pricing",
+    description: "Invite-only paid beta interest.",
+    ariaLabel: "Open Early Access pricing"
+  }
+];
+
+export const trackBMobileNavigationItems: readonly TrackBNavigationItem[] = [
+  {
+    id: "today",
+    label: "Home",
+    href: "/dashboard",
+    description: "Today's Memory Mission.",
+    ariaLabel: "Home dashboard",
+    icon: "home"
   },
   {
     id: "saved",
-    label: "Saved",
+    label: "Queue",
     href: "/saved",
     description: "Saved words organized around review readiness.",
-    ariaLabel: "Open saved words"
+    ariaLabel: "Open memory queue",
+    icon: "layers"
   },
   {
-    id: "progress",
-    label: "Progress",
-    href: "/dashboard#progress",
-    description: "Weekly Reviewed Words and real memory-state movement.",
-    ariaLabel: "View progress"
+    id: "review",
+    label: "Review",
+    href: "/review",
+    description: "Active recall sessions.",
+    ariaLabel: "Review words",
+    icon: "book"
+  },
+  {
+    id: "pricing",
+    label: "Access",
+    href: "/pricing",
+    description: "Invite-only beta access.",
+    ariaLabel: "Open Early Access",
+    icon: "clock"
   }
 ];
+
+export const trackBScreenLabels: Record<
+  Extract<TrackBNavigationItemId, "today" | "save" | "review" | "saved" | "pricing">,
+  string
+> = {
+  today: "Dashboard",
+  save: "Save Word",
+  review: "Review",
+  saved: "Queue",
+  pricing: "Early Access"
+};
 
 export function getTrackBNavItemIsActive({
   activeItemId,
@@ -167,12 +208,12 @@ export function getTrackBNavItemIsActive({
     return false;
   }
 
-  if (item.id === "progress") {
-    return currentPath.includes("#progress");
-  }
-
   if (item.id === "today") {
     return currentPath === "/dashboard";
+  }
+
+  if (item.id === "save") {
+    return currentPath === "/save";
   }
 
   if (item.id === "review") {
@@ -185,6 +226,10 @@ export function getTrackBNavItemIsActive({
       currentPath === "/review/weak-sprint" ||
       currentPath.startsWith("/review/weak/")
     );
+  }
+
+  if (item.id === "pricing") {
+    return currentPath === "/pricing";
   }
 
   return currentPath === item.href || currentPath.startsWith(`${item.href}/`);

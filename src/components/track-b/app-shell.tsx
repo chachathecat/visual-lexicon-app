@@ -3,10 +3,18 @@ import type { ReactNode } from "react";
 
 import {
   getTrackBNavItemIsActive,
+  trackBMobileNavigationItems,
   trackBNavigationItems,
+  trackBScreenLabels,
   type TrackBNavigationItem,
   type TrackBNavigationItemId
 } from "@/components/track-b/tokens";
+import {
+  BookOpenIcon,
+  ClockIcon,
+  HomeIcon,
+  LayersIcon
+} from "@/components/track-b/icons";
 import { cx } from "@/components/track-b/utils";
 
 export type TrackBAppShellProps = {
@@ -51,16 +59,49 @@ function TrackBNavList({
                 href={item.href}
               >
                 <span className="track-b-nav-link__label">{item.label}</span>
-                <span className="track-b-nav-link__description">
+                <span className="track-b-nav-link__description" aria-hidden="true">
                   {item.description}
                 </span>
               </Link>
             </li>
           );
         })}
+        <li aria-hidden="true" className="track-b-nav-list__separator" />
+        <li>
+          <span className="track-b-nav-link track-b-nav-link--system">
+            Components
+          </span>
+        </li>
+        <li>
+          <span className="track-b-nav-link track-b-nav-link--system">
+            Tokens
+          </span>
+        </li>
       </ul>
     </nav>
   );
+}
+
+function getBottomNavIcon(item: TrackBNavigationItem, active: boolean) {
+  const iconProps = {
+    className: "track-b-bottom-nav__icon",
+    size: 20,
+    strokeWidth: active ? 2.3 : 1.8
+  };
+
+  if (item.icon === "layers") {
+    return <LayersIcon {...iconProps} />;
+  }
+
+  if (item.icon === "book") {
+    return <BookOpenIcon {...iconProps} />;
+  }
+
+  if (item.icon === "clock") {
+    return <ClockIcon {...iconProps} />;
+  }
+
+  return <HomeIcon {...iconProps} />;
 }
 
 export type TrackBBottomNavProps = {
@@ -74,7 +115,7 @@ export function TrackBBottomNav({
   activeItemId,
   className,
   currentPath,
-  items = trackBNavigationItems
+  items = trackBMobileNavigationItems
 }: TrackBBottomNavProps) {
   return (
     <nav
@@ -96,7 +137,7 @@ export function TrackBBottomNav({
             href={item.href}
             key={item.id}
           >
-            <span aria-hidden="true" className="track-b-bottom-nav__dot" />
+            {getBottomNavIcon(item, active)}
             <span>{item.label}</span>
           </Link>
         );
@@ -114,21 +155,27 @@ export function TrackBAppShell({
   navItems = trackBNavigationItems,
   sidebarFooter,
   topActions,
-  workspaceLabel = "app.visuallexicon.org"
+  workspaceLabel
 }: TrackBAppShellProps) {
+  const mobileScreenLabel = activeItemId
+    ? trackBScreenLabels[
+        activeItemId as keyof typeof trackBScreenLabels
+      ] ?? "Visual Lexicon"
+    : "Visual Lexicon";
+
   return (
     <div className={cx("track-b-shell", className)}>
       <a className="track-b-shell__skip-link" href={`#${mainId}`}>
         Skip to learning content
       </a>
-      <aside className="track-b-shell__sidebar" aria-label="Track B">
+      <header className="track-b-shell__header">
         <Link
           aria-label="Visual Lexicon Today dashboard"
           className="track-b-shell__brand"
           href="/dashboard"
         >
           <span className="track-b-shell__brand-mark" aria-hidden="true">
-            VL
+            <BookOpenIcon size={13} strokeWidth={2.3} />
           </span>
           <span>
             <span className="track-b-shell__brand-name">Visual Lexicon</span>
@@ -137,31 +184,35 @@ export function TrackBAppShell({
             </span>
           </span>
         </Link>
+        <span className="track-b-shell__mobile-screen-label">
+          {mobileScreenLabel}
+        </span>
         <TrackBNavList
           activeItemId={activeItemId}
-          className="track-b-shell__nav"
+          className="track-b-shell__desktop-nav"
           currentPath={currentPath}
           items={navItems}
         />
-        {sidebarFooter ? (
-          <div className="track-b-shell__sidebar-footer">{sidebarFooter}</div>
-        ) : null}
-      </aside>
-      <div className="track-b-shell__workspace">
-        <header className="track-b-shell__topbar">
-          <span>{workspaceLabel}</span>
+        <div className="track-b-shell__header-meta">
+          {workspaceLabel ? (
+            <span className="track-b-shell__workspace-label">
+              {workspaceLabel}
+            </span>
+          ) : null}
           {topActions ? (
             <div className="track-b-shell__topbar-actions">{topActions}</div>
           ) : null}
-        </header>
-        <main className="track-b-shell__main" id={mainId}>
-          {children}
-        </main>
-      </div>
+          {sidebarFooter ? (
+            <div className="track-b-shell__sidebar-footer">{sidebarFooter}</div>
+          ) : null}
+        </div>
+      </header>
+      <main className="track-b-shell__main" id={mainId}>
+        {children}
+      </main>
       <TrackBBottomNav
         activeItemId={activeItemId}
         currentPath={currentPath}
-        items={navItems}
       />
     </div>
   );

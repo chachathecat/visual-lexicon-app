@@ -224,7 +224,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     ).toHaveCount(0);
   });
 
-  test('dashboard with weak words keeps upgrade nudge visual-only', async ({
+  test('dashboard with weak words keeps first screen free of upgrade prompts', async ({
     page,
   }) => {
     await seedVlxLocalStorage(page, {
@@ -241,10 +241,10 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     await expect(
       page.getByRole('link', { name: 'Start Weak Sprint' }),
-    ).toHaveAttribute('href', '/review/weak-sprint');
+    ).toHaveCount(0);
     await expect(
       page.locator('.track-b-upgrade-nudge[data-visual-only="true"]'),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.locator('[data-paywall-trigger="weak_words_sprint_locked"]'),
     ).toHaveCount(0);
@@ -253,10 +253,10 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     ).toHaveCount(0);
     await expect(page.locator('[data-paywall-trigger]')).toHaveCount(0);
     await expect(
-      page.locator('.track-b-upgrade-nudge[data-visual-only="true"]'),
-    ).toContainText(
-      'This is a visual-only upgrade note',
-    );
+      page.locator('.dashboard-v2-mission-card').getByRole('link', {
+        name: 'Start review',
+      }),
+    ).toHaveAttribute('href', '/review/due');
   });
 
   test('save limit prompt appears when saved count reaches free limit', async ({
@@ -350,8 +350,8 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     const pricingUrl = page.url();
 
-    await page.getByRole('button', { name: 'Preview Lite' }).click();
-    await page.getByRole('button', { name: 'Preview Pro' }).click();
+    await page.getByRole('button', { name: 'Join paid beta' }).click();
+    await page.getByRole('button', { name: 'Request early access' }).click();
 
     await expect(page).toHaveURL(pricingUrl);
     await expect(
@@ -390,19 +390,19 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('button', { name: 'Preview Lite' }),
+      page.getByRole('button', { name: 'Join paid beta' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Preview Pro' }),
+      page.getByRole('button', { name: 'Request early access' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'Preview Lite' }),
+      page.getByRole('link', { name: 'Join paid beta' }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Preview Pro' }),
+      page.getByRole('link', { name: 'Request early access' }),
     ).toHaveCount(0);
     await expect(page.locator('body')).toContainText(
-      'Buttons record local interest only.',
+      'Visual Lexicon is collecting paid beta interest only.',
     );
   });
 

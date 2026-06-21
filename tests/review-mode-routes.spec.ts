@@ -815,7 +815,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
     await expect(page.locator('.review-session')).toHaveCount(0);
   });
 
-  test('dashboard shows Start Weak Sprint when weak words exist', async ({
+  test('dashboard keeps Weak Sprint off the first screen when weak words exist', async ({
     page,
   }) => {
     await seedVlxLocalStorage(page, {
@@ -832,8 +832,12 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     const sprintLink = page.getByRole('link', { name: 'Start Weak Sprint' });
 
-    await expect(sprintLink).toBeVisible();
-    await expect(sprintLink).toHaveAttribute('href', '/review/weak-sprint');
+    await expect(sprintLink).toHaveCount(0);
+    await expect(
+      page.locator('.dashboard-v2-mission-card').getByRole('link', {
+        name: 'Start review',
+      }),
+    ).toHaveAttribute('href', '/review/due');
   });
 
   test('/review?mode=word&slug=dissonance renders a focused session', async ({

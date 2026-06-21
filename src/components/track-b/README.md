@@ -56,8 +56,9 @@ export function DashboardV2Foundation() {
 - Components are presentation primitives only.
 - Upgrade nudges are visual only and do not implement entitlement logic.
 - Status badges communicate text labels, not color alone.
-- Navigation follows `Today -> Review -> Weak -> Packs -> Saved -> Progress`.
-- Progress links back to the dashboard anchor; this PR does not add a new route.
+- Navigation follows `Today -> Save -> Review -> Queue -> Early Access`.
+- Track B app routes use desktop top navigation and mobile bottom navigation,
+  not a desktop left sidebar.
 - Components do not read or write SRS state. Future route PRs must keep Due,
   Weak, Mastered, and progress derived from real review state.
 

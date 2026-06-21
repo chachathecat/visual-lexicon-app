@@ -13,7 +13,7 @@ North Star Metric: **Weekly Reviewed Words**.
 Track B mental model:
 
 ```txt
-Today -> Review -> Weak -> Packs -> Saved -> Progress
+Today -> Save -> Review -> Queue -> Early Access
 ```
 
 Core loop:
@@ -24,11 +24,10 @@ Visual metaphor -> Active recall -> Mistake record -> Spaced review -> Mastery s
 
 ## Runtime Scope
 
-This PR changes `/dashboard` only.
+This parity pass changes `/dashboard` composition only.
 
-- `/dashboard` now uses `TrackBAppShell`, `TrackBPageHeader`,
-  `TrackBPrimaryActionCard`, `TrackBMetricCard`, `TrackBEmptyState`, and
-  `TrackBUpgradeNudge`.
+- `/dashboard` now uses `TrackBAppShell`, `TrackBMetricCard`, and
+  `TrackBEmptyState`.
 - The existing root route remains on the older dashboard view so this PR does
   not unintentionally rebuild `/`.
 - Review Session, Saved Library, Packs pages, Pricing, SRS engine behavior,
@@ -44,42 +43,28 @@ vlx_saved_words_v1
 vlx_review_state_v1
 vlx_review_events_v1
 vlx_daily_stats_v1
-vlx_pack_progress_v1
 ```
 
-It does not mutate review state, review events, daily stats, saved words, or pack
-progress. Review answers remain the only place that should write review events
-and advance SRS state.
+It does not mutate review state, review events, daily stats, or saved words.
+Review answers remain the only place that should write review events and
+advance SRS state.
 
 ## Dashboard Structure
 
-1. Track B app shell.
-2. Page header titled `Today`.
-3. Today's Memory Mission hero with a primary `Start due review` action.
-4. Memory status row:
+1. Track B app shell with desktop top navigation and mobile bottom navigation.
+2. Centered 600px Today's Memory Mission card.
+3. Three due-word preview rows from real review state with real visual
+   thumbnails when due words exist.
+4. One full-width coral `Start review` action.
+5. Four quiet memory-state cards:
    - Due from `getDueToday`.
    - Weak from `getWeakWords`.
    - New from `getNewSaved`.
-   - Learning from review state items with `mastery === "Learning"`.
    - Mastered from `getMastered`.
-5. Continue section:
-   - Shows active pack progress only when `vlx_pack_progress_v1` has visible
-     local progress.
-   - Otherwise shows preview links without claimed progress.
-6. Existing alias search support:
-   - Preserved as a safe way to find canonical word cards and save words into
-     the review loop.
-   - Does not create multilingual pages or generate new route groups.
-7. Weak spotlight:
-   - Shows weak candidates only when the weak selector returns real candidates.
-   - Otherwise shows an educational empty state.
-8. Recently saved:
-   - Shows recent saved words from local saved state.
-   - Saved-only entries do not receive fake box or mastery labels.
-9. Contextual upgrade nudge:
-   - Visual only.
-   - Links to the existing `/pricing` route.
-   - Does not grant paid access or introduce entitlement logic.
+6. Secondary `Memory queue` and `Save a word` actions.
+
+The first screen must not show Alias Search, Learning Modules, Hub Progress,
+Streak, Packs, Pro promotion, or Saved Library.
 
 ## Safety Confirmation
 
@@ -88,8 +73,8 @@ portal, auth, API routes, route handlers, middleware, database/provider SDKs,
 environment variables, production data writes, Webflow, Cloudflare, Vercel, DNS,
 or deployment changes.
 
-It does not fake due counts, weak counts, mastered counts, pack progress, paid
-access, or streaks.
+It does not fake due counts, weak counts, mastered counts, paid access, or
+streaks.
 
 ## Follow-up
 

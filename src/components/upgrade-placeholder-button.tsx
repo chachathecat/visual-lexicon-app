@@ -15,10 +15,12 @@ type UpgradePlaceholderButtonProps = {
   source: string;
   className?: string;
   interestOnly?: boolean;
+  ariaLabel?: string;
   trigger?: string;
 };
 
 export function UpgradePlaceholderButton({
+  ariaLabel,
   className = "button button--quiet",
   interestOnly = false,
   plan,
@@ -52,6 +54,7 @@ export function UpgradePlaceholderButton({
     <div className="upgrade-placeholder">
       {upgradeTarget ? (
         <a
+          aria-label={ariaLabel}
           className={className}
           href={upgradeTarget}
           onClick={recordUpgradeClick}
@@ -62,6 +65,7 @@ export function UpgradePlaceholderButton({
         </a>
       ) : (
         <button
+          aria-label={ariaLabel}
           className={className}
           onClick={handleClick}
           type="button"
