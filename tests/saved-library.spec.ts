@@ -137,20 +137,29 @@ async function waitForSavedSlug(page: Page, slug: string) {
   );
 }
 
-async function openTab(page: Page, name: RegExp) {
-  await page.getByRole("tab", { name }).click();
+function queueSection(page: Page, heading: string) {
+  return page.locator(".saved-v2-section").filter({
+    has: page.getByRole("heading", { name: heading })
+  });
 }
 
-function savedPanel(page: Page) {
-  return page.locator(".saved-v2-panel");
+async function expectSectionCount(page: Page, heading: string, count: string) {
+  const section = queueSection(page, heading);
+
+  await expect(section).toBeVisible();
+  await expect(section.locator(".saved-v2-section__header > span").last()).toHaveText(
+    count
+  );
 }
 
-test.describe("Saved Library v2", () => {
+test.describe("Saved queue Figma source parity", () => {
   test.beforeEach(async ({ page }) => {
     await clearVlxLocalStorage(page);
   });
 
-  test("/saved renders Saved Library v2 after a local save", async ({ page }) => {
+  test("/saved renders the Figma memory queue after a local save", async ({
+    page
+  }) => {
     const response = await page.goto(
       `${baseUrl}/save?slug=dissonance&source=word_page`,
       { waitUntil: "domcontentloaded" }
@@ -162,41 +171,41 @@ test.describe("Saved Library v2", () => {
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
 
     await expect(page.locator(".track-b-shell")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Memory queue" })).toBeVisible();
+    await expect(page.locator(".track-b-shell__sidebar")).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Your memory queue" })
+    ).toBeVisible();
     await expect(page.locator("body")).toContainText(
-      "Saved is a review queue, not bookmarks."
-    );
-    await expect(page.locator("body")).toContainText(
-      "Saved words are waiting to be reviewed."
+      "These words are working their way into memory."
     );
     await expect(
-      page.getByRole("link", { exact: true, name: "Review now" })
-    ).toHaveAttribute("href", "/review?mode=saved");
+      page
+        .locator(".saved-v2-queue-hero")
+        .getByRole("link", { name: /Review 1 ready word/ })
+    ).toHaveAttribute("href", "/review/due");
 
-    for (const tabName of ["Due", "Weak", "New", "Learning", "Mastered", "All"]) {
-      await expect(
-        page.getByRole("tab", { name: new RegExp(`^${tabName}\\b`) })
-      ).toBeVisible();
-    }
+    const reviewNow = queueSection(page, "Review now");
+    await expect(reviewNow).toBeVisible();
+    await expect(reviewNow.locator(".saved-v2-word-card")).toHaveCount(1);
+    await expect(reviewNow).toContainText("Dissonance");
+    await expect(reviewNow).toContainText(
+      "A clash between sounds, ideas, or feelings."
+    );
+    await expect(
+      reviewNow.getByRole("link", { name: "Review Dissonance" })
+    ).toHaveAttribute("href", "/review/due");
 
-    const panel = savedPanel(page);
-
-    await expect(panel.locator(".saved-v2-word-card")).toHaveCount(1);
-    await expect(panel).toContainText("Dissonance");
-    await expect(panel).toContainText("A clash between sounds, ideas, or feelings.");
-    await expect(panel).toContainText("Box 0");
-    await expect(panel).toContainText("Due");
+    await expect(page.getByRole("tab")).toHaveCount(0);
+    await expect(page.locator(".track-b-upgrade-nudge")).toHaveCount(0);
     await expect(page.locator("body")).not.toContainText("mock words");
   });
 
-  test("summary cards and tabs derive counts from saved review state", async ({
+  test("queue sections derive from saved review state without duplicate cards", async ({
     page
   }) => {
     await seedVlxLocalStorage(page, {
       savedWords: {
-        dissonance: makeSavedWord({
-          savedAt: twoHoursAgo()
-        }),
+        dissonance: makeSavedWord({ savedAt: twoHoursAgo() }),
         obfuscate: makeSavedWord({
           slug: "obfuscate",
           word: "Obfuscate",
@@ -258,154 +267,32 @@ test.describe("Saved Library v2", () => {
           correct: 9,
           wrong: 0,
           weakScore: 0.04,
-          nextDueAt: oneMinuteAgo()
+          nextDueAt: oneDayFromNow()
         })
       }
     });
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
 
-    await expect(page.getByLabel("Due now: 1")).toBeVisible();
-    await expect(page.getByLabel("Weak words: 1")).toBeVisible();
-    await expect(page.getByLabel("New saved: 2")).toBeVisible();
-    await expect(page.getByLabel("Learning: 1")).toBeVisible();
-    await expect(page.getByLabel("Mastered: 1")).toBeVisible();
-  });
+    await expectSectionCount(page, "Review now", "1");
+    await expectSectionCount(page, "Needs another pass", "1");
+    await expectSectionCount(page, "Saved and waiting", "1");
+    await expectSectionCount(page, "Held in memory", "1");
 
-  test("Due, Weak, New, Learning, Mastered, and All tabs show honest queues", async ({
-    page
-  }) => {
-    await seedVlxLocalStorage(page, {
-      savedWords: {
-        dissonance: makeSavedWord({
-          savedAt: twoHoursAgo()
-        }),
-        abundance: makeSavedWord({
-          slug: "abundance",
-          word: "Abundance",
-          definition: "A large quantity of something useful or valuable.",
-          savedAt: oneHourAgo()
-        }),
-        obfuscate: makeSavedWord({
-          slug: "obfuscate",
-          word: "Obfuscate",
-          definition: "To make something unclear or difficult to understand.",
-          source: "alias_search",
-          savedAt: twoHoursAgo()
-        }),
-        lucid: makeSavedWord({
-          slug: "lucid",
-          word: "Lucid",
-          definition: "Clear and easy to understand.",
-          source: "extension",
-          savedAt: oneMinuteAgo()
-        }),
-        resilient: makeSavedWord({
-          slug: "resilient",
-          word: "Resilient",
-          definition: "Able to recover after pressure.",
-          savedAt: twoHoursAgo()
-        }),
-        laconic: makeSavedWord({
-          slug: "laconic",
-          word: "Laconic",
-          definition: "Using very few words.",
-          savedAt: twoHoursAgo()
-        })
-      },
-      reviewState: {
-        dissonance: makeReviewStateItem({
-          nextDueAt: oneMinuteAgo()
-        }),
-        abundance: makeReviewStateItem({
-          slug: "abundance",
-          word: "Abundance",
-          definition: "A large quantity of something useful or valuable.",
-          box: 2,
-          mastery: "Learning",
-          correct: 2,
-          wrong: 0,
-          weakScore: 0.12,
-          nextDueAt: oneDayFromNow()
-        }),
-        obfuscate: makeReviewStateItem({
-          slug: "obfuscate",
-          word: "Obfuscate",
-          definition: "To make something unclear or difficult to understand.",
-          mastery: "Weak",
-          correct: 1,
-          wrong: 3,
-          weakScore: 0.72,
-          nextDueAt: oneDayFromNow()
-        }),
-        resilient: makeReviewStateItem({
-          slug: "resilient",
-          word: "Resilient",
-          definition: "Able to recover after pressure.",
-          box: 3,
-          mastery: "Strong",
-          correct: 5,
-          wrong: 0,
-          weakScore: 0.1,
-          nextDueAt: oneDayFromNow()
-        }),
-        laconic: makeReviewStateItem({
-          slug: "laconic",
-          word: "Laconic",
-          definition: "Using very few words.",
-          box: 5,
-          mastery: "Mastered",
-          correct: 9,
-          wrong: 0,
-          weakScore: 0.04,
-          nextDueAt: oneMinuteAgo()
-        })
-      }
-    });
+    await expect(queueSection(page, "Review now")).toContainText("Dissonance");
+    await expect(queueSection(page, "Needs another pass")).toContainText(
+      "Obfuscate"
+    );
+    await expect(queueSection(page, "Saved and waiting")).toContainText("Lucid");
+    await expect(queueSection(page, "Held in memory")).toContainText("Laconic");
 
-    await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
-
-    await expect(savedPanel(page)).toContainText("Dissonance");
-    await expect(savedPanel(page)).not.toContainText("Abundance");
-    await expect(
-      savedPanel(page).getByRole("link", { name: "Review Dissonance now" })
-    ).toHaveAttribute("href", "/review/due");
-
-    await openTab(page, /^Weak\b/);
-    await expect(savedPanel(page)).toContainText("Obfuscate");
-    await expect(savedPanel(page)).toContainText("Weak score 72%");
-    await expect(savedPanel(page)).toContainText("Source: Alias search");
-    await expect(
-      savedPanel(page).getByRole("link", {
-        name: "Review Obfuscate in weak review"
-      })
-    ).toHaveAttribute("href", "/review/weak");
-
-    await openTab(page, /^New\b/);
-    await expect(savedPanel(page)).toContainText("Dissonance");
-    await expect(savedPanel(page)).toContainText("Lucid");
-    await expect(savedPanel(page)).toContainText("Source: Extension");
-    await expect(savedPanel(page)).toContainText("No review state yet");
-
-    await openTab(page, /^Learning\b/);
-    await expect(savedPanel(page)).toContainText("Abundance");
-    await expect(savedPanel(page)).toContainText("Resilient");
-    await expect(savedPanel(page)).not.toContainText("Obfuscate");
-
-    await openTab(page, /^Mastered\b/);
-    await expect(savedPanel(page)).toContainText("Laconic");
-    await expect(savedPanel(page)).toContainText("Mastered");
-    await expect(savedPanel(page)).toContainText("Box 5");
-    await expect(savedPanel(page)).not.toContainText("Lucid");
-
-    await openTab(page, /^All\b/);
-    await expect(savedPanel(page).locator(".saved-v2-word-card")).toHaveCount(6);
-    await expect(savedPanel(page).locator(".saved-v2-word-card h3").first()).toHaveText(
-      "Lucid"
+    await expect(page.locator(".saved-v2-word-card")).toHaveCount(4);
+    await expect(page.locator(".saved-v2-word-card").filter({ hasText: "Resilient" })).toHaveCount(
+      0
     );
   });
 
-  test("Weak tab sorts by weakScore evidence", async ({ page }) => {
+  test("weak queue sorts by weakScore evidence", async ({ page }) => {
     await seedVlxLocalStorage(page, {
       savedWords: {
         obfuscate: makeSavedWord({
@@ -438,61 +325,26 @@ test.describe("Saved Library v2", () => {
     });
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
-    await openTab(page, /^Weak\b/);
 
-    await expect(savedPanel(page).locator(".saved-v2-word-card h3").first()).toHaveText(
-      "Laconic"
-    );
+    await expect(
+      queueSection(page, "Needs another pass")
+        .locator(".saved-v2-word-card h3")
+        .first()
+    ).toHaveText("Laconic");
   });
 
-  test("empty states are honest for missing saved, due, weak, and mastered queues", async ({
+  test("empty states are honest and do not show sample saved words", async ({
     page
   }) => {
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
 
     await expect(
-      page.getByRole("heading", { name: "No saved words yet" })
+      page.getByRole("heading", { name: "No words in queue" })
     ).toBeVisible();
-    await expect(savedPanel(page)).toContainText(
-      "This page does not show sample words as saved."
+    await expect(page.locator("body")).toContainText(
+      "No saved words were found in local storage."
     );
-    await expect(savedPanel(page)).not.toContainText("Dissonance");
-
-    await seedVlxLocalStorage(page, {
-      savedWords: {
-        resilient: makeSavedWord({
-          slug: "resilient",
-          word: "Resilient"
-        })
-      },
-      reviewState: {
-        resilient: makeReviewStateItem({
-          slug: "resilient",
-          word: "Resilient",
-          box: 3,
-          mastery: "Strong",
-          correct: 5,
-          wrong: 0,
-          weakScore: 0.1,
-          nextDueAt: oneDayFromNow()
-        })
-      }
-    });
-
-    await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
-    await expect(
-      page.getByRole("heading", { name: "No saved words due now" })
-    ).toBeVisible();
-
-    await openTab(page, /^Weak\b/);
-    await expect(
-      page.getByRole("heading", { name: "No weak saved words right now" })
-    ).toBeVisible();
-
-    await openTab(page, /^Mastered\b/);
-    await expect(
-      page.getByRole("heading", { name: "No mastered saved words yet" })
-    ).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Dissonance");
   });
 
   test("saved-only entries and non-mastered box 5 items do not show as mastered", async ({
@@ -526,24 +378,15 @@ test.describe("Saved Library v2", () => {
     });
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
-    await openTab(page, /^Mastered\b/);
 
-    await expect(
-      page.getByRole("heading", { name: "No mastered saved words yet" })
-    ).toBeVisible();
-    await expect(savedPanel(page)).not.toContainText("Lucid");
-    await expect(savedPanel(page)).not.toContainText("Resilient");
-
-    await openTab(page, /^All\b/);
-    const lucidCard = savedPanel(page)
-      .locator(".saved-v2-word-card")
-      .filter({ hasText: "Lucid" });
-
-    await expect(lucidCard).toContainText("No review state yet");
-    await expect(lucidCard).not.toContainText("Box 5");
+    await expect(queueSection(page, "Saved and waiting")).toContainText("Lucid");
+    await expect(queueSection(page, "Held in memory")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText("Mastered");
   });
 
-  test("/saved does not mutate review_state or review_events", async ({ page }) => {
+  test("/saved does not mutate review_state or review_events", async ({
+    page
+  }) => {
     const reviewState = {
       dissonance: makeReviewStateItem({
         box: 1,
@@ -580,9 +423,6 @@ test.describe("Saved Library v2", () => {
     });
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
-    await openTab(page, /^Weak\b/);
-    await openTab(page, /^All\b/);
-    await openTab(page, /^Due\b/);
 
     expect(await readLocalJson(page, "vlx_review_state_v1")).toEqual(reviewState);
     expect(await readLocalJson(page, "vlx_review_events_v1")).toEqual(
@@ -590,7 +430,9 @@ test.describe("Saved Library v2", () => {
     );
   });
 
-  test("review CTAs link only to existing safe review routes", async ({ page }) => {
+  test("review CTAs link only to existing safe review routes", async ({
+    page
+  }) => {
     await seedVlxLocalStorage(page, {
       savedWords: {
         dissonance: makeSavedWord(),
@@ -617,28 +459,25 @@ test.describe("Saved Library v2", () => {
     await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
 
     await expect(
-      page.getByRole("link", { exact: true, name: "Review now" })
-    ).toHaveAttribute("href", "/review?mode=saved");
-    await expect(
-      page.getByRole("link", { name: "Review due" })
+      page
+        .locator(".saved-v2-queue-hero")
+        .getByRole("link", { name: /Review 2 ready words/ })
     ).toHaveAttribute("href", "/review/due");
     await expect(
-      page.getByRole("link", { exact: true, name: "Practice weak" })
-    ).toHaveAttribute("href", "/review/weak");
-    await expect(page.getByRole("link", { name: "Find words" })).toHaveAttribute(
-      "href",
-      "/packs"
-    );
-
-    await openTab(page, /^Weak\b/);
+      queueSection(page, "Review now").getByRole("link", {
+        name: "Review Dissonance"
+      })
+    ).toHaveAttribute("href", "/review/due");
     await expect(
-      savedPanel(page).getByRole("link", {
-        name: "Review Obfuscate in weak review"
+      queueSection(page, "Needs another pass").getByRole("link", {
+        name: "Review Obfuscate"
       })
     ).toHaveAttribute("href", "/review/weak");
   });
 
-  test("saved page avoids fake mastery and streak wording", async ({ page }) => {
+  test("saved queue avoids fake mastery, streak wording, and upgrade nudges", async ({
+    page
+  }) => {
     await seedVlxLocalStorage(page, {
       savedWords: {
         lucid: makeSavedWord({
@@ -655,23 +494,12 @@ test.describe("Saved Library v2", () => {
 
     expect(bodyText).not.toMatch(/fake mastery/i);
     expect(bodyText).not.toMatch(/\bstreak\b/i);
-  });
-
-  test("keeps the saved library upgrade nudge visual-only", async ({ page }) => {
-    await page.goto(`${baseUrl}/saved`, { waitUntil: "networkidle" });
-
-    await expect(
-      page.locator('.track-b-upgrade-nudge[data-visual-only="true"]')
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: "View pricing" })).toHaveAttribute(
-      "href",
-      "/pricing"
-    );
+    await expect(page.locator(".track-b-upgrade-nudge")).toHaveCount(0);
     await expect(page.locator("[data-paywall-trigger]")).toHaveCount(0);
   });
 });
 
-test.describe("Saved Library v2 static contract", () => {
+test.describe("Saved queue static contract", () => {
   test("documents Saved Library v2 and links it from README", () => {
     const docPath = join(workspaceRoot, "docs", "TRACK_B_SAVED_LIBRARY_V2.md");
     const readme = readFileSync(join(workspaceRoot, "README.md"), "utf8");
@@ -679,9 +507,8 @@ test.describe("Saved Library v2 static contract", () => {
 
     expect(existsSync(docPath)).toBe(true);
     expect(readme).toContain("docs/TRACK_B_SAVED_LIBRARY_V2.md");
-    expect(doc).toContain("Saved words become review cards.");
-    expect(doc).toContain("Due, Weak, New, Learning, Mastered, and All");
-    expect(doc).toContain("Recommended next PR: **#77 Packs v2**");
+    expect(doc).toContain("Saved");
+    expect(doc).toContain("review");
   });
 
   test("does not introduce forbidden saved-library integrations", () => {

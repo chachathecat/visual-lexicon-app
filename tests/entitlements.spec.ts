@@ -136,13 +136,16 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     expect(response?.status()).toBe(200);
     await expect(page.locator('.track-b-shell')).toBeVisible();
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Visual Lexicon paid beta' }),
+      page.getByRole('heading', {
+        level: 1,
+        name: 'Early access',
+      }),
     ).toBeVisible();
     await expect(page.locator('body')).toContainText(
-      'Paid beta is invite-only.',
+      'Visual Lexicon is invite-only during beta.',
     );
     await expect(page.locator('body')).toContainText(
-      'does not create checkout, billing, paid access, or external validation.',
+      'No checkout is live',
     );
 
     const freePlan = page.locator('[data-plan-id="free"]');
@@ -154,22 +157,25 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     await expect(proPlan).toBeVisible();
     await expect(
       freePlan.getByRole('heading', {
-        name: 'Start the local memory loop.',
+        name: 'Preview',
       }),
     ).toBeVisible();
     await expect(
       litePlan.getByRole('heading', {
-        name: 'Daily memory habit.',
+        name: 'Daily',
       }),
     ).toBeVisible();
     await expect(
       proPlan.getByRole('heading', {
-        name: 'Weak-word repair and exam prep.',
+        name: 'Scholar',
       }),
     ).toBeVisible();
-    await expect(freePlan).toContainText('Saved words become review items');
-    await expect(litePlan).toContainText('Interest capture only in this beta');
-    await expect(proPlan).toContainText('No fake paid access or checkout');
+    await expect(freePlan).toContainText('Save up to 30 words');
+    await expect(litePlan).toContainText('Priority review queue');
+    await expect(proPlan).toContainText('Exam-mode timed review');
+    await expect(
+      freePlan.getByRole('link', { name: 'Request preview access' }),
+    ).toHaveAttribute('href', '/dashboard');
     await expect(
       page.getByRole('button', { name: 'Join paid beta' }),
     ).toBeVisible();
@@ -220,28 +226,50 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
       .toBe(true);
   });
 
-  test('pricing page links Exam Packs to existing safe pack routes', async ({
+  test('pricing page keeps Early Access scoped to beta tiers', async ({
     page,
   }) => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('heading', { name: 'Exam Packs' }),
+      page.getByRole('heading', { name: 'Early access' }),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'View all packs' })).toHaveAttribute(
-      'href',
-      '/packs',
-    );
+    await expect(
+      page.getByRole('heading', { name: 'Preview' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Daily' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Scholar' }),
+    ).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('Exam Packs');
+    await expect(
+      page.getByRole('link', { name: 'View all packs' }),
+    ).toHaveCount(0);
 
-    const safePackLinks = [
-      ['Open Academic Vocabulary pack plan', '/packs/academic-vocabulary'],
-      ['Open IELTS Writing pack plan', '/packs/ielts-writing-vocabulary'],
-      ['Open GRE Visual Verbal pack plan', '/packs/gre-visual-verbal'],
+    const removedPackLinks = [
+      'Open Academic Vocabulary pack plan',
+      'Open IELTS Writing pack plan',
+      'Open GRE Visual Verbal pack plan',
     ] as const;
 
-    for (const [name, href] of safePackLinks) {
-      await expect(page.getByRole('link', { name })).toHaveAttribute('href', href);
+    for (const name of removedPackLinks) {
+      await expect(page.getByRole('link', { name })).toHaveCount(0);
     }
+
+    await expect(
+      page.getByRole('link', { name: 'Request preview access' }),
+    ).toHaveAttribute('href', '/dashboard');
+    await expect(
+      page.getByRole('button', { name: 'Join paid beta' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Request early access' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /checkout|subscribe|pay/i }),
+    ).toHaveCount(0);
   });
 
   test('documents Pricing / Paywall v2 and links it from README', () => {

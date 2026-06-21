@@ -228,7 +228,7 @@ test.describe('Visual Lexicon local MVP smoke', () => {
     );
 
     await expect(
-      page.getByText('This word is now in your review queue.', { exact: true }),
+      page.getByText('Added to your review queue', { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Review now' }),

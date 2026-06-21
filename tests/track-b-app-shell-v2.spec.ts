@@ -61,6 +61,7 @@ const trackBAppShellOwnedRoutes = [
   "/packs",
   "/pricing",
   "/review",
+  "/save",
   "/saved"
 ] as const;
 
@@ -141,24 +142,28 @@ test.describe("Track B app shell v2 foundation", () => {
     }
   });
 
-  test("keeps navigation aligned to the Track B learning model without adding a Progress route", () => {
+  test("keeps navigation aligned to the Figma Track B route set", () => {
     expect(trackBNavigationItems.map((item) => item.label)).toEqual([
-      "Today",
+      "Dashboard",
+      "Save Word",
       "Review",
-      "Weak",
-      "Packs",
-      "Saved",
-      "Progress"
+      "Queue",
+      "Early Access"
     ]);
-    expect(trackBNavigationItems.find((item) => item.id === "progress")).toMatchObject({
-      href: "/dashboard#progress"
-    });
+    expect(trackBNavigationItems.some((item) => item.label === "Packs")).toBe(
+      false
+    );
+    expect(trackBNavigationItems.some((item) => item.id === "pricing")).toBe(
+      true
+    );
 
     const reviewItem = trackBNavigationItems.find((item) => item.id === "review");
-    const weakItem = trackBNavigationItems.find((item) => item.id === "weak");
+    const saveItem = trackBNavigationItems.find((item) => item.id === "save");
+    const pricingItem = trackBNavigationItems.find((item) => item.id === "pricing");
 
     expect(reviewItem).toBeDefined();
-    expect(weakItem).toBeDefined();
+    expect(saveItem).toBeDefined();
+    expect(pricingItem).toBeDefined();
     expect(
       getTrackBNavItemIsActive({
         currentPath: "/review/due",
@@ -173,14 +178,14 @@ test.describe("Track B app shell v2 foundation", () => {
     ).toBe(false);
     expect(
       getTrackBNavItemIsActive({
-        currentPath: "/review/weak",
-        item: weakItem!
+        currentPath: "/save",
+        item: saveItem!
       })
     ).toBe(true);
     expect(
       getTrackBNavItemIsActive({
-        currentPath: "/review/weak-sprint",
-        item: weakItem!
+        currentPath: "/pricing",
+        item: pricingItem!
       })
     ).toBe(true);
   });
@@ -290,7 +295,7 @@ test.describe("Track B app shell v2 foundation", () => {
     expect(readme).toContain("docs/TRACK_B_SHELL_NAVIGATION_CLEANUP.md");
     expect(readme).toContain("docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md");
     expect(readme).toContain("docs/TRACK_B_SALMON_BRAND_TOKENS.md");
-    expect(doc).toContain("Today -> Review -> Weak -> Packs -> Saved -> Progress");
+    expect(doc).toContain("Today -> Save -> Review -> Queue -> Early Access");
     expect(doc).toContain("No payment, billing, subscription");
     expect(doc).toContain("#74 should use this foundation");
     expect(cleanupDoc).toContain("skip link is the first meaningful tab stop");
@@ -466,7 +471,7 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect(
       page.getByRole("link", {
-        name: "Review 5 words before they fade"
+        name: "Start review"
       })
     ).toHaveCount(1);
 
@@ -483,7 +488,7 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
 
     await page.goto("/pricing", { waitUntil: "networkidle" });
     await expect(
-      page.getByText("Invite-only. No live checkout.")
+      page.getByText("No checkout is live.")
     ).toBeVisible();
     await expect(page.locator("body")).not.toContainText("Checkout");
     await expect(page.locator("body")).not.toContainText("Subscribe now");

@@ -29,8 +29,10 @@ export {
 export {
   TRACK_B_APP_SHELL_V2_VERSION,
   getTrackBNavItemIsActive,
+  trackBMobileNavigationItems,
   trackBDesignTokens,
   trackBNavigationItems,
+  trackBScreenLabels,
   type TrackBNavigationItem,
   type TrackBNavigationItemId,
   type TrackBStatusTone

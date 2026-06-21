@@ -224,7 +224,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     ).toHaveCount(0);
   });
 
-  test('dashboard with weak words keeps upgrade nudge visual-only', async ({
+  test('dashboard with weak words keeps first screen free of upgrade prompts', async ({
     page,
   }) => {
     await seedVlxLocalStorage(page, {
@@ -241,10 +241,10 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     await expect(
       page.getByRole('link', { name: 'Start Weak Sprint' }),
-    ).toHaveAttribute('href', '/review/weak-sprint');
+    ).toHaveCount(0);
     await expect(
       page.locator('.track-b-upgrade-nudge[data-visual-only="true"]'),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.locator('[data-paywall-trigger="weak_words_sprint_locked"]'),
     ).toHaveCount(0);
@@ -253,10 +253,10 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     ).toHaveCount(0);
     await expect(page.locator('[data-paywall-trigger]')).toHaveCount(0);
     await expect(
-      page.locator('.track-b-upgrade-nudge[data-visual-only="true"]'),
-    ).toContainText(
-      'This is a visual-only upgrade note',
-    );
+      page.locator('.dashboard-v2-mission-card').getByRole('link', {
+        name: 'Start review',
+      }),
+    ).toHaveAttribute('href', '/review/due');
   });
 
   test('save limit prompt appears when saved count reaches free limit', async ({
@@ -402,7 +402,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
       page.getByRole('link', { name: 'Request early access' }),
     ).toHaveCount(0);
     await expect(page.locator('body')).toContainText(
-      'records local interest only',
+      'Visual Lexicon is collecting paid beta interest only.',
     );
   });
 

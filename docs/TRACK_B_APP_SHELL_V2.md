@@ -14,7 +14,7 @@ Track B should feel like a premium visual vocabulary learning app organized
 around:
 
 ```txt
-Today -> Review -> Weak -> Packs -> Saved -> Progress
+Today -> Save -> Review -> Queue -> Early Access
 ```
 
 The product loop remains:
@@ -59,7 +59,8 @@ Reusable components:
 ## Accessibility Contract
 
 - The shell includes a keyboard skip link.
-- Navigation uses semantic landmarks and `aria-current` for the active item.
+- Navigation uses desktop top navigation, mobile bottom navigation, semantic
+  landmarks, and `aria-current` for the active item.
 - Headings are semantic and controlled by component props where nesting matters.
 - Focus styles are visible through namespaced `--vlx-track-b-focus-*` tokens.
 - Status and progress components include text labels and ARIA labels, so meaning
@@ -95,9 +96,8 @@ Mission. The dashboard integration should keep:
 
 - Due, Weak, and Mastered counts derived from real review state.
 - Start Review pointed at due review when due words exist.
-- Saved Library subordinate to review behavior.
-- Progress centered on Weekly Reviewed Words, not fake streaks or synthetic
-  mastery.
+- Saved Queue subordinate to review behavior.
+- No desktop left sidebar on Track B app routes.
 
 If a route integration starts requiring new data contracts, paid access logic,
 or SRS changes, keep it out of this PR and move it into the relevant future PR.

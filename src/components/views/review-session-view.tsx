@@ -7,12 +7,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PaywallPrompt } from "@/components/paywall-prompt";
 import {
   TrackBAppShell,
-  TrackBMetricCard,
-  TrackBPageHeader,
-  TrackBStatusBadge,
-  type TrackBNavigationItemId,
-  type TrackBStatusTone
+  type TrackBNavigationItemId
 } from "@/components/track-b";
+import {
+  CheckIcon,
+  ChevronRightIcon,
+  RotateCcwIcon,
+  XIcon
+} from "@/components/track-b/icons";
+import { WordVisualImage } from "@/components/word-visual-image";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import { mockQuizWords } from "@/lib/packs/mock-data";
@@ -48,18 +51,13 @@ import type {
   VlxSavedWord,
   VlxSavedWordsStore
 } from "@/lib/srs/types";
+import {
+  getWordVisualFallbackClass,
+  getWordVisualImage
+} from "@/lib/word-visuals";
 
 const SESSION_SIZE = 5;
 const WEAK_SPRINT_SIZE = 5;
-const visualCueSlugs = new Set([
-  "dissonance",
-  "abundance",
-  "resilient",
-  "laconic",
-  "obfuscate",
-  "lucid"
-]);
-
 type ReviewMode = VlxReviewRouteMode;
 type ReviewSource = "due" | "weak" | "saved" | "starter" | "word" | "hub";
 type SessionStatus = "loading" | "empty" | "active" | "summary";
@@ -701,36 +699,104 @@ function isCorrectSelection(selected: string, answer: string) {
   return normalizeTerm(selected) === normalizeTerm(answer);
 }
 
-function getVisualClass(slug: string) {
-  return visualCueSlugs.has(slug) ? ` word-card__visual--${slug}` : "";
+function getVisualClass(question: ReviewQuestion) {
+  return getWordVisualImage(question.slug) || question.image
+    ? " word-card__visual--image"
+    : getWordVisualFallbackClass(question.slug);
 }
 
 function getVisualStyle(question: ReviewQuestion): CSSProperties | undefined {
-  return question.image
+  return !getWordVisualImage(question.slug) && question.image
     ? {
-        backgroundImage: `url(${question.image})`
+        backgroundImage: `url("${question.image}")`
       }
     : undefined;
 }
 
-function getMasteryTone(mastery?: VlxMasteryLabel): TrackBStatusTone {
-  if (mastery === "Weak") {
+function getReviewMemoryState(
+  question: Pick<ReviewableWord, "mastery" | "source" | "weakScore">
+) {
+  if (question.mastery === "Weak" || (question.weakScore ?? 0) > 0) {
     return "weak";
   }
 
-  if (mastery === "Learning") {
-    return "learning";
-  }
-
-  if (mastery === "Strong") {
-    return "strong";
-  }
-
-  if (mastery === "Mastered") {
+  if (question.mastery === "Mastered") {
     return "mastered";
   }
 
-  return "new";
+  if (question.mastery === "New" || question.source === "saved") {
+    return "new";
+  }
+
+  return "due";
+}
+
+function ReviewMemoryPill({
+  state
+}: {
+  state: "due" | "weak" | "new" | "mastered";
+}) {
+  const label =
+    state === "weak"
+      ? "Needs work"
+      : state === "new"
+        ? "New"
+        : state === "mastered"
+          ? "Mastered"
+          : "Due now";
+
+  return (
+    <span className={`review-v2-memory-pill review-v2-memory-pill--${state}`}>
+      <span aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
+
+function ReviewQuestionVisual({ question }: { question: ReviewQuestion }) {
+  return (
+    <div
+      aria-label={`Visual cue for ${question.word}`}
+      className={`word-card__visual review-v2-card__visual${getVisualClass(
+        question
+      )}`}
+      role="img"
+      style={getVisualStyle(question)}
+    >
+      {getWordVisualImage(question.slug) ? (
+        <WordVisualImage
+          sizes="(max-width: 768px) 100vw, 560px"
+          src={getWordVisualImage(question.slug) ?? ""}
+        />
+      ) : null}
+      <div className="review-v2-card__visual-pill">
+        <ReviewMemoryPill state={getReviewMemoryState(question)} />
+      </div>
+    </div>
+  );
+}
+
+function ReviewResultThumbnail({ answer }: { answer: SessionAnswer }) {
+  const packWord = mergePackWord(answer.slug);
+  const visualImage = getWordVisualImage(answer.slug);
+  const externalImage = visualImage ? undefined : packWord?.image;
+  const style: CSSProperties | undefined = externalImage
+    ? { backgroundImage: `url("${externalImage}")` }
+    : undefined;
+  const visualClass =
+    visualImage || externalImage
+      ? " word-card__visual--image"
+      : getWordVisualFallbackClass(answer.slug);
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`word-card__visual review-v2-result-row__thumb${visualClass}`}
+      style={style}
+    >
+      {visualImage ? <WordVisualImage sizes="42px" src={visualImage} /> : null}
+    </div>
+  );
 }
 
 function getAnswerSummary(answers: SessionAnswer[]): SessionSummary {
@@ -956,7 +1022,7 @@ function getReviewSummaryPaywallSurface({
 }
 
 function getReviewShellActiveItem(mode: ReviewMode): TrackBNavigationItemId {
-  return mode === "weak" || mode === "weak-sprint" ? "weak" : "review";
+  return "review";
 }
 
 function getReviewShellPath(mode: ReviewMode) {
@@ -1283,331 +1349,304 @@ export function ReviewSessionView({
       activeItemId={getReviewShellActiveItem(mode)}
       currentPath={getReviewShellPath(mode)}
     >
-      <div className="page review-v2-page">
-      <TrackBPageHeader
-        eyebrow={copy.eyebrow}
-        title={copy.title}
-        description={copy.description}
-      />
+      <div className="review-v2-page">
+        <h1 className="sr-only">{copy.title}</h1>
 
-      {status === "loading" ? (
-        <section className="review-v2-empty" aria-live="polite">
-          <h2>Loading review state</h2>
-          <p>Reading saved words and memory state from local storage.</p>
-        </section>
-      ) : null}
+        {status === "loading" ? (
+          <section className="review-v2-empty" aria-live="polite">
+            <h2>Loading review state</h2>
+            <p>Reading saved words and memory state from local storage.</p>
+          </section>
+        ) : null}
 
-      {status === "empty" ? (
-        <section className="review-v2-empty" aria-live="polite">
-          <p className="track-b-eyebrow">{copy.modeLabel}</p>
-          <h2>{emptyTitle}</h2>
-          <p>{emptyBody}</p>
-          <div className="track-b-action-row">
-            <Link className="track-b-button track-b-button--primary" href="/dashboard">
-              Back to Today
-            </Link>
-            <Link className="track-b-button track-b-button--quiet" href="/saved">
-              Saved library
-            </Link>
-            <Link className="track-b-button track-b-button--quiet" href="/packs">
-              Browse packs
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      {status === "active" && currentQuestion ? (
-        <section className="review-session review-v2-session" aria-labelledby="review-session-title">
-          <header className="review-session__topline review-v2-session__header">
-            <div>
-              <p className="track-b-eyebrow">{copy.modeLabel}</p>
-              <h2 id="review-session-title">
-                Card {currentIndex + 1} of {questions.length}
-              </h2>
-              <p>{queueLabel}. {copy.sourceDetail}.</p>
+        {status === "empty" ? (
+          <section className="review-v2-empty" aria-live="polite">
+            <p className="track-b-eyebrow">{copy.modeLabel}</p>
+            <h2>{emptyTitle}</h2>
+            <p>{emptyBody}</p>
+            <div className="track-b-action-row">
+              <Link
+                aria-label="Back to Today"
+                className="track-b-button track-b-button--primary"
+                href="/dashboard"
+              >
+                Back to dashboard
+              </Link>
+              <Link className="track-b-button track-b-button--quiet" href="/saved">
+                Memory queue
+              </Link>
+              <Link className="track-b-button track-b-button--quiet" href="/packs">
+                Browse packs
+              </Link>
             </div>
-            <div className="review-v2-session__badges" aria-label="Current card state">
-              <span className="track-b-status-badge track-b-status-badge--due">
-                {getQuestionTypeLabel(currentQuestion.questionType)}
-              </span>
-              {currentQuestion.mastery ? (
-                <TrackBStatusBadge status={getMasteryTone(currentQuestion.mastery)} />
-              ) : null}
-            </div>
-          </header>
+          </section>
+        ) : null}
 
-          <div className="review-v2-stage-strip" aria-label="Review progress">
-            <span className="review-v2-stage-strip__item review-v2-stage-strip__item--active">
-              Visual cue
-            </span>
-            <span
-              className={
-                selectedAnswer
-                  ? "review-v2-stage-strip__item review-v2-stage-strip__item--active"
-                  : "review-v2-stage-strip__item"
-              }
-            >
-              Active recall
-            </span>
-            <span
-              className={
-                currentAnswer
-                  ? "review-v2-stage-strip__item review-v2-stage-strip__item--active"
-                  : "review-v2-stage-strip__item"
-              }
-            >
-              Memory state
-            </span>
-          </div>
-
-          <article className="review-card review-v2-card" aria-label="Review card">
+        {status === "active" && currentQuestion ? (
+          <section
+            className="review-session review-v2-session"
+            aria-labelledby="review-session-title"
+          >
+            <h2 className="sr-only">
+              Card {currentIndex + 1} of {questions.length}
+            </h2>
+            <p className="sr-only">{copy.description}</p>
             <div
-              aria-label={`Visual cue for ${currentQuestion.word}`}
-              className={`word-card__visual review-card__visual review-v2-card__visual${getVisualClass(
-                currentQuestion.slug
-              )}${currentQuestion.image ? " word-card__visual--image" : ""}`}
-              role="img"
-              style={getVisualStyle(currentQuestion)}
-            />
-            <div className="review-card__body review-v2-card__body">
-              <p className="track-b-eyebrow">
-                {getPrompt(currentQuestion.questionType)}
-              </p>
-              <p className="review-card__clue">{getClue(currentQuestion)}</p>
-              <dl className="review-v2-card__state">
-                <div>
-                  <dt>Source</dt>
-                  <dd>{currentQuestion.source}</dd>
-                </div>
-                {typeof currentQuestion.box === "number" ? (
-                  <div>
-                    <dt>Box</dt>
-                    <dd>{currentQuestion.box}</dd>
-                  </div>
-                ) : null}
-                {typeof currentQuestion.weakScore === "number" ? (
-                  <div>
-                    <dt>Weak</dt>
-                    <dd>{formatPercent(currentQuestion.weakScore)}</dd>
-                  </div>
-                ) : null}
-                {currentQuestion.hub ? (
-                  <div>
-                    <dt>Hub</dt>
-                    <dd>{currentQuestion.hub}</dd>
-                  </div>
-                ) : null}
-              </dl>
-            </div>
-          </article>
-
-          <div className="review-v2-answer-block">
-            <div className="review-v2-answer-heading">
-              <h3>Answer</h3>
-              <span>{currentQuestion.optionSourceLabel}</span>
-            </div>
-            <div className="review-options" aria-label="Answer choices">
-              {currentQuestion.options.map((option) => (
-                <button
-                  aria-pressed={selectedAnswer === option}
-                  className={getOptionClass(option)}
-                  disabled={Boolean(currentAnswer)}
-                  key={option}
-                  onClick={() => handleSelect(option)}
-                  type="button"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {pendingSelection && !currentAnswer ? (
-            <div className="review-v2-confidence" aria-labelledby="review-confidence-title">
+              aria-label={`Card ${currentIndex + 1} of ${questions.length}`}
+              className="review-v2-progress"
+            >
               <div>
-                <p className="track-b-eyebrow">Confidence</p>
-                <h3 id="review-confidence-title">How did that recall feel?</h3>
+                {questions.map((question, index) => {
+                  const completedAnswer = answers[index];
+
+                  return (
+                    <span
+                      className={
+                        index === currentIndex
+                          ? "review-v2-progress__bar review-v2-progress__bar--current"
+                          : completedAnswer?.result === "correct"
+                            ? "review-v2-progress__bar review-v2-progress__bar--correct"
+                            : completedAnswer?.result === "wrong"
+                              ? "review-v2-progress__bar review-v2-progress__bar--wrong"
+                              : "review-v2-progress__bar"
+                      }
+                      key={question.slug}
+                    />
+                  );
+                })}
               </div>
-              <div className="review-v2-confidence__buttons">
-                {confidenceOptions.map((option) => (
+              <span>
+                {currentIndex + 1} / {questions.length}
+              </span>
+            </div>
+
+            <article className="review-v2-card" aria-label="Review card">
+              <ReviewQuestionVisual question={currentQuestion} />
+              <div className="review-v2-card__body">
+                <h2 id="review-session-title">{currentQuestion.word}</h2>
+                <p className="review-v2-card__phonetic">
+                  /{currentQuestion.word.toLocaleLowerCase()}/
+                </p>
+                <p className="review-v2-card__question">
+                  What does this word mean?
+                </p>
+                <p className="review-card__clue">{getClue(currentQuestion)}</p>
+
+                {currentAnswer ? (
+                  <div
+                    className={`review-v2-inline-feedback review-v2-inline-feedback--${currentAnswer.result}`}
+                    aria-live="polite"
+                  >
+                    <span aria-hidden="true">
+                      {currentAnswer.result === "correct" ? (
+                        <CheckIcon size={11} strokeWidth={3} />
+                      ) : (
+                        <XIcon size={11} strokeWidth={3} />
+                      )}
+                    </span>
+                    <div>
+                      <h3>
+                        {currentAnswer.result === "correct"
+                          ? "You recalled it."
+                          : "Almost there."}
+                      </h3>
+                      <p>
+                        {currentQuestion.definition ??
+                          "This answer updated the local memory state."}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+
+            <div className="review-v2-answer-block">
+              <div className="review-v2-answer-heading sr-only">
+                <h3>Answer</h3>
+                <span>{currentQuestion.optionSourceLabel}</span>
+              </div>
+              <div className="review-options" aria-label="Answer choices">
+                {currentQuestion.options.map((option) => (
                   <button
-                    className="review-v2-confidence-button"
-                    key={option.value}
-                    onClick={() => handleConfidence(option.value)}
+                    aria-pressed={selectedAnswer === option}
+                    className={getOptionClass(option)}
+                    disabled={Boolean(currentAnswer)}
+                    key={option}
+                    onClick={() => handleSelect(option)}
                     type="button"
                   >
-                    <span>{option.label}</span>
-                    <small>{option.detail}</small>
+                    <span>{option}</span>
                   </button>
                 ))}
               </div>
             </div>
-          ) : null}
 
-          {currentAnswer ? (
-            <div
-              className={`review-feedback review-v2-feedback review-v2-feedback--${currentAnswer.result}`}
-              aria-live="polite"
-            >
-              <span className="review-v2-feedback__mark" aria-hidden="true">
-                {currentAnswer.result === "correct" ? "OK" : "SOON"}
-              </span>
-              <div className="review-v2-feedback__copy">
-                <p className="track-b-eyebrow">
-                  {currentAnswer.result === "correct" ? "Correct" : "Review again"}
-                </p>
-                <h3>
-                  {currentAnswer.result === "correct"
-                    ? "You recalled it."
-                    : "Almost. This word will return sooner."}
-                </h3>
-                <p>Memory state updated from this answer and confidence.</p>
-                <p>{currentAnswer.explanation}</p>
-                <dl className="review-v2-feedback__state">
-                  <div>
-                    <dt>Answer</dt>
-                    <dd>{currentAnswer.answer}</dd>
-                  </div>
-                  <div>
-                    <dt>Confidence</dt>
-                    <dd>{formatConfidence(currentAnswer.confidence)}</dd>
-                  </div>
-                  <div>
-                    <dt>Box</dt>
-                    <dd>
-                      {currentAnswer.boxBefore} to {currentAnswer.boxAfter}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Weak score</dt>
-                    <dd>
-                      {formatPercent(currentAnswer.weakScoreBefore)} to{" "}
-                      {formatPercent(currentAnswer.weakScoreAfter)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Next due</dt>
-                    <dd>
-                      {currentAnswer.nextDueAt
-                        ? formatDateLabel(currentAnswer.nextDueAt)
-                        : "Not scheduled"}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-              <button
-                className="track-b-button track-b-button--primary"
-                onClick={handleNext}
-                type="button"
+            {pendingSelection && !currentAnswer ? (
+              <div
+                className="review-v2-confidence"
+                aria-labelledby="review-confidence-title"
               >
-                {currentIndex + 1 >= questions.length ? "View summary" : "Next card"}
-              </button>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+                <h3 className="sr-only" id="review-confidence-title">
+                  How did that recall feel?
+                </h3>
+                <p>
+                  {pendingSelection.result === "correct"
+                    ? "How confident did you feel?"
+                    : "How close were you?"}
+                </p>
+                <div className="review-v2-confidence__buttons">
+                  {confidenceOptions.map((option) => {
+                    const visibleLabel =
+                      option.value === "knew"
+                        ? "Knew it"
+                        : option.value === "guessed"
+                          ? "Sort of"
+                          : "Not at all";
 
-      {status === "summary" ? (
-        <section className="review-v2-summary" aria-labelledby="session-summary">
-          <div className="review-v2-summary__header">
-            <div>
-              <p className="track-b-eyebrow">Memory state updated</p>
-              <h2 id="session-summary">Session summary</h2>
-            </div>
-            <span>{sessionId}</span>
-          </div>
-
-          <p className="review-v2-summary__headline">
-            {getSessionSummaryHeadline(summary)}
-          </p>
-
-          <div className="summary-grid review-v2-summary__metrics">
-            <TrackBMetricCard label="Reviewed" value={summary.reviewed} />
-            <TrackBMetricCard label="Correct" value={summary.correct} tone="strong" />
-            <TrackBMetricCard label="Wrong" value={summary.wrong} tone="weak" />
-            <TrackBMetricCard
-              label="Improved"
-              value={summary.movedForward}
-              description="Words that moved to a higher SRS box."
-              tone="learning"
-            />
-            <TrackBMetricCard
-              label="Weak remaining"
-              value={summary.weakRemaining}
-              description="Real weak words still in local review state."
-              tone="weak"
-            />
-          </div>
-
-          {summary.weakSpotlight || nextReviewMessage ? (
-            <div className="session-summary-insights">
-              {summary.weakSpotlight ? (
-                <div className="session-summary-insight session-summary-insight--weak">
-                  <span className="track-b-eyebrow">Weak word spotlight</span>
-                  <h3>{summary.weakSpotlight.word}</h3>
-                  <p>
-                    {summary.weakSpotlight.result === "wrong"
-                      ? "Missed in this session"
-                      : "Still needs reinforcement"}{" "}
-                    | {summary.weakSpotlight.mastery ?? "Learning"} | Weak score{" "}
-                    {formatPercent(summary.weakSpotlight.weakScore)} |{" "}
-                    {summary.weakSpotlight.wrong} misses recorded
-                  </p>
-                </div>
-              ) : null}
-
-              {nextReviewMessage ? (
-                <div className="session-summary-insight">
-                  <span className="track-b-eyebrow">Next review</span>
-                  <p>{nextReviewMessage}</p>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {summaryPaywallSurface ? (
-            <PaywallPrompt
-              prompt={summaryPaywallSurface.prompt}
-              userState={summaryPaywallSurface.userState}
-            />
-          ) : null}
-
-          <div className="review-results" aria-label="Reviewed cards">
-            {answers.map((answer) => (
-              <div className="review-result-row" key={`${answer.slug}-${answer.responseMs}`}>
-                <div>
-                  <strong>{answer.word}</strong>
-                  <span>{getQuestionTypeLabel(answer.questionType)}</span>
-                  <span>{formatConfidence(answer.confidence)}</span>
-                </div>
-                <div>
-                  <span className={answer.result === "correct" ? "tag tag--strong" : "tag tag--weak"}>
-                    {answer.result}
-                  </span>
-                  <span className="tag">
-                    Box {answer.boxBefore} to {answer.boxAfter}
-                  </span>
-                  <span className="tag">{answer.masteryAfter}</span>
+                    return (
+                      <button
+                        aria-label={option.label}
+                        className="review-v2-confidence-button"
+                        key={option.value}
+                        onClick={() => handleConfidence(option.value)}
+                        type="button"
+                      >
+                        {visibleLabel}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="track-b-action-row">
-            <Link className="track-b-button track-b-button--primary" href="/dashboard">
-              Back to Today
-            </Link>
-            {summary.weakRemaining > 0 ? (
-              <Link className="track-b-button track-b-button--quiet" href="/review/weak">
-                Review weak words
-              </Link>
             ) : null}
-            <button className="track-b-button track-b-button--quiet" onClick={loadLocalSession} type="button">
-              Start next session
-            </button>
-          </div>
-        </section>
-      ) : null}
+
+            {currentAnswer ? (
+              <div
+                className={`review-feedback review-v2-feedback review-v2-feedback--${currentAnswer.result}`}
+                aria-live="polite"
+              >
+                <div className="review-v2-feedback__copy">
+                  <p className="track-b-eyebrow">
+                    {currentAnswer.result === "correct" ? "Correct" : "Review again"}
+                  </p>
+                  <h3>
+                    {currentAnswer.result === "correct"
+                      ? "You recalled it."
+                      : "This card will return sooner."}
+                  </h3>
+                  <p>{currentAnswer.explanation}</p>
+                  <p className="sr-only">
+                    Memory state updated from this answer and confidence.
+                  </p>
+                  <dl className="review-v2-feedback__state">
+                    <div>
+                      <dt>Answer</dt>
+                      <dd>{currentAnswer.answer}</dd>
+                    </div>
+                    <div>
+                      <dt>Confidence</dt>
+                      <dd>{formatConfidence(currentAnswer.confidence)}</dd>
+                    </div>
+                    <div>
+                      <dt>Box</dt>
+                      <dd>
+                        {currentAnswer.boxBefore} to {currentAnswer.boxAfter}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Next due</dt>
+                      <dd>
+                        {currentAnswer.nextDueAt
+                          ? formatDateLabel(currentAnswer.nextDueAt)
+                          : "Not scheduled"}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                <button
+                  aria-label={
+                    currentIndex + 1 >= questions.length
+                      ? "View summary"
+                      : "Next card"
+                  }
+                  className="track-b-button track-b-button--primary"
+                  onClick={handleNext}
+                  type="button"
+                >
+                  {currentIndex + 1 >= questions.length ? "View summary" : "Next word"}
+                  <ChevronRightIcon size={16} />
+                </button>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {status === "summary" ? (
+          <section className="review-v2-summary" aria-labelledby="session-summary">
+            <h2 className="sr-only" id="session-summary">
+              Session summary
+            </h2>
+            <div className="review-v2-summary-card">
+              <div className="review-v2-summary__header">
+                <p className="track-b-eyebrow">Review complete</p>
+                <h3>
+                  {summary.correct === summary.reviewed
+                    ? "Every word recalled."
+                    : `${summary.correct} moved closer to memory.`}
+                </h3>
+                {nextReviewMessage ? <p>{nextReviewMessage}</p> : null}
+              </div>
+
+              <div className="review-results" aria-label="Reviewed cards">
+                {answers.map((answer) => (
+                  <div
+                    className={`review-result-row review-result-row--${answer.result}`}
+                    key={`${answer.slug}-${answer.responseMs}`}
+                  >
+                    <ReviewResultThumbnail answer={answer} />
+                    <div>
+                      <strong>{answer.word}</strong>
+                      <span>
+                        {answer.result === "correct"
+                          ? answer.confidence === "knew"
+                            ? "Recalled easily"
+                            : "Recalled - keep going"
+                          : "Will return sooner"}
+                      </span>
+                    </div>
+                    <span aria-hidden="true">
+                      {answer.result === "correct" ? (
+                        <CheckIcon size={12} strokeWidth={2.5} />
+                      ) : (
+                        <RotateCcwIcon size={12} strokeWidth={2.5} />
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {summaryPaywallSurface ? (
+                <PaywallPrompt
+                  prompt={summaryPaywallSurface.prompt}
+                  userState={summaryPaywallSurface.userState}
+                />
+              ) : null}
+
+              <div className="track-b-action-row">
+                <Link className="track-b-button track-b-button--primary" href="/dashboard">
+                  Back to dashboard
+                </Link>
+                <button
+                  className="track-b-button track-b-button--quiet"
+                  onClick={loadLocalSession}
+                  type="button"
+                >
+                  <RotateCcwIcon size={13} />
+                  Review again
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : null}
       </div>
     </TrackBAppShell>
   );

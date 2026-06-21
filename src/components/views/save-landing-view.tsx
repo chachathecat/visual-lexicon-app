@@ -1,14 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode
+} from "react";
 
 import { PaywallPrompt } from "@/components/paywall-prompt";
+import { ArrowRightIcon, CheckIcon } from "@/components/track-b/icons";
 import {
   TrackBAppShell,
   TrackBEmptyState,
   TrackBPageHeader
 } from "@/components/track-b";
+import { WordVisualImage } from "@/components/word-visual-image";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import type { VlxSaveWordResult } from "@/lib/analytics";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
@@ -30,6 +38,10 @@ import type {
   VlxSavedWord,
   VlxSavedWordSource
 } from "@/lib/srs/types";
+import {
+  getWordVisualFallbackClass,
+  getWordVisualImage
+} from "@/lib/word-visuals";
 
 type SaveLandingViewProps = {
   slug?: string;
@@ -71,15 +83,6 @@ const validSources = new Set<string>([
   "app",
   "exam_pack",
   "manual"
-]);
-
-const visualCueSlugs = new Set([
-  "dissonance",
-  "abundance",
-  "resilient",
-  "laconic",
-  "obfuscate",
-  "lucid"
 ]);
 
 function normalizeSlug(value?: string) {
@@ -161,8 +164,24 @@ function toSavedWord(
   };
 }
 
-function getVisualClass(slug: string) {
-  return visualCueSlugs.has(slug) ? ` word-card__visual--${slug}` : "";
+function getSavedWordVisualClass(savedWord: VlxSavedWord) {
+  if (getWordVisualImage(savedWord.slug) || savedWord.image) {
+    return " word-card__visual--image";
+  }
+
+  return getWordVisualFallbackClass(savedWord.slug);
+}
+
+function getSavedWordVisualStyle(
+  savedWord: VlxSavedWord
+): CSSProperties | undefined {
+  return !getWordVisualImage(savedWord.slug) && savedWord.image
+    ? { backgroundImage: `url("${savedWord.image}")` }
+    : undefined;
+}
+
+function getSavedWordLocalVisual(savedWord: VlxSavedWord) {
+  return getWordVisualImage(savedWord.slug);
 }
 
 function getInitialOutcome(slug?: string, word?: VlxQuizWord): SaveOutcome {
@@ -198,16 +217,43 @@ function emitSaveWordAnalytics(input: {
 function SaveShell({ children }: { children: ReactNode }) {
   return (
     <TrackBAppShell
-      activeItemId="saved"
+      activeItemId="save"
       currentPath="/save"
-      topActions={
-        <Link className="track-b-button track-b-button--quiet" href="/dashboard">
-          Back to Today
-        </Link>
-      }
     >
       {children}
     </TrackBAppShell>
+  );
+}
+
+function getSavedWordPhonetic(savedWord: VlxSavedWord) {
+  return `/${savedWord.word.toLocaleLowerCase()}/`;
+}
+
+function getSaveMemoryState(reviewItem?: VlxReviewStateItem) {
+  if (!reviewItem || reviewItem.mastery === "New") {
+    return "new";
+  }
+
+  if (reviewItem.mastery === "Weak" || reviewItem.weakScore > 0) {
+    return "weak";
+  }
+
+  return "due";
+}
+
+function SaveMemoryPill({
+  state
+}: {
+  state: "due" | "weak" | "new";
+}) {
+  const label =
+    state === "new" ? "New" : state === "weak" ? "Needs work" : "Due now";
+
+  return (
+    <span className={`save-v2-memory-pill save-v2-memory-pill--${state}`}>
+      <span aria-hidden="true" />
+      {label}
+    </span>
   );
 }
 
@@ -403,96 +449,74 @@ export function SaveLandingView({
 
   return (
     <SaveShell>
-      <TrackBPageHeader
-        eyebrow="Save"
-        title="This word is now in your review queue."
-        description="Save is complete. Review five words now, then return tomorrow before they fade."
-        meta={<span>{"Save -> Review 5 words -> Return tomorrow"}</span>}
-        actions={
-          <>
-            <Link className="track-b-button track-b-button--primary" href={reviewHref}>
-              Review this word
-            </Link>
-            <Link className="track-b-button track-b-button--quiet" href="/dashboard">
-              Go to dashboard
-            </Link>
-          </>
-        }
-      />
-
-      <section className="save-panel save-panel--v2" aria-live="polite">
+      <section className="save-v2-confirm" aria-live="polite">
         {savedWord ? (
           <>
-            <div
-              aria-label={`Visual cue for ${savedWord.word}`}
-              className={`word-card__visual save-panel__visual${getVisualClass(
-                savedWord.slug
-              )}`}
-              role="img"
-            >
-              <span className="save-panel__visual-kicker">Visual memory card</span>
-              <strong>{savedWord.word}</strong>
+            <div className="save-v2-status">
+              <span aria-hidden="true">
+                <CheckIcon size={11} strokeWidth={3} />
+              </span>
+              <strong>Added to your review queue</strong>
+              <span className="sr-only">
+                This word is now in your review queue.
+              </span>
             </div>
-            <div className="save-panel__body">
-              <div>
-                <span className="track-b-eyebrow">
-                  {outcome.alreadySaved ? "Already saved" : "Local save complete"}
-                </span>
-                <h2>{savedWord.word}</h2>
-                {savedWord.definition ? <p>{savedWord.definition}</p> : null}
-              </div>
-              <ol
-                aria-label="Save to review handoff"
-                className="save-panel__handoff"
+
+            <header className="save-v2-heading">
+              <h1>{savedWord.word}</h1>
+              <p>{getSavedWordPhonetic(savedWord)}</p>
+            </header>
+
+            <div className="save-v2-card">
+              <div
+                aria-label={`Visual cue for ${savedWord.word}`}
+                className={`word-card__visual save-v2-card__visual${getSavedWordVisualClass(
+                  savedWord
+                )}`}
+                role="img"
+                style={getSavedWordVisualStyle(savedWord)}
               >
-                <li>
-                  <span>Save</span>
-                  <strong>Queued locally</strong>
-                </li>
-                <li>
-                  <span>Review</span>
-                  <strong>5 words now</strong>
-                </li>
-                <li>
-                  <span>Return</span>
-                  <strong>Tomorrow</strong>
-                </li>
-              </ol>
-              <div className="save-panel__primary-handoff">
-                <div>
-                  <span>Next best action</span>
-                  <strong>Review now while the image is fresh.</strong>
+                {getSavedWordLocalVisual(savedWord) ? (
+                  <WordVisualImage
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    src={getSavedWordLocalVisual(savedWord) ?? ""}
+                  />
+                ) : null}
+              </div>
+              <div className="save-v2-card__body">
+                <SaveMemoryPill state={getSaveMemoryState(reviewItem)} />
+                {savedWord.definition ? <p>{savedWord.definition}</p> : null}
+                <div className="save-v2-memory-hook">
+                  <span>Visual memory</span>
+                  <p>
+                    {word?.memoryHook ??
+                      "The image becomes the recall cue when this word returns."}
+                  </p>
                 </div>
-                <Link
-                  className="track-b-button track-b-button--primary"
-                  href={reviewHref}
-                >
-                  Review now
-                </Link>
               </div>
-              <div className="tag-row">
-                <span className="tag">{formatHubLabel(savedWord.hub)}</span>
-                <span className="tag">
-                  {source && !normalizedSource
-                    ? "Source not recognized"
-                    : formatSourceLabel(normalizedSource)}
-                </span>
-                {reviewItem ? (
-                  <span className="tag">Box {reviewItem.box}</span>
-                ) : null}
-                {reviewItem ? (
-                  <span className="tag">{reviewItem.mastery}</span>
-                ) : null}
-              </div>
-              <p className="save-panel__note">
-                {outcome.alreadyQueued
-                  ? "The review item was already present, so this save keeps the same memory state."
-                  : "A review item was created from the saved word and is waiting for recall."}
-              </p>
+            </div>
+
+            <p className="save-v2-note">
+              We&apos;ll bring this back before you forget it. Your first review is
+              in a few minutes.
+            </p>
+
+            <div className="save-v2-actions">
+              <Link className="track-b-button track-b-button--primary" href={reviewHref}>
+                <span>Review now</span>
+                <ArrowRightIcon size={15} />
+              </Link>
+              <Link
+                aria-label="Go to dashboard"
+                className="track-b-button track-b-button--quiet"
+                href="/dashboard"
+              >
+                Back to dashboard
+              </Link>
             </div>
           </>
         ) : (
-          <p className="save-panel__note">Preparing save confirmation.</p>
+          <p className="save-v2-note">Preparing save confirmation.</p>
         )}
       </section>
 

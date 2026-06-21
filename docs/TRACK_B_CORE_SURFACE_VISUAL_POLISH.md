@@ -23,7 +23,7 @@ PR, pricing PR, launch-readiness PR, or SRS logic PR.
 ## Polish Summary
 
 - `/dashboard`: Today Memory Mission is the warm dominant surface. The primary
-  CTA remains `Review 5 words before they fade`; supporting stats remain Due,
+  CTA remains `Review 5 words before you forget`; supporting stats remain Due,
   Weak, New, and Reviewed this week. Deferred pack, weak, saved, and pricing
   surfaces remain visually secondary.
 - `/save`: The save confirmation reads as a warm review-queue handoff. The

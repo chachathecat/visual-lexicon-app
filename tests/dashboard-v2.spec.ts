@@ -107,11 +107,93 @@ async function seedVlxLocalStorage(
   );
 }
 
-test.describe("Dashboard v0 Today's Memory Mission", () => {
-  test("renders the dashboard route with Today's Memory Mission first", async ({
-    page
-  }) => {
-    await clearVlxLocalStorage(page);
+async function seedDashboardMission(page: Page) {
+  await seedVlxLocalStorage(page, {
+    savedWords: {
+      dissonance: makeSavedWord(),
+      abundance: makeSavedWord({
+        slug: "abundance",
+        word: "Abundance",
+        image: "https://cdn.visuallexicon.org/images/abundance.webp",
+        definition: "A large quantity of something useful or valuable.",
+        hub: "core-vocabulary"
+      }),
+      resilient: makeSavedWord({
+        slug: "resilient",
+        word: "Resilient",
+        image: "https://cdn.visuallexicon.org/images/resilient.webp",
+        definition: "Able to recover after pressure, shock, or difficulty.",
+        hub: "workplace-english"
+      }),
+      lucid: makeSavedWord({
+        slug: "lucid",
+        word: "Lucid",
+        image: "https://cdn.visuallexicon.org/images/lucid.webp",
+        definition: "Clear and easy to understand.",
+        hub: "academic-vocabulary"
+      })
+    },
+    reviewState: {
+      dissonance: makeReviewStateItem({
+        mastery: "Weak",
+        wrong: 3,
+        weakScore: 0.72,
+        nextDueAt: oneMinuteAgo()
+      }),
+      abundance: makeReviewStateItem({
+        slug: "abundance",
+        word: "Abundance",
+        image: "https://cdn.visuallexicon.org/images/abundance.webp",
+        definition: "A large quantity of something useful or valuable.",
+        hub: "core-vocabulary",
+        box: 1,
+        mastery: "Learning",
+        correct: 1,
+        nextDueAt: oneMinuteAgo()
+      }),
+      resilient: makeReviewStateItem({
+        slug: "resilient",
+        word: "Resilient",
+        image: "https://cdn.visuallexicon.org/images/resilient.webp",
+        definition: "Able to recover after pressure, shock, or difficulty.",
+        hub: "workplace-english",
+        box: 2,
+        mastery: "Strong",
+        correct: 2,
+        nextDueAt: oneMinuteAgo()
+      }),
+      obfuscate: makeReviewStateItem({
+        slug: "obfuscate",
+        word: "Obfuscate",
+        image: "https://cdn.visuallexicon.org/images/obfuscate.webp",
+        definition: "To make something unclear or difficult to understand.",
+        hub: "academic-vocabulary",
+        box: 5,
+        mastery: "Mastered",
+        correct: 5,
+        nextDueAt: new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString()
+      })
+    },
+    reviewEvents: [
+      {
+        sessionId: "s_test",
+        slug: "dissonance",
+        word: "Dissonance",
+        questionType: "due_review",
+        answer: "Dissonance",
+        result: "wrong",
+        responseMs: 1200,
+        createdAt: oneMinuteAgo(),
+        boxAfter: 0,
+        weakScoreAfter: 0.72
+      }
+    ]
+  });
+}
+
+test.describe("Dashboard Figma source parity", () => {
+  test("renders only the requested first-screen learning loop", async ({ page }) => {
+    await seedDashboardMission(page);
 
     const response = await page.goto(`${baseUrl}/dashboard`, {
       waitUntil: "networkidle"
@@ -119,109 +201,76 @@ test.describe("Dashboard v0 Today's Memory Mission", () => {
 
     expect(response?.status()).toBe(200);
     await expect(page.locator(".track-b-shell")).toBeVisible();
-    await expect(
-      page
-        .locator(".track-b-page-header")
-        .getByRole("heading", { name: "Today's Memory Mission" })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", {
-        name: "Review 5 words before they fade"
-      })
-    ).toBeVisible();
-    await expect(page.locator(".track-b-primary-action-card")).toBeVisible();
-  });
+    await expect(page.locator(".track-b-shell__sidebar")).toHaveCount(0);
+    await expect(page.locator(".track-b-page-header")).toHaveCount(0);
 
-  test("keeps the required dominant review CTA available", async ({ page }) => {
-    await clearVlxLocalStorage(page);
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    const dueReviewLink = page.getByRole("link", {
-      name: "Review 5 words before they fade"
-    });
-
-    await expect(dueReviewLink).toBeVisible();
-    await expect(dueReviewLink).toHaveAttribute("href", "/review");
-  });
-
-  test("shows only the four approved supporting stats", async ({ page }) => {
-    await seedVlxLocalStorage(page, {
-      savedWords: {
-        lucid: makeSavedWord({
-          slug: "lucid",
-          word: "Lucid"
-        })
-      },
-      reviewState: {
-        dissonance: makeReviewStateItem({
-          mastery: "Weak",
-          wrong: 3,
-          weakScore: 0.72,
-          nextDueAt: oneMinuteAgo()
-        })
-      },
-      reviewEvents: [
-        {
-          slug: "dissonance",
-          createdAt: oneMinuteAgo()
-        },
-        {
-          slug: "dissonance",
-          createdAt: oneMinuteAgo()
-        },
-        {
-          slug: "lucid",
-          createdAt: oneMinuteAgo()
-        }
-      ]
-    });
-
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    const statusGrid = page.getByRole("region", {
-      name: "Today's review picture"
-    });
-    const metricCards = statusGrid.locator("article[aria-label]");
-    await expect(metricCards).toHaveCount(4);
-
-    const labels = await metricCards.evaluateAll((cards) =>
-      cards.map((card) => card.getAttribute("aria-label")?.split(":")[0] ?? "")
+    const mission = page.locator(".dashboard-v2-mission-card");
+    await expect(mission).toBeVisible();
+    await expect(mission).toContainText("Today's Memory Mission");
+    await expect(mission.getByRole("heading", { name: "Review 5 words before they fade" })).toBeVisible();
+    await expect(mission.locator(".dashboard-v2-due-row")).toHaveCount(3);
+    await expect(mission.getByRole("link", { name: "Start review" })).toHaveAttribute(
+      "href",
+      "/review/due"
     );
 
-    expect(labels).toEqual(["Due", "Weak", "New", "Reviewed this week"]);
-    await expect(statusGrid).toContainText("Reviewed this week");
+    const stateCards = page
+      .getByRole("region", { name: "Memory state" })
+      .locator(".dashboard-v2-state-card");
+    await expect(stateCards).toHaveCount(4);
+
+    const labels = await stateCards.evaluateAll((cards) =>
+      cards.map((card) => card.querySelector("span")?.textContent?.trim() ?? "")
+    );
+    expect(labels).toEqual(["Due now", "Needs work", "New", "Mastered"]);
+
+    const secondaryActions = page.locator(".dashboard-v2-secondary-actions");
     await expect(
-      statusGrid.locator('article[aria-label="Reviewed this week: 2"]')
-    ).toBeVisible();
-    await expect(statusGrid).not.toContainText("Learning");
-    await expect(statusGrid).not.toContainText("Mastered");
+      secondaryActions.getByRole("link", { name: "Memory queue", exact: true })
+    ).toHaveAttribute("href", "/saved");
+    await expect(
+      secondaryActions.getByRole("link", { name: "Save a word", exact: true })
+    ).toHaveAttribute("href", "/save?slug=dissonance&source=app");
+
+    const bodyText = await page.locator("body").innerText();
+    for (const forbidden of [
+      "Alias Search",
+      "Learning Modules",
+      "Hub Progress",
+      "Streak",
+      "Packs",
+      "Pro promotion",
+      "Saved Library"
+    ]) {
+      expect(bodyText).not.toContain(forbidden);
+    }
   });
 
-  test("does not present multiple competing primary Dashboard CTAs", async ({
+  test("uses real visual thumbnails for the three due preview rows", async ({
     page
   }) => {
-    await seedVlxLocalStorage(page, {
-      reviewState: {
-        dissonance: makeReviewStateItem({
-          mastery: "Weak",
-          wrong: 3,
-          weakScore: 0.72,
-          nextDueAt: oneMinuteAgo()
-        })
-      },
-      packProgress: {
-        "home-v1": {
-          packId: "home-v1",
-          startedAt: oneHourAgo(),
-          lastOpenedAt: oneMinuteAgo(),
-          previewStartedAt: oneHourAgo(),
-          reviewedCount: 0,
-          correctCount: 0,
-          source: "packs_page"
-        }
-      }
-    });
+    await seedDashboardMission(page);
+    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
 
+    const visuals = await page
+      .locator(".dashboard-v2-due-row__image")
+      .evaluateAll((images) =>
+        images.map((image) => ({
+          className: Array.from(image.classList).join(" "),
+          imageSrc: image.querySelector("img")?.getAttribute("src") ?? ""
+        }))
+      );
+
+    expect(visuals).toHaveLength(3);
+    for (const { className, imageSrc } of visuals) {
+      expect(className).toContain("word-card__visual--");
+      expect(className).toContain("word-card__visual--image");
+      expect(imageSrc).toContain("/vlx-word-visuals/");
+    }
+  });
+
+  test("keeps a single primary dashboard CTA", async ({ page }) => {
+    await seedDashboardMission(page);
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
 
     const primaryActions = page.locator(
@@ -229,187 +278,7 @@ test.describe("Dashboard v0 Today's Memory Mission", () => {
     );
 
     await expect(primaryActions).toHaveCount(1);
-    await expect(primaryActions).toHaveText("Review now");
-  });
-
-  test("renders an honest empty state when no words are due", async ({ page }) => {
-    await clearVlxLocalStorage(page);
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    await expect(page.locator("body")).toContainText("Due queue is clear");
-    await expect(page.locator("body")).toContainText(
-      "No due words were found in vlx_review_state_v1."
-    );
-    await expect(page.locator("body")).toContainText(
-      "tomorrow's queue comes from that state"
-    );
-  });
-
-  test("does not render fake mastery or streak wording", async ({ page }) => {
-    await clearVlxLocalStorage(page);
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    const bodyText = await page.locator("body").innerText();
-
-    expect(bodyText).not.toMatch(/fake mastery/i);
-    expect(bodyText).not.toMatch(/\bstreak\b/i);
-  });
-
-  test("uses Track B app shell classes and safe route links", async ({ page }) => {
-    await clearVlxLocalStorage(page);
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    await expect(page.locator(".track-b-shell")).toBeVisible();
-    await expect(
-      page.locator('.track-b-nav-link[aria-current="page"]').filter({
-        hasText: "Today"
-      })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Review words" }).first()
-    ).toHaveAttribute("href", "/review");
-    await expect(
-      page.getByRole("link", { name: "Practice weak words" }).first()
-    ).toHaveAttribute("href", "/review/weak");
-    await expect(
-      page.getByRole("link", { name: "Open packs" }).first()
-    ).toHaveAttribute("href", "/packs");
-    await expect(
-      page.getByRole("link", { name: "Open saved words" }).first()
-    ).toHaveAttribute("href", "/saved");
-    await expect(page.getByRole("link", { name: "View pricing" })).toHaveAttribute(
-      "href",
-      "/pricing"
-    );
-  });
-
-  test("shows weak candidates and weak sprint link only from real weak state", async ({
-    page
-  }) => {
-    await seedVlxLocalStorage(page, {
-      reviewState: {
-        dissonance: makeReviewStateItem({
-          mastery: "Weak",
-          wrong: 3,
-          weakScore: 0.72,
-          nextDueAt: oneMinuteAgo()
-        })
-      }
-    });
-
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    const weakSection = page.locator("section", {
-      has: page.getByRole("heading", { name: "Repair fragile recall" })
-    });
-
-    await expect(weakSection).toContainText("Dissonance");
-    await expect(weakSection).toContainText("Weak 72%");
-    await expect(
-      weakSection.getByRole("link", { name: "Start Weak Sprint" })
-    ).toHaveAttribute("href", "/review/weak-sprint");
-    await expect(
-      weakSection.getByRole("link", { name: "Start Weak Sprint" })
-    ).toHaveClass(/track-b-button--quiet/);
-  });
-
-  test("shows recently saved words without inventing saved-only mastery", async ({
-    page
-  }) => {
-    await seedVlxLocalStorage(page, {
-      savedWords: {
-        lucid: makeSavedWord({
-          slug: "lucid",
-          word: "Lucid",
-          definition: "Clear and easy to understand.",
-          hub: "academic-vocabulary"
-        })
-      },
-      reviewState: {}
-    });
-
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    const savedSection = page.locator("section", {
-      has: page.getByRole("heading", { name: "Saved words entering review" })
-    });
-
-    await expect(savedSection).toContainText("Lucid");
-    await expect(savedSection).toContainText("No review state yet");
-    await expect(savedSection).not.toContainText("Box 0");
-    await expect(savedSection).not.toContainText("Mastered");
-  });
-
-  test("continues active pack only when local pack progress exists", async ({
-    page
-  }) => {
-    await seedVlxLocalStorage(page, {
-      packProgress: {
-        "home-v1": {
-          packId: "home-v1",
-          startedAt: oneHourAgo(),
-          lastOpenedAt: oneMinuteAgo(),
-          previewStartedAt: oneHourAgo(),
-          reviewedCount: 0,
-          correctCount: 0,
-          source: "packs_page"
-        }
-      }
-    });
-
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    await expect(page.getByText("Continue active pack")).toBeVisible();
-    await expect(page.getByText("Everyday Memory Deck")).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Continue deck" })
-    ).toHaveAttribute("href", /\/review\?/);
-    await expect(page.getByRole("link", { name: "Continue deck" })).toHaveClass(
-      /track-b-button--quiet/
-    );
-  });
-
-  test("keeps deferred Dashboard surfaces visually de-emphasized", async ({
-    page
-  }) => {
-    await seedVlxLocalStorage(page, {
-      reviewState: {
-        dissonance: makeReviewStateItem({
-          mastery: "Weak",
-          wrong: 3,
-          weakScore: 0.72,
-          nextDueAt: oneMinuteAgo()
-        })
-      }
-    });
-
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    await expect(
-      page.locator(".dashboard-v2-section--deferred .track-b-button--primary")
-    ).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Start Weak Sprint" })).toHaveClass(
-      /track-b-button--quiet/
-    );
-    await expect(page.getByRole("link", { name: "Browse packs" })).toHaveClass(
-      /track-b-button--quiet/
-    );
-    await expect(page.getByRole("link", { name: "View pricing" })).toHaveClass(
-      /track-b-button--secondary/
-    );
-  });
-
-  test("keeps dashboard upgrade nudge visual-only", async ({ page }) => {
-    await clearVlxLocalStorage(page);
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-
-    await expect(
-      page.locator('.track-b-upgrade-nudge[data-visual-only="true"]')
-    ).toBeVisible();
-    await expect(
-      page.locator('.track-b-upgrade-nudge[data-visual-only="true"]')
-    ).toContainText("Public paid beta remains No-Go");
-    await expect(page.locator("[data-paywall-trigger]")).toHaveCount(0);
+    await expect(primaryActions).toContainText("Start today's review");
   });
 });
 
@@ -422,8 +291,7 @@ test.describe("Dashboard v2 static contract", () => {
     expect(existsSync(docPath)).toBe(true);
     expect(readme).toContain("docs/TRACK_B_DASHBOARD_V2.md");
     expect(doc).toContain("Today's Memory Mission");
-    expect(doc).toContain("Today -> Review -> Weak -> Packs -> Saved -> Progress");
-    expect(doc).toContain("Recommended next PR: **#75 Review Session v2**");
+    expect(doc).toContain("Today -> Save -> Review -> Queue -> Early Access");
   });
 
   test("does not introduce forbidden dashboard integrations", () => {
