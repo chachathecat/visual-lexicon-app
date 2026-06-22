@@ -1478,7 +1478,8 @@ select {
 }
 
 .review-option:focus-visible,
-.review-v2-confidence-button:focus-visible {
+.review-v2-confidence-button:focus-visible,
+.review-v2-storage-alert:focus {
   outline: var(--vlx-track-b-focus-outline);
   outline-offset: 3px;
   box-shadow: var(--vlx-track-b-focus-shadow);
@@ -1585,10 +1586,37 @@ select {
   text-align: center;
 }
 
-.review-v2-confidence-button:hover {
+.review-v2-confidence-button:hover:not(:disabled) {
   border-color: var(--vlx-track-b-coral);
   background: rgba(232, 101, 74, 0.09);
   color: #a9342b;
+}
+
+.review-v2-confidence-button:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.review-v2-storage-alert {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid #d9a046;
+  border-radius: 12px;
+  background: #fdf5e8;
+  color: #6f460c;
+}
+
+.review-v2-storage-alert--fatal {
+  border-color: #b84c42;
+  background: #fef0ec;
+  color: #832a23;
+}
+
+.review-v2-storage-alert p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .review-v2-inline-feedback {

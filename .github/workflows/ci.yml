@@ -97,6 +97,11 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
         run: npm run test -- tests/track-b-performance-budget.spec.ts --workers=1
 
+      - name: Track B review reliability gate
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
+        run: npm run test -- tests/track-b-review-reliability.spec.ts --workers=1
+
       - name: Stop app
         if: always()
         run: |
