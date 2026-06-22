@@ -305,6 +305,7 @@ function QueueWordCard({ word }: { word: QueueWord }) {
         aria-label={actionLabel}
         className="saved-v2-word-card__action"
         href={actionHref}
+        prefetch={false}
       >
         <ChevronRightIcon size={15} />
       </Link>
@@ -367,7 +368,11 @@ export function SavedLibraryView() {
             </p>
           </div>
           {reviewableCount > 0 ? (
-            <Link className="track-b-button track-b-button--primary" href={reviewHref}>
+            <Link
+              className="track-b-button track-b-button--primary"
+              href={reviewHref}
+              prefetch={false}
+            >
               <span>
                 Review {reviewableCount} ready{" "}
                 {reviewableCount === 1 ? "word" : "words"}

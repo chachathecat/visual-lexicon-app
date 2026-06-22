@@ -222,7 +222,7 @@ function DueWordRows({ words }: { words: DashboardDueWord[] }) {
     <ul className="dashboard-v2-due-list" aria-label="Due words preview">
       {words.map((word) => (
         <li key={word.slug}>
-          <Link className="dashboard-v2-due-row" href="/review/due">
+          <Link className="dashboard-v2-due-row" href="/review/due" prefetch={false}>
             <DueWordThumbnail word={word} />
             <div className="dashboard-v2-due-row__copy">
               <h2>{word.word}</h2>
@@ -307,13 +307,16 @@ export function DashboardV2View() {
 
           <div className="dashboard-v2-queue-row">
             <span>+ {queueRemainder} more in your queue</span>
-            <Link href="/saved">See all</Link>
+            <Link href="/saved" prefetch={false}>
+              See all
+            </Link>
           </div>
 
           <Link
             aria-label="Start review"
             className="track-b-button track-b-button--primary dashboard-v2-review-cta"
             href={reviewHref}
+            prefetch={false}
           >
             <span>Start today&apos;s review</span>
             <ArrowRightIcon size={16} />
@@ -357,13 +360,18 @@ export function DashboardV2View() {
           aria-label="Dashboard secondary actions"
           className="dashboard-v2-secondary-actions"
         >
-          <Link className="track-b-button track-b-button--quiet" href="/saved">
+          <Link
+            className="track-b-button track-b-button--quiet"
+            href="/saved"
+            prefetch={false}
+          >
             <LayersIcon size={14} />
             Memory queue
           </Link>
           <Link
             className="track-b-button track-b-button--quiet"
             href="/save?slug=dissonance&source=app"
+            prefetch={false}
           >
             <BookOpenIcon size={14} />
             Save a word

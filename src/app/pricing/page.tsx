@@ -87,7 +87,7 @@ function TierCard({ tier }: { tier: (typeof tiers)[number] }) {
         ))}
       </ul>
       {tier.id === "free" ? (
-        <Link className={buttonClass} href="/dashboard">
+        <Link className={buttonClass} href="/dashboard" prefetch={false}>
           {tier.cta}
         </Link>
       ) : (

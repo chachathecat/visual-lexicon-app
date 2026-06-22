@@ -355,6 +355,7 @@ export function SaveLandingView({
       const savedWords = readSavedWords();
       const reviewState = readReviewState();
       const existingSavedWord = savedWords[word.slug];
+      const existingReviewItem = reviewState[word.slug];
       const savedWord =
         existingSavedWord ?? toSavedWord(word, normalizedSource, savedAt);
       const nextSavedWords = existingSavedWord
@@ -369,9 +370,8 @@ export function SaveLandingView({
       }
 
       const reviewItem = createReviewItemFromSavedWord(savedWord, savedAt);
-      const hasLocalReviewState = Boolean(readReviewState()[word.slug]);
       const userState = readLocalPlanState().plan;
-      const savedCount = Object.keys(readSavedWords()).length;
+      const savedCount = Object.keys(nextSavedWords).length;
       const paywallPrompt = evaluateSaveLimitPaywall({
         plan: userState,
         savedCount,
@@ -383,7 +383,7 @@ export function SaveLandingView({
         savedWord,
         reviewItem,
         alreadySaved: Boolean(existingSavedWord),
-        alreadyQueued: Boolean(reviewState[word.slug])
+        alreadyQueued: Boolean(existingReviewItem)
       });
       setPaywallSurface(
         paywallPrompt ? { prompt: paywallPrompt, userState } : null
@@ -393,7 +393,7 @@ export function SaveLandingView({
         source,
         result: existingSavedWord ? "duplicate" : "saved",
         word: savedWord,
-        hasLocalReviewState,
+        hasLocalReviewState: Boolean(existingReviewItem || reviewItem),
         hasLocalSavedWord: true
       });
     } catch {
@@ -541,6 +541,7 @@ export function SaveLandingView({
               >
                 {getSavedWordLocalVisual(savedWord) ? (
                   <WordVisualImage
+                    priority
                     sizes="(max-width: 768px) 100vw, 560px"
                     src={getSavedWordLocalVisual(savedWord) ?? ""}
                   />
@@ -565,7 +566,11 @@ export function SaveLandingView({
             </p>
 
             <div className="save-v2-actions">
-              <Link className="track-b-button track-b-button--primary" href={reviewHref}>
+              <Link
+                className="track-b-button track-b-button--primary"
+                href={reviewHref}
+                prefetch={false}
+              >
                 <span>Review now</span>
                 <ArrowRightIcon size={15} />
               </Link>
@@ -573,6 +578,7 @@ export function SaveLandingView({
                 aria-label="Go to dashboard"
                 className="track-b-button track-b-button--quiet"
                 href="/dashboard"
+                prefetch={false}
               >
                 Back to dashboard
               </Link>

@@ -57,6 +57,7 @@ function TrackBNavList({
                 aria-label={item.ariaLabel}
                 className="track-b-nav-link"
                 href={item.href}
+                prefetch={false}
               >
                 <span className="track-b-nav-link__label">{item.label}</span>
                 <span className="track-b-nav-link__description" aria-hidden="true">
@@ -136,6 +137,7 @@ export function TrackBBottomNav({
             className="track-b-bottom-nav__link"
             href={item.href}
             key={item.id}
+            prefetch={false}
           >
             {getBottomNavIcon(item, active)}
             <span>{item.label}</span>
@@ -173,6 +175,7 @@ export function TrackBAppShell({
           aria-label="Visual Lexicon Today dashboard"
           className="track-b-shell__brand"
           href="/dashboard"
+          prefetch={false}
         >
           <span className="track-b-shell__brand-mark" aria-hidden="true">
             <BookOpenIcon size={13} strokeWidth={2.3} />

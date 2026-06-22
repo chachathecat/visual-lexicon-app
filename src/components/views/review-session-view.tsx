@@ -765,6 +765,7 @@ function ReviewQuestionVisual({ question }: { question: ReviewQuestion }) {
     >
       {getWordVisualImage(question.slug) ? (
         <WordVisualImage
+          priority
           sizes="(max-width: 768px) 100vw, 560px"
           src={getWordVisualImage(question.slug) ?? ""}
         />
@@ -1079,6 +1080,8 @@ export function ReviewSessionView({
   const emptyBody = routeSession?.emptyBody ?? copy.emptyBody;
   const cardStartedAt = useRef(getNowMs());
   const completionRecordedSessionId = useRef<string | null>(null);
+  const answerSubmissionLocked = useRef(false);
+  const nextActionLocked = useRef(false);
   const firstOptionRef = useRef<HTMLButtonElement | null>(null);
   const feedbackActionRef = useRef<HTMLButtonElement | null>(null);
   const summaryHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -1116,6 +1119,8 @@ export function ReviewSessionView({
       stats?: AvailabilityStats
     ) => {
       const nextQuestions = buildQuestions(words.slice(0, sessionLimit), mode);
+      answerSubmissionLocked.current = false;
+      nextActionLocked.current = false;
 
       if (!nextQuestions.length) {
         setStatus("empty");
@@ -1176,6 +1181,8 @@ export function ReviewSessionView({
       );
 
       if (!routeWords.length) {
+        answerSubmissionLocked.current = false;
+        nextActionLocked.current = false;
         setStatus("empty");
         setQuestions([]);
         setAnswers([]);
@@ -1195,6 +1202,8 @@ export function ReviewSessionView({
     const localWords = buildLocalWords(mode, savedWords, reviewState, sessionLimit);
 
     if (!localWords.length) {
+      answerSubmissionLocked.current = false;
+      nextActionLocked.current = false;
       setStatus("empty");
       setQuestions([]);
       setAnswers([]);
@@ -1221,6 +1230,10 @@ export function ReviewSessionView({
   useEffect(() => {
     loadLocalSession();
   }, [loadLocalSession]);
+
+  useEffect(() => {
+    nextActionLocked.current = false;
+  }, [currentIndex, status]);
 
   useEffect(() => {
     if (!focusTarget) {
@@ -1265,10 +1278,16 @@ export function ReviewSessionView({
   }
 
   function handleConfidence(confidence: VlxReviewConfidence) {
-    if (!currentQuestion || !pendingSelection || currentAnswer) {
+    if (
+      !currentQuestion ||
+      !pendingSelection ||
+      currentAnswer ||
+      answerSubmissionLocked.current
+    ) {
       return;
     }
 
+    answerSubmissionLocked.current = true;
     const previousState = readReviewState()[currentQuestion.slug];
     const output = applyReviewAnswer({
       sessionId,
@@ -1329,6 +1348,12 @@ export function ReviewSessionView({
   }
 
   function handleNext() {
+    if (!currentAnswer || nextActionLocked.current) {
+      return;
+    }
+
+    nextActionLocked.current = true;
+
     if (currentIndex + 1 >= questions.length) {
       const nextSummary = buildCompletedSummary(answers, readReviewState());
       const completedAt = new Date().toISOString();
@@ -1386,6 +1411,7 @@ export function ReviewSessionView({
       `Next card. Card ${currentIndex + 2} of ${questions.length}.`
     );
     setFocusTarget("first-option");
+    answerSubmissionLocked.current = false;
     resetCardTimer();
   }
 
@@ -1445,13 +1471,22 @@ export function ReviewSessionView({
                 aria-label="Back to Today"
                 className="track-b-button track-b-button--primary"
                 href="/dashboard"
+                prefetch={false}
               >
                 Back to dashboard
               </Link>
-              <Link className="track-b-button track-b-button--quiet" href="/saved">
+              <Link
+                className="track-b-button track-b-button--quiet"
+                href="/saved"
+                prefetch={false}
+              >
                 Memory queue
               </Link>
-              <Link className="track-b-button track-b-button--quiet" href="/packs">
+              <Link
+                className="track-b-button track-b-button--quiet"
+                href="/packs"
+                prefetch={false}
+              >
                 Browse packs
               </Link>
             </div>
@@ -1716,7 +1751,11 @@ export function ReviewSessionView({
               ) : null}
 
               <div className="track-b-action-row">
-                <Link className="track-b-button track-b-button--primary" href="/dashboard">
+                <Link
+                  className="track-b-button track-b-button--primary"
+                  href="/dashboard"
+                  prefetch={false}
+                >
                   Back to dashboard
                 </Link>
                 <button
