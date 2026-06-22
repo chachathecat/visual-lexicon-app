@@ -41,10 +41,15 @@ type VlxDataLayerWindow = Window & {
 
 type VlxAnalyticsAllowedKey = keyof VlxAnalyticsAllowedPayload;
 
+const ANALYTICS_SCHEMA_VERSION = 1;
+const ANALYTICS_SOURCE_OF_TRUTH = "client";
+
 const allowedKeys = new Set<VlxAnalyticsAllowedKey>([
   "event",
   "eventId",
   "eventTime",
+  "schemaVersion",
+  "sourceOfTruth",
   "source",
   "slug",
   "word",
@@ -58,6 +63,11 @@ const allowedKeys = new Set<VlxAnalyticsAllowedKey>([
   "boxBefore",
   "boxAfter",
   "weakScoreAfter",
+  "weakScoreBefore",
+  "masteryBefore",
+  "masteryAfter",
+  "responseMs",
+  "durationMs",
   "reviewedCount",
   "correctCount",
   "wrongCount",
@@ -65,9 +75,12 @@ const allowedKeys = new Set<VlxAnalyticsAllowedKey>([
   "weakCount",
   "savedCount",
   "reviewEventCount",
+  "queueSize",
   "hasLocalReviewState",
   "hasLocalSavedWord",
-  "mastery"
+  "mastery",
+  "confidence",
+  "sessionId"
 ]);
 
 const stringKeys = new Set<VlxAnalyticsAllowedKey>([
@@ -84,26 +97,61 @@ const stringKeys = new Set<VlxAnalyticsAllowedKey>([
   "trigger",
   "result",
   "questionType",
-  "mastery"
+  "masteryBefore",
+  "masteryAfter",
+  "mastery",
+  "sourceOfTruth",
+  "sessionId",
+  "confidence"
 ]);
 
 const numberKeys = new Set<VlxAnalyticsAllowedKey>([
   "boxBefore",
   "boxAfter",
   "weakScoreAfter",
+  "weakScoreBefore",
   "reviewedCount",
   "correctCount",
   "wrongCount",
   "dueCount",
   "weakCount",
   "savedCount",
-  "reviewEventCount"
+  "reviewEventCount",
+  "queueSize",
+  "responseMs",
+  "durationMs",
+  "schemaVersion"
 ]);
 
 const booleanKeys = new Set<VlxAnalyticsAllowedKey>([
   "hasLocalReviewState",
   "hasLocalSavedWord"
 ]);
+
+const allowedBoxKeys = new Set<VlxAnalyticsAllowedKey>(["boxBefore", "boxAfter"]);
+const allowedWeakScoreKeys = new Set<VlxAnalyticsAllowedKey>([
+  "weakScoreAfter",
+  "weakScoreBefore"
+]);
+const allowedCountKeys = new Set<VlxAnalyticsAllowedKey>([
+  "reviewedCount",
+  "correctCount",
+  "wrongCount",
+  "dueCount",
+  "weakCount",
+  "savedCount",
+  "reviewEventCount",
+  "queueSize"
+]);
+const allowedResponseNumberKeys = new Set<VlxAnalyticsAllowedKey>([
+  "responseMs",
+  "durationMs"
+]);
+
+const allowedConfidenceValues = new Set(["knew", "guessed", "forgot"]);
+const allowedSourceOfTruth = new Set(["client", "server", "derived"]);
+
+const pushedEvents = new Map<string, string>();
 
 function getBrowserWindow() {
   if (typeof window === "undefined") {
@@ -157,6 +205,12 @@ function sanitizeString(key: VlxAnalyticsAllowedKey, value: unknown) {
     return normalizeRoute(trimmed);
   }
 
+  if (key === "sourceOfTruth") {
+    return allowedSourceOfTruth.has(trimmed as "client" | "server" | "derived")
+      ? trimmed
+      : undefined;
+  }
+
   return trimmed.slice(0, 160);
 }
 
@@ -166,6 +220,57 @@ function sanitizeNumber(value: unknown) {
   }
 
   return value;
+}
+
+function sanitizeNonNegativeInteger(value: unknown) {
+  const number = sanitizeNumber(value);
+
+  if (number === undefined || !Number.isInteger(number) || number < 0) {
+    return undefined;
+  }
+
+  return number;
+}
+
+function sanitizeIntegerRange(value: unknown, min: number, max: number) {
+  const number = sanitizeNumber(value);
+
+  if (
+    number === undefined ||
+    !Number.isInteger(number) ||
+    number < min ||
+    number > max
+  ) {
+    return undefined;
+  }
+
+  return number;
+}
+
+function sanitizeFraction01(value: unknown) {
+  const number = sanitizeNumber(value);
+
+  if (number === undefined || number < 0 || number > 1) {
+    return undefined;
+  }
+
+  return number;
+}
+
+function sanitizeSchemaVersion(value: unknown) {
+  return value === ANALYTICS_SCHEMA_VERSION ? ANALYTICS_SCHEMA_VERSION : undefined;
+}
+
+function sanitizeConfidence(value: unknown) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+
+  return allowedConfidenceValues.has(normalized)
+    ? (normalized as "knew" | "guessed" | "forgot")
+    : undefined;
 }
 
 function sanitizeBoolean(value: unknown) {
@@ -197,9 +302,65 @@ function withLegacyCountAliases(
     wrongCount: input.wrongCount,
     weakCount: input.weakCount ?? input.weakWordsCount,
     savedCount: input.savedCount ?? input.savedWordsCount,
-    weakScoreAfter: input.weakScoreAfter,
+    weakScoreAfter: input.weakScoreAfter ?? input.weakScore,
+    weakScoreBefore: input.weakScoreBefore,
+    masteryBefore: input.masteryBefore,
+    masteryAfter: input.masteryAfter,
     mastery: input.mastery ?? input.masteryAfter
   };
+}
+
+function toAllowedPayloadEntry(
+  key: VlxAnalyticsAllowedKey,
+  value: unknown
+) {
+  if (numberKeys.has(key)) {
+    if (allowedBoxKeys.has(key)) {
+      return sanitizeIntegerRange(value, 0, 5);
+    }
+
+    if (allowedWeakScoreKeys.has(key)) {
+      return sanitizeFraction01(value);
+    }
+
+    if (allowedResponseNumberKeys.has(key)) {
+      const normalized = sanitizeNumber(value);
+
+      return normalized !== undefined && normalized >= 0 ? normalized : undefined;
+    }
+
+    if (allowedCountKeys.has(key)) {
+      return sanitizeNonNegativeInteger(value);
+    }
+
+    if (key === "schemaVersion") {
+      return sanitizeSchemaVersion(value);
+    }
+
+    return sanitizeNumber(value);
+  }
+
+  if (stringKeys.has(key)) {
+    if (key === "confidence") {
+      return sanitizeConfidence(value);
+    }
+
+    return sanitizeString(key, value);
+  }
+
+  if (booleanKeys.has(key)) {
+    return sanitizeBoolean(value);
+  }
+
+  return undefined;
+}
+
+function applySourceAndSchemaDefaults(
+  rawPayload: Record<VlxAnalyticsAllowedKey, unknown>,
+  sanitizedPayload: Partial<VlxAnalyticsAllowedPayload>
+) {
+  sanitizedPayload.schemaVersion = ANALYTICS_SCHEMA_VERSION;
+  sanitizedPayload.sourceOfTruth = ANALYTICS_SOURCE_OF_TRUTH;
 }
 
 export function sanitizeVlxEventPayload<
@@ -215,44 +376,24 @@ export function sanitizeVlxEventPayload<
     event,
     eventId: eventInput.eventId ?? createEventId(event),
     eventTime: eventInput.eventTime ?? new Date().toISOString(),
+    schemaVersion: eventInput.schemaVersion ?? ANALYTICS_SCHEMA_VERSION,
+    sourceOfTruth: eventInput.sourceOfTruth ?? ANALYTICS_SOURCE_OF_TRUTH,
     route:
       eventInput.route ??
       fallbackRoute ??
       normalizeRoute(eventInput.pagePath as string | undefined)
-  });
+  }) as Record<VlxAnalyticsAllowedKey, unknown>;
   const sanitizedPayload: Partial<VlxAnalyticsAllowedPayload> = {};
 
   for (const key of allowedKeys) {
-    const value = rawPayload[key];
+    const sanitizedValue = toAllowedPayloadEntry(key, rawPayload[key]);
 
-    if (stringKeys.has(key)) {
-      const sanitizedValue = sanitizeString(key, value);
-
-      if (sanitizedValue !== undefined) {
-        sanitizedPayload[key] = sanitizedValue as never;
-      }
-
-      continue;
-    }
-
-    if (numberKeys.has(key)) {
-      const sanitizedValue = sanitizeNumber(value);
-
-      if (sanitizedValue !== undefined) {
-        sanitizedPayload[key] = sanitizedValue as never;
-      }
-
-      continue;
-    }
-
-    if (booleanKeys.has(key)) {
-      const sanitizedValue = sanitizeBoolean(value);
-
-      if (sanitizedValue !== undefined) {
-        sanitizedPayload[key] = sanitizedValue as never;
-      }
+    if (sanitizedValue !== undefined) {
+      sanitizedPayload[key] = sanitizedValue as never;
     }
   }
+
+  applySourceAndSchemaDefaults(rawPayload, sanitizedPayload);
 
   return sanitizedPayload as VlxAnalyticsEvent<TEventName>;
 }
@@ -267,6 +408,14 @@ function pushToDataLayer(payload: VlxAnalyticsEventPayload) {
   dataLayer.push(payload);
 }
 
+function getDedupeFingerprint(payload: VlxAnalyticsEventPayload) {
+  return JSON.stringify(
+    Object.entries(payload)
+      .filter(([key]) => key !== "eventTime")
+      .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+  );
+}
+
 export function pushVlxEvent<TEventName extends VlxAnalyticsEventName>(
   event: TEventName,
   input: VlxAnalyticsEventInput<TEventName> = {}
@@ -277,11 +426,26 @@ export function pushVlxEvent<TEventName extends VlxAnalyticsEventName>(
     input,
     getCurrentRoute(browserWindow)
   );
+  const dedupeKey = `${payload.event}_${payload.eventId}`;
+  const dedupeFingerprint = getDedupeFingerprint(payload);
+  const previousFingerprint = pushedEvents.get(dedupeKey);
 
-  try {
-    pushToDataLayer(payload);
-  } catch {
-    // Analytics should never interrupt the learning flow.
+  if (previousFingerprint === undefined) {
+    pushedEvents.set(dedupeKey, dedupeFingerprint);
+    try {
+      pushToDataLayer(payload);
+    } catch {
+      // Analytics should never interrupt the learning flow.
+    }
+  } else if (
+    previousFingerprint !== dedupeFingerprint &&
+    process.env.NODE_ENV === "development"
+  ) {
+    console.warn(
+      "[vlx analytics] duplicate eventId with conflicting payload",
+      payload.event,
+      payload.eventId
+    );
   }
 
   if (process.env.NODE_ENV === "development") {
@@ -289,6 +453,10 @@ export function pushVlxEvent<TEventName extends VlxAnalyticsEventName>(
   }
 
   return payload;
+}
+
+export function resetDataLayerDedupState() {
+  pushedEvents.clear();
 }
 
 export const emitVlxEvent = pushVlxEvent;

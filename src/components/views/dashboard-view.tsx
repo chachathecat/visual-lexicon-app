@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { MissionPanel } from "@/components/mission-panel";
 import { MultilingualAliasSearch } from "@/components/multilingual-alias-search";
 import { PaywallPrompt } from "@/components/paywall-prompt";
+import { getRetentionSignals } from "@/lib/analytics";
 import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import {
   evaluateMasteryExportLockedPaywall,
@@ -22,7 +23,6 @@ import {
   getReviewStreak,
   getSavedLibrary,
   getWeakWords,
-  getWeeklyReviewedWords,
   type VlxHubProgressItem
 } from "@/lib/srs/selectors";
 import {
@@ -93,6 +93,7 @@ function readDashboardSnapshot(): DashboardSnapshot {
   const reviewState = readReviewState();
   const reviewEvents = readReviewEvents();
   const dailyStats = readDailyStats();
+  const retentionSignals = getRetentionSignals(savedWords, reviewEvents, now);
   const dueToday = getDueToday(reviewState, now);
   const weakWords = getWeakWords(reviewState);
   const newSaved = getNewSaved(savedWords, reviewState);
@@ -125,7 +126,7 @@ function readDashboardSnapshot(): DashboardSnapshot {
     hubProgress: getHubProgress(savedWords, reviewState, now),
     reviewedToday: getReviewedToday(dailyStats, now),
     reviewStreak: getReviewStreak(dailyStats, now),
-    weeklyReviewedWords: getWeeklyReviewedWords(reviewEvents, now),
+    weeklyReviewedWords: retentionSignals.weeklyReviewedWords,
     weakWordsPaywallPrompt,
     masteryExportPaywallPrompt,
     hasAnyLocalData:

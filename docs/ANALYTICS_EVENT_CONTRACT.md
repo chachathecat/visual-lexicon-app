@@ -42,6 +42,48 @@ type AnalyticsEventEnvelope<TPayload> = {
 `eventId` should be unique per event. Server writes also need an idempotency key
 or a durable event ID tied to the accepted write.
 
+## Current Track B Client Runtime
+
+The current Track B runtime emits browser-local `window.dataLayer` diagnostics
+only. It does not add an analytics SDK, network delivery, cookies,
+fingerprinting, identity, anonymous-ID storage, sessionStorage keys, or durable
+analytics storage.
+
+Runtime event objects use:
+
+```ts
+{
+  event: "vlx_*";
+  eventId: string;
+  eventTime: string;
+  schemaVersion: 1;
+  sourceOfTruth: "client";
+  route?: string;
+}
+```
+
+The payload is allowlisted. Query strings, hashes, raw URLs, raw alias queries,
+tokens, auth values, email, arbitrary objects, and page content are dropped.
+Routes are pathnames only.
+
+Runtime dedupe is in memory by `event name + eventId`. Same event name and same
+eventId pushes once. A conflicting duplicate payload does not push again and may
+warn in development. Different event names may share the same SRS event id.
+
+Current runtime event timing:
+
+| Runtime event | Timing |
+| --- | --- |
+| `vlx_save_word` | After the save result is known: `saved`, `duplicate`, `missing`, or `storage_error`. |
+| `vlx_review_start` | Once after a non-empty review session becomes active. Loading and empty queues do not emit. |
+| `vlx_review_answer` | Only after `applyReviewAnswer` commits; uses the exact committed SRS `eventId` and `sessionId`; selected answer text is not emitted. |
+| `vlx_review_complete` | Once per fully committed logical review session; advisory until backend-derived reporting exists. |
+| `vlx_pricing_interest` / `vlx_paywall_interest` | Interest-only diagnostics; no entitlement or billing change. |
+
+No runtime analytics event can change mastery, payment, entitlement, or access.
+Client-local retention is not cross-device or account-wide retention. Backend
+account event ingestion and trusted reporting remain future work.
+
 ## Shared Field Rules
 
 | Field | Rule |
@@ -54,7 +96,14 @@ or a durable event ID tied to the accepted write.
 | `source` | Use an approved enum such as `dashboard`, `saved`, `review_due`, `extension`, `pack`, or `alias_search`. |
 | `aliasQuery` | Avoid raw query storage. Prefer language bucket, normalized match status, hash, or drop. |
 | `url` | Do not collect full page URLs by default. |
+| `schemaVersion` | Runtime payload must emit `1`. |
+| `sourceOfTruth` | Runtime payload must emit `client` (analytics contract source authority). |
 | `responseMs` | Must be finite, non-negative, and bounded by validation policy. |
+| `durationMs` | Must be finite, non-negative, and bounded by validation policy. |
+| `boxAfter`, `boxBefore` | Integers in range 0-5. |
+| `weakScoreBefore`, `weakScoreAfter` | Number range 0..1. |
+| `reviewedCount`, `correctCount`, `wrongCount`, `dueCount`, `weakCount`, `savedCount`, `reviewEventCount`, `queueSize` | Non-negative integers only. |
+| `confidence` | Only `knew`, `guessed`, or `forgot`. |
 
 ## Event Contracts
 
@@ -82,6 +131,10 @@ or a durable event ID tied to the accepted write.
 | Idempotency/dedupe notes | Future server source dedupes by `userId + slug + idempotencyKey`; duplicate saves must not reset SRS. |
 | Can affect mastery or entitlement | Can create/preserve review state only after accepted save logic; cannot affect entitlement. |
 
+Current Track B runtime note: `vlx_save_word` reports exactly one result:
+`saved`, `duplicate`, `missing`, or `storage_error`. Missing/unknown save
+targets do not send arbitrary query values as slugs.
+
 ### `review_start`
 
 | Requirement | Contract |
@@ -106,6 +159,10 @@ or a durable event ID tied to the accepted write.
 | Idempotency/dedupe notes | Server must dedupe by accepted review event ID or idempotency key; retries must not advance SRS twice. |
 | Can affect mastery or entitlement | Can affect mastery only through the trusted SRS reducer; cannot affect entitlement. |
 
+Current Track B runtime note: `vlx_review_answer` is emitted only after local
+SRS commit succeeds, with the exact committed SRS `eventId` and `sessionId`.
+Rollback emits no answer event. Retry emits once after commit.
+
 ### `review_complete`
 
 | Requirement | Contract |
@@ -117,6 +174,10 @@ or a durable event ID tied to the accepted write.
 | Privacy notes | Aggregate counts only. |
 | Idempotency/dedupe notes | Prefer derived session completion from unique accepted answers; client complete events can be dropped or used as UX diagnostics. |
 | Can affect mastery or entitlement | No. |
+
+Current Track B runtime note: `vlx_review_complete` counts only committed
+answers, requires `reviewedCount = correctCount + wrongCount`, and remains
+advisory until derived from accepted backend review events.
 
 ### `due_queue_view`
 
@@ -327,7 +388,11 @@ or a durable event ID tied to the accepted write.
 Derived metrics should be computed from documented events:
 
 - Weekly Reviewed Words: unique accepted `review_answer` events by week.
-- Activation: `save_word` followed by first accepted `review_answer`.
+- Current browser-local Weekly Reviewed Words: unique accepted local review
+  event slugs over seven UTC dates.
+- Activation: `save_word` followed by first accepted `review_answer`; current
+  browser-local save-to-first-review returns `null` when no words are saved and
+  only counts reviews at or after the saved word's `savedAt`.
 - Review retention: first accepted `review_answer` followed by later accepted
   `review_answer` in a defined window.
 - Due completion: `due_queue_view` followed by due-mode accepted

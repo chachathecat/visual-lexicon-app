@@ -84,6 +84,15 @@ const validSources = new Set<string>([
   "exam_pack",
   "manual"
 ]);
+const RECENT_SAVE_ANALYTICS_SUPPRESSION_MS = 1000;
+const recentSaveAnalyticsBySlug = new Map<
+  string,
+  {
+    source?: string;
+    result: VlxSaveWordResult;
+    emittedAtMs: number;
+  }
+>();
 
 function normalizeSlug(value?: string) {
   const slug = value?.trim().toLocaleLowerCase();
@@ -108,9 +117,41 @@ function normalizeSource(value?: string): VlxSavedWordSource | undefined {
 }
 
 function normalizeAnalyticsSource(value?: string) {
-  const source = value?.trim();
+  const source = normalizeSource(value);
 
-  return source || undefined;
+  return source;
+}
+
+function getSaveAnalyticsEventId(slug: string | undefined, result: VlxSaveWordResult) {
+  return `vlx_save_word_${slug ?? "missing"}_${result}`;
+}
+
+function shouldSuppressSaveAnalytics(input: {
+  slug?: string;
+  source?: string;
+  result: VlxSaveWordResult;
+}) {
+  const analyticsSource = normalizeAnalyticsSource(input.source);
+  const key = input.slug ?? "missing";
+  const nowMs = Date.now();
+  const recent = recentSaveAnalyticsBySlug.get(key);
+
+  if (
+    input.result === "duplicate" &&
+    recent?.result === "saved" &&
+    recent.source === analyticsSource &&
+    nowMs - recent.emittedAtMs < RECENT_SAVE_ANALYTICS_SUPPRESSION_MS
+  ) {
+    return true;
+  }
+
+  recentSaveAnalyticsBySlug.set(key, {
+    source: analyticsSource,
+    result: input.result,
+    emittedAtMs: nowMs
+  });
+
+  return false;
 }
 
 function formatHubLabel(hub?: string) {
@@ -204,8 +245,13 @@ function emitSaveWordAnalytics(input: {
   hasLocalReviewState?: boolean;
   hasLocalSavedWord?: boolean;
 }) {
+  if (shouldSuppressSaveAnalytics(input)) {
+    return;
+  }
+
   emitVlxEvent(VLX_ANALYTICS_EVENTS.saveWord, {
-    slug: input.slug ?? "",
+    eventId: getSaveAnalyticsEventId(input.slug, input.result),
+    slug: input.slug,
     source: normalizeAnalyticsSource(input.source),
     result: input.result,
     word: input.word?.word,
@@ -331,7 +377,6 @@ export function SaveLandingView({
       setOutcome({ status: "unknown_word" });
       setPaywallSurface(null);
       emitSaveWordAnalytics({
-        slug: normalizedSlug,
         source,
         result: "missing"
       });
@@ -342,7 +387,7 @@ export function SaveLandingView({
       setOutcome({ status: "storage_unavailable" });
       setPaywallSurface(null);
       emitSaveWordAnalytics({
-        slug: normalizedSlug,
+        slug: word.slug,
         source,
         result: "storage_error",
         word
@@ -400,7 +445,7 @@ export function SaveLandingView({
       setOutcome({ status: "storage_error" });
       setPaywallSurface(null);
       emitSaveWordAnalytics({
-        slug: normalizedSlug,
+        slug: word?.slug,
         source,
         result: "storage_error",
         word
