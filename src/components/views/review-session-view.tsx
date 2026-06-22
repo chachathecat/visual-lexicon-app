@@ -39,7 +39,8 @@ import {
   readDailyStats,
   readReviewEvents,
   readReviewState,
-  readSavedWords
+  readSavedWords,
+  VlxReviewStorageError
 } from "@/lib/srs/storage";
 import type {
   VlxMasteryLabel,
@@ -100,6 +101,7 @@ type AvailabilityStats = {
 };
 
 type PendingSelection = {
+  eventId: string;
   selected: string;
   result: VlxReviewResult;
   responseMs: number;
@@ -107,6 +109,7 @@ type PendingSelection = {
 };
 
 type SessionAnswer = {
+  eventId: string;
   slug: string;
   word: string;
   selected: string;
@@ -153,6 +156,11 @@ type SessionSummary = {
 type ReviewPaywallSurface = {
   prompt: VlxPaywallPrompt;
   userState: VlxPlanId;
+};
+
+type ReviewPersistenceError = {
+  fatal: boolean;
+  message: string;
 };
 
 type ReviewModeCopy = {
@@ -287,6 +295,15 @@ function createSessionId(mode: ReviewMode) {
       : Math.random().toString(36).slice(2, 10);
 
   return `s_${datePart}_${mode}_${randomPart}`;
+}
+
+function createReviewEventId(sessionId: string, slug: string, cardIndex: number) {
+  const randomPart =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10);
+
+  return `evt_${sessionId}_${cardIndex + 1}_${slug}_${randomPart}`;
 }
 
 function normalizeTerm(value: string) {
@@ -893,6 +910,20 @@ function buildCompletedSummary(
   };
 }
 
+function getCommittedSessionAnswers(
+  answers: SessionAnswer[],
+  reviewEvents: ReturnType<typeof readReviewEvents>,
+  sessionId: string
+) {
+  const committedEventIds = new Set(
+    reviewEvents
+      .filter((event) => event.sessionId === sessionId)
+      .map((event) => event.eventId)
+  );
+
+  return answers.filter((answer) => committedEventIds.has(answer.eventId));
+}
+
 function formatDateLabel(value: string) {
   const date = new Date(value);
 
@@ -1035,6 +1066,21 @@ function getReviewSummaryLiveMessage(summary: SessionSummary) {
   return `Session complete. ${summary.reviewed} reviewed. ${summary.correct} correct. ${summary.wrong} wrong. ${summary.weakRemaining} weak words remain.`;
 }
 
+function getReviewPersistenceError(error: unknown): ReviewPersistenceError {
+  if (error instanceof VlxReviewStorageError) {
+    return {
+      fatal: error.fatal,
+      message: error.message
+    };
+  }
+
+  return {
+    fatal: false,
+    message:
+      "Memory state could not be saved. Your card did not advance; retry saving this answer."
+  };
+}
+
 function getReviewShellActiveItem(mode: ReviewMode): TrackBNavigationItemId {
   return "review";
 }
@@ -1085,6 +1131,7 @@ export function ReviewSessionView({
   const firstOptionRef = useRef<HTMLButtonElement | null>(null);
   const feedbackActionRef = useRef<HTMLButtonElement | null>(null);
   const summaryHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const storageErrorRef = useRef<HTMLDivElement | null>(null);
   const emptyPanelRef = useRef<HTMLElement | null>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [questions, setQuestions] = useState<ReviewQuestion[]>([]);
@@ -1093,11 +1140,16 @@ export function ReviewSessionView({
   const [pendingSelection, setPendingSelection] = useState<PendingSelection | null>(
     null
   );
+  const [pendingConfidence, setPendingConfidence] =
+    useState<VlxReviewConfidence | null>(null);
   const [currentAnswer, setCurrentAnswer] = useState<SessionAnswer | null>(null);
   const [answers, setAnswers] = useState<SessionAnswer[]>([]);
   const [completedSummary, setCompletedSummary] = useState<SessionSummary | null>(
     null
   );
+  const [isPersistingAnswer, setIsPersistingAnswer] = useState(false);
+  const [reviewPersistenceError, setReviewPersistenceError] =
+    useState<ReviewPersistenceError | null>(null);
   const [summaryPaywallSurface, setSummaryPaywallSurface] =
     useState<ReviewPaywallSurface | null>(null);
   const [queueLabel, setQueueLabel] = useState(copy.sourceLabel);
@@ -1105,7 +1157,12 @@ export function ReviewSessionView({
     "Loading review state from local storage."
   );
   const [focusTarget, setFocusTarget] = useState<
-    "first-option" | "feedback-action" | "summary-heading" | "empty-panel" | null
+    | "first-option"
+    | "feedback-action"
+    | "summary-heading"
+    | "storage-error"
+    | "empty-panel"
+    | null
   >(null);
 
   const resetCardTimer = useCallback(() => {
@@ -1118,15 +1175,21 @@ export function ReviewSessionView({
       label: string,
       stats?: AvailabilityStats
     ) => {
-      const nextQuestions = buildQuestions(words.slice(0, sessionLimit), mode);
+      const nextQuestions = buildQuestions(
+        dedupeBySlug(words).slice(0, sessionLimit),
+        mode
+      );
       answerSubmissionLocked.current = false;
       nextActionLocked.current = false;
+      setIsPersistingAnswer(false);
+      setReviewPersistenceError(null);
 
       if (!nextQuestions.length) {
         setStatus("empty");
         setCompletedSummary(null);
         setSummaryPaywallSurface(null);
         setPendingSelection(null);
+        setPendingConfidence(null);
         setCurrentAnswer(null);
         setLiveMessage(`${copy.emptyTitle}. ${copy.emptyBody}`);
         completionRecordedSessionId.current = null;
@@ -1143,9 +1206,11 @@ export function ReviewSessionView({
       setCurrentIndex(0);
       setSessionId(nextSessionId);
       setPendingSelection(null);
+      setPendingConfidence(null);
       setCurrentAnswer(null);
       setAnswers([]);
       setCompletedSummary(null);
+      setReviewPersistenceError(null);
       setSummaryPaywallSurface(null);
       setQueueLabel(label);
       setStatus("active");
@@ -1183,6 +1248,8 @@ export function ReviewSessionView({
       if (!routeWords.length) {
         answerSubmissionLocked.current = false;
         nextActionLocked.current = false;
+        setIsPersistingAnswer(false);
+        setReviewPersistenceError(null);
         setStatus("empty");
         setQuestions([]);
         setAnswers([]);
@@ -1190,6 +1257,7 @@ export function ReviewSessionView({
         setSummaryPaywallSurface(null);
         setCurrentAnswer(null);
         setPendingSelection(null);
+        setPendingConfidence(null);
         setLiveMessage(`${routeSession.emptyTitle}. ${routeSession.emptyBody}`);
         completionRecordedSessionId.current = null;
         return;
@@ -1204,6 +1272,8 @@ export function ReviewSessionView({
     if (!localWords.length) {
       answerSubmissionLocked.current = false;
       nextActionLocked.current = false;
+      setIsPersistingAnswer(false);
+      setReviewPersistenceError(null);
       setStatus("empty");
       setQuestions([]);
       setAnswers([]);
@@ -1211,6 +1281,7 @@ export function ReviewSessionView({
       setSummaryPaywallSurface(null);
       setCurrentAnswer(null);
       setPendingSelection(null);
+      setPendingConfidence(null);
       setLiveMessage(`${emptyTitle}. ${emptyBody}`);
       completionRecordedSessionId.current = null;
       return;
@@ -1247,7 +1318,9 @@ export function ReviewSessionView({
           ? feedbackActionRef.current
           : focusTarget === "summary-heading"
             ? summaryHeadingRef.current
-            : emptyPanelRef.current;
+            : focusTarget === "storage-error"
+              ? storageErrorRef.current
+              : emptyPanelRef.current;
 
     focusElement?.focus({ preventScroll: false });
     setFocusTarget(null);
@@ -1263,11 +1336,17 @@ export function ReviewSessionView({
   );
 
   function handleSelect(option: string) {
-    if (!currentQuestion || currentAnswer) {
+    if (
+      !currentQuestion ||
+      currentAnswer ||
+      pendingSelection ||
+      isPersistingAnswer
+    ) {
       return;
     }
 
     setPendingSelection({
+      eventId: createReviewEventId(sessionId, currentQuestion.slug, currentIndex),
       selected: option,
       selectedAt: new Date().toISOString(),
       responseMs: Math.max(0, Math.round(getNowMs() - cardStartedAt.current)),
@@ -1275,9 +1354,11 @@ export function ReviewSessionView({
         ? "correct"
         : "wrong"
     });
+    setPendingConfidence(null);
+    setReviewPersistenceError(null);
   }
 
-  function handleConfidence(confidence: VlxReviewConfidence) {
+  function commitPendingAnswer(confidence: VlxReviewConfidence) {
     if (
       !currentQuestion ||
       !pendingSelection ||
@@ -1288,63 +1369,98 @@ export function ReviewSessionView({
     }
 
     answerSubmissionLocked.current = true;
-    const previousState = readReviewState()[currentQuestion.slug];
-    const output = applyReviewAnswer({
-      sessionId,
-      slug: currentQuestion.slug,
-      word: currentQuestion.word,
-      image: currentQuestion.image,
-      definition: currentQuestion.definition,
-      hub: currentQuestion.hub,
-      questionType: currentQuestion.questionType,
-      selected: pendingSelection.selected,
-      answer: currentQuestion.word,
-      result: pendingSelection.result,
-      responseMs: pendingSelection.responseMs,
-      confidence,
-      createdAt: pendingSelection.selectedAt
-    });
-    const answer: SessionAnswer = {
-      slug: output.state.slug,
-      word: output.state.word,
-      selected: pendingSelection.selected,
-      answer: output.event.answer,
-      result: output.event.result,
-      responseMs: output.event.responseMs,
-      confidence: output.event.confidence ?? confidence,
-      questionType: output.event.questionType,
-      boxBefore: output.event.boxBefore,
-      boxAfter: output.event.boxAfter,
-      weakScoreBefore: output.event.weakScoreBefore,
-      weakScoreAfter: output.event.weakScoreAfter,
-      weakAdded:
-        previousState?.mastery !== "Weak" && output.state.mastery === "Weak",
-      weakImproved:
-        output.event.weakScoreAfter < output.event.weakScoreBefore ||
-        output.event.boxAfter > output.event.boxBefore,
-      movedForward: output.event.boxAfter > output.event.boxBefore,
-      masteryAfter: output.state.mastery,
-      nextDueAt: output.state.nextDueAt,
-      explanation: getFeedbackExplanation(currentQuestion, confidence)
-    };
+    setIsPersistingAnswer(true);
+    setPendingConfidence(confidence);
+    setReviewPersistenceError(null);
 
-    setCurrentAnswer(answer);
-    setAnswers((previousAnswers) => [...previousAnswers, answer]);
-    setLiveMessage(getReviewAnswerLiveMessage(answer));
-    setFocusTarget("feedback-action");
+    try {
+      const previousState = readReviewState()[currentQuestion.slug];
+      const output = applyReviewAnswer({
+        eventId: pendingSelection.eventId,
+        sessionId,
+        slug: currentQuestion.slug,
+        word: currentQuestion.word,
+        image: currentQuestion.image,
+        definition: currentQuestion.definition,
+        hub: currentQuestion.hub,
+        questionType: currentQuestion.questionType,
+        selected: pendingSelection.selected,
+        answer: currentQuestion.word,
+        result: pendingSelection.result,
+        responseMs: pendingSelection.responseMs,
+        confidence,
+        createdAt: pendingSelection.selectedAt
+      });
+      const answer: SessionAnswer = {
+        eventId: output.event.eventId,
+        slug: output.state.slug,
+        word: output.state.word,
+        selected: pendingSelection.selected,
+        answer: output.event.answer,
+        result: output.event.result,
+        responseMs: output.event.responseMs,
+        confidence: output.event.confidence ?? confidence,
+        questionType: output.event.questionType,
+        boxBefore: output.event.boxBefore,
+        boxAfter: output.event.boxAfter,
+        weakScoreBefore: output.event.weakScoreBefore,
+        weakScoreAfter: output.event.weakScoreAfter,
+        weakAdded:
+          previousState?.mastery !== "Weak" && output.state.mastery === "Weak",
+        weakImproved:
+          output.event.weakScoreAfter < output.event.weakScoreBefore ||
+          output.event.boxAfter > output.event.boxBefore,
+        movedForward: output.event.boxAfter > output.event.boxBefore,
+        masteryAfter: output.state.mastery,
+        nextDueAt: output.state.nextDueAt,
+        explanation: getFeedbackExplanation(currentQuestion, confidence)
+      };
 
-    emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewAnswer, {
-      source: currentQuestion.source,
-      slug: output.event.slug,
-      word: output.event.word,
-      mode,
-      questionType: output.event.questionType,
-      result: output.event.result,
-      boxBefore: output.event.boxBefore,
-      boxAfter: output.event.boxAfter,
-      weakScoreAfter: output.event.weakScoreAfter,
-      mastery: output.state.mastery
-    });
+      setCurrentAnswer(answer);
+      setAnswers((previousAnswers) =>
+        previousAnswers.some(
+          (previousAnswer) => previousAnswer.eventId === answer.eventId
+        )
+          ? previousAnswers
+          : [...previousAnswers, answer]
+      );
+      setLiveMessage(getReviewAnswerLiveMessage(answer));
+      setFocusTarget("feedback-action");
+
+      emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewAnswer, {
+        source: currentQuestion.source,
+        slug: output.event.slug,
+        word: output.event.word,
+        mode,
+        questionType: output.event.questionType,
+        result: output.event.result,
+        boxBefore: output.event.boxBefore,
+        boxAfter: output.event.boxAfter,
+        weakScoreAfter: output.event.weakScoreAfter,
+        mastery: output.state.mastery
+      });
+    } catch (error) {
+      const persistenceError = getReviewPersistenceError(error);
+
+      answerSubmissionLocked.current = false;
+      setReviewPersistenceError(persistenceError);
+      setLiveMessage(persistenceError.message);
+      setFocusTarget("storage-error");
+    } finally {
+      setIsPersistingAnswer(false);
+    }
+  }
+
+  function handleConfidence(confidence: VlxReviewConfidence) {
+    commitPendingAnswer(confidence);
+  }
+
+  function handleRetryPersistence() {
+    if (!pendingConfidence) {
+      return;
+    }
+
+    commitPendingAnswer(pendingConfidence);
   }
 
   function handleNext() {
@@ -1355,9 +1471,18 @@ export function ReviewSessionView({
     nextActionLocked.current = true;
 
     if (currentIndex + 1 >= questions.length) {
-      const nextSummary = buildCompletedSummary(answers, readReviewState());
+      const committedAnswers = getCommittedSessionAnswers(
+        answers,
+        readReviewEvents(),
+        sessionId
+      );
+      const nextSummary = buildCompletedSummary(
+        committedAnswers,
+        readReviewState()
+      );
       const completedAt = new Date().toISOString();
 
+      setAnswers(committedAnswers);
       setCompletedSummary(nextSummary);
       setLiveMessage(getReviewSummaryLiveMessage(nextSummary));
 
@@ -1406,7 +1531,9 @@ export function ReviewSessionView({
 
     setCurrentIndex((index) => index + 1);
     setPendingSelection(null);
+    setPendingConfidence(null);
     setCurrentAnswer(null);
+    setReviewPersistenceError(null);
     setLiveMessage(
       `Next card. Card ${currentIndex + 2} of ${questions.length}.`
     );
@@ -1584,7 +1711,11 @@ export function ReviewSessionView({
                   <button
                     aria-pressed={selectedAnswer === option}
                     className={getOptionClass(option)}
-                    disabled={Boolean(currentAnswer)}
+                    disabled={
+                      Boolean(currentAnswer) ||
+                      Boolean(pendingSelection) ||
+                      isPersistingAnswer
+                    }
                     key={option}
                     onClick={() => handleSelect(option)}
                     ref={index === 0 ? firstOptionRef : undefined}
@@ -1622,6 +1753,7 @@ export function ReviewSessionView({
                       <button
                         aria-label={option.label}
                         className="review-v2-confidence-button"
+                        disabled={isPersistingAnswer || Boolean(pendingConfidence)}
                         key={option.value}
                         onClick={() => handleConfidence(option.value)}
                         type="button"
@@ -1631,6 +1763,29 @@ export function ReviewSessionView({
                     );
                   })}
                 </div>
+              </div>
+            ) : null}
+
+            {reviewPersistenceError ? (
+              <div
+                className={`review-v2-storage-alert${
+                  reviewPersistenceError.fatal
+                    ? " review-v2-storage-alert--fatal"
+                    : ""
+                }`}
+                ref={storageErrorRef}
+                role="alert"
+                tabIndex={-1}
+              >
+                <p>{reviewPersistenceError.message}</p>
+                <button
+                  className="track-b-button track-b-button--quiet"
+                  disabled={isPersistingAnswer || !pendingConfidence}
+                  onClick={handleRetryPersistence}
+                  type="button"
+                >
+                  Retry save
+                </button>
               </div>
             ) : null}
 
@@ -1683,6 +1838,7 @@ export function ReviewSessionView({
                       : "Next card"
                   }
                   className="track-b-button track-b-button--primary"
+                  disabled={isPersistingAnswer}
                   onClick={handleNext}
                   ref={feedbackActionRef}
                   type="button"
@@ -1719,7 +1875,7 @@ export function ReviewSessionView({
                 {answers.map((answer) => (
                   <div
                     className={`review-result-row review-result-row--${answer.result}`}
-                    key={`${answer.slug}-${answer.responseMs}`}
+                    key={answer.eventId}
                   >
                     <ReviewResultThumbnail answer={answer} />
                     <div>
