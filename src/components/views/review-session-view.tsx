@@ -1021,6 +1021,19 @@ function getReviewSummaryPaywallSurface({
   return mistakePrompt ? { prompt: mistakePrompt, userState } : null;
 }
 
+function getReviewAnswerLiveMessage(answer: SessionAnswer) {
+  const result = answer.result === "correct" ? "Correct" : "Wrong";
+  const nextDue = answer.nextDueAt
+    ? `Next due ${formatDateLabel(answer.nextDueAt) ?? "soon"}.`
+    : "Next due was not scheduled.";
+
+  return `${result}. ${answer.word}. Memory state updated to ${answer.masteryAfter}. Box ${answer.boxBefore} to ${answer.boxAfter}. Weak score ${formatPercent(answer.weakScoreAfter)}. ${nextDue}`;
+}
+
+function getReviewSummaryLiveMessage(summary: SessionSummary) {
+  return `Session complete. ${summary.reviewed} reviewed. ${summary.correct} correct. ${summary.wrong} wrong. ${summary.weakRemaining} weak words remain.`;
+}
+
 function getReviewShellActiveItem(mode: ReviewMode): TrackBNavigationItemId {
   return "review";
 }
@@ -1066,6 +1079,10 @@ export function ReviewSessionView({
   const emptyBody = routeSession?.emptyBody ?? copy.emptyBody;
   const cardStartedAt = useRef(getNowMs());
   const completionRecordedSessionId = useRef<string | null>(null);
+  const firstOptionRef = useRef<HTMLButtonElement | null>(null);
+  const feedbackActionRef = useRef<HTMLButtonElement | null>(null);
+  const summaryHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const emptyPanelRef = useRef<HTMLElement | null>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [questions, setQuestions] = useState<ReviewQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -1081,6 +1098,12 @@ export function ReviewSessionView({
   const [summaryPaywallSurface, setSummaryPaywallSurface] =
     useState<ReviewPaywallSurface | null>(null);
   const [queueLabel, setQueueLabel] = useState(copy.sourceLabel);
+  const [liveMessage, setLiveMessage] = useState(
+    "Loading review state from local storage."
+  );
+  const [focusTarget, setFocusTarget] = useState<
+    "first-option" | "feedback-action" | "summary-heading" | "empty-panel" | null
+  >(null);
 
   const resetCardTimer = useCallback(() => {
     cardStartedAt.current = getNowMs();
@@ -1100,6 +1123,7 @@ export function ReviewSessionView({
         setSummaryPaywallSurface(null);
         setPendingSelection(null);
         setCurrentAnswer(null);
+        setLiveMessage(`${copy.emptyTitle}. ${copy.emptyBody}`);
         completionRecordedSessionId.current = null;
         return;
       }
@@ -1120,6 +1144,9 @@ export function ReviewSessionView({
       setSummaryPaywallSurface(null);
       setQueueLabel(label);
       setStatus("active");
+      setLiveMessage(
+        `Review session ready. ${nextQuestions.length} ${nextQuestions.length === 1 ? "card" : "cards"} from ${label}.`
+      );
       completionRecordedSessionId.current = null;
       resetCardTimer();
 
@@ -1134,7 +1161,7 @@ export function ReviewSessionView({
         hasLocalReviewState: hasDueCards || hasWeakCards
       });
     },
-    [mode, packId, resetCardTimer, routeSource, sessionLimit]
+    [copy.emptyBody, copy.emptyTitle, mode, packId, resetCardTimer, routeSource, sessionLimit]
   );
 
   const loadLocalSession = useCallback(() => {
@@ -1156,6 +1183,7 @@ export function ReviewSessionView({
         setSummaryPaywallSurface(null);
         setCurrentAnswer(null);
         setPendingSelection(null);
+        setLiveMessage(`${routeSession.emptyTitle}. ${routeSession.emptyBody}`);
         completionRecordedSessionId.current = null;
         return;
       }
@@ -1174,16 +1202,43 @@ export function ReviewSessionView({
       setSummaryPaywallSurface(null);
       setCurrentAnswer(null);
       setPendingSelection(null);
+      setLiveMessage(`${emptyTitle}. ${emptyBody}`);
       completionRecordedSessionId.current = null;
       return;
     }
 
     startSession(localWords, copy.sourceLabel, nextAvailability);
-  }, [copy.sourceLabel, mode, routeSession, sessionLimit, startSession]);
+  }, [
+    copy.sourceLabel,
+    emptyBody,
+    emptyTitle,
+    mode,
+    routeSession,
+    sessionLimit,
+    startSession
+  ]);
 
   useEffect(() => {
     loadLocalSession();
   }, [loadLocalSession]);
+
+  useEffect(() => {
+    if (!focusTarget) {
+      return;
+    }
+
+    const focusElement =
+      focusTarget === "first-option"
+        ? firstOptionRef.current
+        : focusTarget === "feedback-action"
+          ? feedbackActionRef.current
+          : focusTarget === "summary-heading"
+            ? summaryHeadingRef.current
+            : emptyPanelRef.current;
+
+    focusElement?.focus({ preventScroll: false });
+    setFocusTarget(null);
+  }, [currentAnswer, currentIndex, focusTarget, status]);
 
   const currentQuestion = questions[currentIndex];
   const selectedAnswer = currentAnswer?.selected ?? pendingSelection?.selected ?? null;
@@ -1256,6 +1311,8 @@ export function ReviewSessionView({
 
     setCurrentAnswer(answer);
     setAnswers((previousAnswers) => [...previousAnswers, answer]);
+    setLiveMessage(getReviewAnswerLiveMessage(answer));
+    setFocusTarget("feedback-action");
 
     emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewAnswer, {
       source: currentQuestion.source,
@@ -1277,6 +1334,7 @@ export function ReviewSessionView({
       const completedAt = new Date().toISOString();
 
       setCompletedSummary(nextSummary);
+      setLiveMessage(getReviewSummaryLiveMessage(nextSummary));
 
       if (packId && completionRecordedSessionId.current !== sessionId) {
         recordPackReviewCompleted({
@@ -1317,12 +1375,17 @@ export function ReviewSessionView({
         })
       );
       setStatus("summary");
+      setFocusTarget("summary-heading");
       return;
     }
 
     setCurrentIndex((index) => index + 1);
     setPendingSelection(null);
     setCurrentAnswer(null);
+    setLiveMessage(
+      `Next card. Card ${currentIndex + 2} of ${questions.length}.`
+    );
+    setFocusTarget("first-option");
     resetCardTimer();
   }
 
@@ -1351,16 +1414,29 @@ export function ReviewSessionView({
     >
       <div className="review-v2-page">
         <h1 className="sr-only">{copy.title}</h1>
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className="sr-only"
+          data-testid="review-live-region"
+          role="status"
+        >
+          {liveMessage}
+        </div>
 
         {status === "loading" ? (
-          <section className="review-v2-empty" aria-live="polite">
+          <section className="review-v2-empty" aria-busy="true">
             <h2>Loading review state</h2>
             <p>Reading saved words and memory state from local storage.</p>
           </section>
         ) : null}
 
         {status === "empty" ? (
-          <section className="review-v2-empty" aria-live="polite">
+          <section
+            className="review-v2-empty review-v2-focus-anchor"
+            ref={emptyPanelRef}
+            tabIndex={-1}
+          >
             <p className="track-b-eyebrow">{copy.modeLabel}</p>
             <h2>{emptyTitle}</h2>
             <p>{emptyBody}</p>
@@ -1392,10 +1468,14 @@ export function ReviewSessionView({
             </h2>
             <p className="sr-only">{copy.description}</p>
             <div
-              aria-label={`Card ${currentIndex + 1} of ${questions.length}`}
+              aria-valuemax={questions.length}
+              aria-valuemin={1}
+              aria-valuenow={currentIndex + 1}
+              aria-valuetext={`Card ${currentIndex + 1} of ${questions.length}`}
               className="review-v2-progress"
+              role="progressbar"
             >
-              <div>
+              <div aria-hidden="true">
                 {questions.map((question, index) => {
                   const completedAnswer = answers[index];
 
@@ -1435,7 +1515,6 @@ export function ReviewSessionView({
                 {currentAnswer ? (
                   <div
                     className={`review-v2-inline-feedback review-v2-inline-feedback--${currentAnswer.result}`}
-                    aria-live="polite"
                   >
                     <span aria-hidden="true">
                       {currentAnswer.result === "correct" ? (
@@ -1466,13 +1545,14 @@ export function ReviewSessionView({
                 <span>{currentQuestion.optionSourceLabel}</span>
               </div>
               <div className="review-options" aria-label="Answer choices">
-                {currentQuestion.options.map((option) => (
+                {currentQuestion.options.map((option, index) => (
                   <button
                     aria-pressed={selectedAnswer === option}
                     className={getOptionClass(option)}
                     disabled={Boolean(currentAnswer)}
                     key={option}
                     onClick={() => handleSelect(option)}
+                    ref={index === 0 ? firstOptionRef : undefined}
                     type="button"
                   >
                     <span>{option}</span>
@@ -1522,7 +1602,6 @@ export function ReviewSessionView({
             {currentAnswer ? (
               <div
                 className={`review-feedback review-v2-feedback review-v2-feedback--${currentAnswer.result}`}
-                aria-live="polite"
               >
                 <div className="review-v2-feedback__copy">
                   <p className="track-b-eyebrow">
@@ -1570,6 +1649,7 @@ export function ReviewSessionView({
                   }
                   className="track-b-button track-b-button--primary"
                   onClick={handleNext}
+                  ref={feedbackActionRef}
                   type="button"
                 >
                   {currentIndex + 1 >= questions.length ? "View summary" : "Next word"}
@@ -1588,7 +1668,11 @@ export function ReviewSessionView({
             <div className="review-v2-summary-card">
               <div className="review-v2-summary__header">
                 <p className="track-b-eyebrow">Review complete</p>
-                <h3>
+                <h3
+                  className="review-v2-focus-anchor"
+                  ref={summaryHeadingRef}
+                  tabIndex={-1}
+                >
                   {summary.correct === summary.reviewed
                     ? "Every word recalled."
                     : `${summary.correct} moved closer to memory.`}

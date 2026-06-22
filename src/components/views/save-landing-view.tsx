@@ -241,6 +241,43 @@ function getSaveMemoryState(reviewItem?: VlxReviewStateItem) {
   return "due";
 }
 
+function getSaveStatusMessage(outcome: SaveOutcome) {
+  if (outcome.status === "checking") {
+    return "Loading save state from local storage.";
+  }
+
+  if (outcome.status === "missing_slug") {
+    return "Save failed because no word slug was provided.";
+  }
+
+  if (outcome.status === "unknown_word") {
+    return "Save failed because the word was not found in the current pack data.";
+  }
+
+  if (
+    outcome.status === "storage_unavailable" ||
+    outcome.status === "storage_error"
+  ) {
+    return "Save failed because local storage could not be written.";
+  }
+
+  const savedWord = outcome.savedWord;
+
+  if (!savedWord) {
+    return "Preparing save confirmation.";
+  }
+
+  const queueStatus = outcome.alreadySaved
+    ? `${savedWord.word} was already in your saved words.`
+    : `${savedWord.word} was added to your saved words.`;
+  const reviewStatus = outcome.alreadyQueued
+    ? "The existing review state was preserved."
+    : "A local review state item was created.";
+  const masteryStatus = outcome.reviewItem?.mastery ?? "New";
+
+  return `${queueStatus} ${reviewStatus} Memory state is ${masteryStatus}.`;
+}
+
 function SaveMemoryPill({
   state
 }: {
@@ -374,6 +411,14 @@ export function SaveLandingView({
   if (outcome.status === "checking") {
     return (
       <SaveShell>
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className="sr-only"
+          role="status"
+        >
+          {getSaveStatusMessage(outcome)}
+        </div>
         <TrackBPageHeader
           eyebrow="Save"
           title="Preparing save."
@@ -390,6 +435,9 @@ export function SaveLandingView({
   if (outcome.status === "missing_slug") {
     return (
       <SaveShell>
+        <div className="sr-only" role="alert">
+          {getSaveStatusMessage(outcome)}
+        </div>
         <TrackBPageHeader
           eyebrow="Save"
           title="No word selected."
@@ -407,6 +455,9 @@ export function SaveLandingView({
   if (outcome.status === "unknown_word") {
     return (
       <SaveShell>
+        <div className="sr-only" role="alert">
+          {getSaveStatusMessage(outcome)}
+        </div>
         <TrackBPageHeader
           eyebrow="Save"
           title="Word not found."
@@ -427,6 +478,9 @@ export function SaveLandingView({
   ) {
     return (
       <SaveShell>
+        <div className="sr-only" role="alert">
+          {getSaveStatusMessage(outcome)}
+        </div>
         <TrackBPageHeader
           eyebrow="Save"
           title="Save unavailable."
@@ -449,9 +503,18 @@ export function SaveLandingView({
 
   return (
     <SaveShell>
-      <section className="save-v2-confirm" aria-live="polite">
+      <section className="save-v2-confirm" aria-labelledby="save-v2-heading">
         {savedWord ? (
           <>
+            <div
+              aria-atomic="true"
+              aria-live="polite"
+              className="sr-only"
+              data-testid="save-live-region"
+              role="status"
+            >
+              {getSaveStatusMessage(outcome)}
+            </div>
             <div className="save-v2-status">
               <span aria-hidden="true">
                 <CheckIcon size={11} strokeWidth={3} />
@@ -463,7 +526,7 @@ export function SaveLandingView({
             </div>
 
             <header className="save-v2-heading">
-              <h1>{savedWord.word}</h1>
+              <h1 id="save-v2-heading">{savedWord.word}</h1>
               <p>{getSavedWordPhonetic(savedWord)}</p>
             </header>
 

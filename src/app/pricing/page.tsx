@@ -123,11 +123,11 @@ export default function PricingPage() {
           </p>
         </header>
 
-        <div className="pricing-v2-plan-grid" aria-label="Early access tiers">
+        <section className="pricing-v2-plan-grid" aria-label="Early access tiers">
           {tiers.map((tier) => (
             <TierCard key={tier.id} tier={tier} />
           ))}
-        </div>
+        </section>
 
         <p className="pricing-v2-note">
           Visual Lexicon is collecting paid beta interest only. No checkout is
