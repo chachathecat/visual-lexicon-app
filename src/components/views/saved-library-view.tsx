@@ -281,6 +281,8 @@ function QueueWordCard({ word }: { word: QueueWord }) {
       : word.state === "mastered"
         ? `/word/${word.slug}`
         : "/review/due";
+  const actionLabel =
+    word.state === "mastered" ? `Open ${word.word}` : `Review ${word.word}`;
 
   return (
     <article className="saved-v2-word-card">
@@ -300,7 +302,7 @@ function QueueWordCard({ word }: { word: QueueWord }) {
         </div>
       </div>
       <Link
-        aria-label={`Review ${word.word}`}
+        aria-label={actionLabel}
         className="saved-v2-word-card__action"
         href={actionHref}
       >

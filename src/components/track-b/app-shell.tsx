@@ -67,12 +67,12 @@ function TrackBNavList({
           );
         })}
         <li aria-hidden="true" className="track-b-nav-list__separator" />
-        <li>
+        <li aria-hidden="true">
           <span className="track-b-nav-link track-b-nav-link--system">
             Components
           </span>
         </li>
-        <li>
+        <li aria-hidden="true">
           <span className="track-b-nav-link track-b-nav-link--system">
             Tokens
           </span>

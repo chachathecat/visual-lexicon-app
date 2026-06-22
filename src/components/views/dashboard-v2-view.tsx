@@ -219,23 +219,20 @@ function DueWordRows({ words }: { words: DashboardDueWord[] }) {
   }
 
   return (
-    <div className="dashboard-v2-due-list" role="list" aria-label="Due words preview">
+    <ul className="dashboard-v2-due-list" aria-label="Due words preview">
       {words.map((word) => (
-        <Link
-          className="dashboard-v2-due-row"
-          href="/review/due"
-          key={word.slug}
-          role="listitem"
-        >
-          <DueWordThumbnail word={word} />
-          <div className="dashboard-v2-due-row__copy">
-            <h2>{word.word}</h2>
-            {word.definition ? <p>{word.definition}</p> : null}
-          </div>
-          <DashboardMemoryPill label={word.detail} state={word.memoryState} />
-        </Link>
+        <li key={word.slug}>
+          <Link className="dashboard-v2-due-row" href="/review/due">
+            <DueWordThumbnail word={word} />
+            <div className="dashboard-v2-due-row__copy">
+              <h2>{word.word}</h2>
+              {word.definition ? <p>{word.definition}</p> : null}
+            </div>
+            <DashboardMemoryPill label={word.detail} state={word.memoryState} />
+          </Link>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
@@ -323,7 +320,13 @@ export function DashboardV2View() {
           </Link>
         </section>
 
-        <section className="dashboard-v2-status-grid" aria-label="Memory state">
+        <section
+          aria-labelledby="dashboard-v2-memory-state-heading"
+          className="dashboard-v2-status-grid"
+        >
+          <h2 className="sr-only" id="dashboard-v2-memory-state-heading">
+            Memory state
+          </h2>
           <DashboardStateCard
             count={snapshot.dueToday.length}
             label="Due now"
