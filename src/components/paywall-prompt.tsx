@@ -106,7 +106,7 @@ export function PaywallPrompt({
             Paid beta interest noted locally. Billing is not connected.
           </p>
         ) : null}
-        <Link className="button button--quiet" href="/pricing">
+        <Link className="button button--quiet" href="/pricing" prefetch={false}>
           Compare plans
         </Link>
       </div>
