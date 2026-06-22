@@ -1125,7 +1125,10 @@ export function ReviewSessionView({
   const emptyTitle = routeSession?.emptyTitle ?? copy.emptyTitle;
   const emptyBody = routeSession?.emptyBody ?? copy.emptyBody;
   const cardStartedAt = useRef(getNowMs());
+  const sessionStartedAtMs = useRef<number | null>(null);
   const completionRecordedSessionId = useRef<string | null>(null);
+  const completionAnalyticsSessionId = useRef<string | null>(null);
+  const reviewStartAnalyticsSessionIds = useRef(new Set<string>());
   const answerSubmissionLocked = useRef(false);
   const nextActionLocked = useRef(false);
   const firstOptionRef = useRef<HTMLButtonElement | null>(null);
@@ -1147,6 +1150,8 @@ export function ReviewSessionView({
   const [completedSummary, setCompletedSummary] = useState<SessionSummary | null>(
     null
   );
+  const [availabilityStats, setAvailabilityStats] =
+    useState<AvailabilityStats | null>(null);
   const [isPersistingAnswer, setIsPersistingAnswer] = useState(false);
   const [reviewPersistenceError, setReviewPersistenceError] =
     useState<ReviewPersistenceError | null>(null);
@@ -1191,16 +1196,15 @@ export function ReviewSessionView({
         setPendingSelection(null);
         setPendingConfidence(null);
         setCurrentAnswer(null);
+        setAvailabilityStats(null);
         setLiveMessage(`${copy.emptyTitle}. ${copy.emptyBody}`);
         completionRecordedSessionId.current = null;
+        completionAnalyticsSessionId.current = null;
+        sessionStartedAtMs.current = null;
         return;
       }
 
       const nextSessionId = createSessionId(mode);
-      const hasDueCards = nextQuestions.some((question) => question.source === "due");
-      const hasWeakCards = nextQuestions.some(
-        (question) => question.source === "weak"
-      );
 
       setQuestions(nextQuestions);
       setCurrentIndex(0);
@@ -1210,6 +1214,7 @@ export function ReviewSessionView({
       setCurrentAnswer(null);
       setAnswers([]);
       setCompletedSummary(null);
+      setAvailabilityStats(stats ?? null);
       setReviewPersistenceError(null);
       setSummaryPaywallSurface(null);
       setQueueLabel(label);
@@ -1218,20 +1223,11 @@ export function ReviewSessionView({
         `Review session ready. ${nextQuestions.length} ${nextQuestions.length === 1 ? "card" : "cards"} from ${label}.`
       );
       completionRecordedSessionId.current = null;
+      completionAnalyticsSessionId.current = null;
+      sessionStartedAtMs.current = getNowMs();
       resetCardTimer();
-
-      emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewStart, {
-        source: routeSource ?? label,
-        mode,
-        packId,
-        reviewedCount: nextQuestions.length,
-        dueCount: stats?.dueCount,
-        weakCount: stats?.weakCount,
-        savedCount: stats?.savedCount,
-        hasLocalReviewState: hasDueCards || hasWeakCards
-      });
     },
-    [copy.emptyBody, copy.emptyTitle, mode, packId, resetCardTimer, routeSource, sessionLimit]
+    [copy.emptyBody, copy.emptyTitle, mode, resetCardTimer, sessionLimit]
   );
 
   const loadLocalSession = useCallback(() => {
@@ -1258,8 +1254,11 @@ export function ReviewSessionView({
         setCurrentAnswer(null);
         setPendingSelection(null);
         setPendingConfidence(null);
+        setAvailabilityStats(null);
         setLiveMessage(`${routeSession.emptyTitle}. ${routeSession.emptyBody}`);
         completionRecordedSessionId.current = null;
+        completionAnalyticsSessionId.current = null;
+        sessionStartedAtMs.current = null;
         return;
       }
 
@@ -1282,8 +1281,11 @@ export function ReviewSessionView({
       setCurrentAnswer(null);
       setPendingSelection(null);
       setPendingConfidence(null);
+      setAvailabilityStats(null);
       setLiveMessage(`${emptyTitle}. ${emptyBody}`);
       completionRecordedSessionId.current = null;
+      completionAnalyticsSessionId.current = null;
+      sessionStartedAtMs.current = null;
       return;
     }
 
@@ -1301,6 +1303,47 @@ export function ReviewSessionView({
   useEffect(() => {
     loadLocalSession();
   }, [loadLocalSession]);
+
+  useEffect(() => {
+    if (status !== "active" || !sessionId || !questions.length) {
+      return;
+    }
+
+    const startTimer = window.setTimeout(() => {
+      if (reviewStartAnalyticsSessionIds.current.has(sessionId)) {
+        return;
+      }
+
+      reviewStartAnalyticsSessionIds.current.add(sessionId);
+      emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewStart, {
+        eventId: `vlx_review_start_${sessionId}`,
+        sessionId,
+        source: routeSource ?? queueLabel,
+        mode,
+        packId,
+        queueSize: questions.length,
+        dueCount: availabilityStats?.dueCount,
+        weakCount: availabilityStats?.weakCount,
+        hasLocalReviewState: questions.some(
+          (question) => question.source === "due" || question.source === "weak"
+        )
+      });
+    }, 0);
+
+    return () => {
+      window.clearTimeout(startTimer);
+    };
+  }, [
+    availabilityStats?.dueCount,
+    availabilityStats?.weakCount,
+    mode,
+    packId,
+    questions,
+    queueLabel,
+    routeSource,
+    sessionId,
+    status
+  ]);
 
   useEffect(() => {
     nextActionLocked.current = false;
@@ -1428,16 +1471,20 @@ export function ReviewSessionView({
       setFocusTarget("feedback-action");
 
       emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewAnswer, {
+        eventId: output.event.eventId,
+        sessionId: output.event.sessionId,
         source: currentQuestion.source,
         slug: output.event.slug,
-        word: output.event.word,
         mode,
         questionType: output.event.questionType,
         result: output.event.result,
+        responseMs: output.event.responseMs,
+        confidence: output.event.confidence ?? confidence,
         boxBefore: output.event.boxBefore,
         boxAfter: output.event.boxAfter,
+        weakScoreBefore: output.event.weakScoreBefore,
         weakScoreAfter: output.event.weakScoreAfter,
-        mastery: output.state.mastery
+        masteryAfter: output.state.mastery
       });
     } catch (error) {
       const persistenceError = getReviewPersistenceError(error);
@@ -1481,6 +1528,14 @@ export function ReviewSessionView({
         readReviewState()
       );
       const completedAt = new Date().toISOString();
+      const isCompleteSession =
+        committedAnswers.length === questions.length &&
+        nextSummary.reviewed > 0 &&
+        nextSummary.reviewed === nextSummary.correct + nextSummary.wrong;
+      const durationMs =
+        sessionStartedAtMs.current === null
+          ? undefined
+          : Math.max(0, Math.round(getNowMs() - sessionStartedAtMs.current));
 
       setAnswers(committedAnswers);
       setCompletedSummary(nextSummary);
@@ -1497,15 +1552,23 @@ export function ReviewSessionView({
         completionRecordedSessionId.current = sessionId;
       }
 
-      emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewComplete, {
-        source: routeSource ?? queueLabel,
-        mode,
-        packId,
-        reviewedCount: nextSummary.reviewed,
-        correctCount: nextSummary.correct,
-        wrongCount: nextSummary.wrong,
-        weakCount: nextSummary.weakRemaining
-      });
+      if (
+        isCompleteSession &&
+        completionAnalyticsSessionId.current !== sessionId
+      ) {
+        emitVlxEvent(VLX_ANALYTICS_EVENTS.reviewComplete, {
+          eventId: `vlx_review_complete_${sessionId}`,
+          sessionId,
+          source: routeSource ?? queueLabel,
+          mode,
+          packId,
+          reviewedCount: nextSummary.reviewed,
+          correctCount: nextSummary.correct,
+          wrongCount: nextSummary.wrong,
+          durationMs
+        });
+        completionAnalyticsSessionId.current = sessionId;
+      }
 
       if (packId && routeSource === "pack_preview") {
         emitVlxEvent(VLX_ANALYTICS_EVENTS.packPreviewComplete, {

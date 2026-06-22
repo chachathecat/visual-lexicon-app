@@ -66,10 +66,14 @@ export type VlxAliasSearchQueryLanguage = "ko" | "ja" | "en";
 
 export type VlxAnalyticsPlan = "lite" | "pro";
 
+export type VlxAnalyticsSourceOfTruth = "client" | "server" | "derived";
+
 export type VlxAnalyticsAllowedPayload = {
   event: VlxAnalyticsEventName;
   eventId: string;
   eventTime: string;
+  schemaVersion?: 1;
+  sourceOfTruth?: VlxAnalyticsSourceOfTruth;
   source?: string;
   slug?: string;
   word?: string;
@@ -80,9 +84,13 @@ export type VlxAnalyticsAllowedPayload = {
   trigger?: string;
   result?: VlxReviewResult | VlxSaveWordResult | VlxAliasSearchResult | string;
   questionType?: VlxQuestionType;
+  responseMs?: number;
   boxBefore?: number;
   boxAfter?: number;
   weakScoreAfter?: number;
+  weakScoreBefore?: number;
+  masteryBefore?: VlxMasteryLabel;
+  masteryAfter?: VlxMasteryLabel;
   reviewedCount?: number;
   correctCount?: number;
   wrongCount?: number;
@@ -90,6 +98,10 @@ export type VlxAnalyticsAllowedPayload = {
   weakCount?: number;
   savedCount?: number;
   reviewEventCount?: number;
+  durationMs?: number;
+  confidence?: "knew" | "guessed" | "forgot";
+  queueSize?: number;
+  sessionId?: string;
   hasLocalReviewState?: boolean;
   hasLocalSavedWord?: boolean;
   mastery?: VlxMasteryLabel;
@@ -111,9 +123,14 @@ export type VlxLegacyAnalyticsInputFields = {
   savedWordsCount?: number;
   localCandidateCount?: number;
   weakScoreBefore?: number;
+  masteryBefore?: VlxMasteryLabel;
   masteryAfter?: VlxMasteryLabel;
+  weakScoreAfter?: number;
   correct?: boolean;
   responseMs?: number;
+  durationMs?: number;
+  queueSize?: number;
+  confidence?: "knew" | "guessed" | "forgot";
   pack_source?: VlxSavePackSource;
   title?: string;
   targetLabel?: string;
