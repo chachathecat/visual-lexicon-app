@@ -253,3 +253,24 @@ docs/BETA_READINESS_AUDIT.md
 docs/PAID_BETA_MANUAL_QA.md
 PLANS.md
 ```
+## Track B Monetization Canonical Sources v1
+
+Canonical sources:
+
+- `docs/monetization/v1/VLX_Track_B_Monetization_Master_Spec_v1.0.md`
+- `docs/monetization/v1/vlx-plan-entitlements.v1.json`
+- `docs/monetization/v1/plan-catalog.v1.ts`
+- `docs/monetization/v1/VLX_Codex_Track_B_Master_Prompt_v1.0.md`
+
+Precedence:
+
+1. `vlx-plan-entitlements.v1.json` is authoritative for numeric prices,
+   limits, plan capabilities, promotions, and lifecycle values.
+2. `VLX_Track_B_Monetization_Master_Spec_v1.0.md` is authoritative for
+   product principles, implementation order, security, and safety boundaries.
+3. Existing repository safety rules remain binding.
+4. Any mismatch between UI, server authorization, and the canonical JSON
+   blocks release until reconciled.
+
+Public paid beta remains No-Go until all required account sync, monitoring,
+privacy, accessibility, support, refund, and rollback gates pass.
