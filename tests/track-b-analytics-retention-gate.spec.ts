@@ -589,7 +589,7 @@ test("dataLayer dedupe is scoped by event name and eventId", () => {
   });
 });
 
-test("root legacy dashboard weekly metric is wired to canonical retention signals", async ({
+test("canonical dashboard entry preserves the retention selector boundary", async ({
   page
 }) => {
   const rootRoute = readFileSync(
@@ -600,58 +600,18 @@ test("root legacy dashboard weekly metric is wired to canonical retention signal
     join(workspaceRoot, "src", "app", "dashboard", "page.tsx"),
     "utf8"
   );
-  const dashboardView = readFileSync(
-    join(workspaceRoot, "src", "components", "views", "dashboard-view.tsx"),
-    "utf8"
-  );
   const dashboardV2View = readFileSync(
     join(workspaceRoot, "src", "components", "views", "dashboard-v2-view.tsx"),
     "utf8"
   );
 
-  expect(rootRoute).toContain("DashboardView");
+  expect(rootRoute).toContain('redirect("/dashboard");');
+  expect(rootRoute).not.toContain("DashboardView");
   expect(dashboardRoute).toContain("DashboardV2View");
-  expect(dashboardView).toContain("getRetentionSignals(savedWords, reviewEvents, now)");
-  expect(dashboardView).not.toContain("getWeeklyReviewedWords(reviewEvents, now)");
   expect(dashboardV2View).not.toContain("getWeeklyReviewedWords");
 
-  await seedVlxLocalStorage(page, {
-    reviewEvents: [
-      makeReviewEvent({
-        eventId: "evt-dashboard-valid",
-        slug: "dissonance",
-        createdAt: minutesFromNow(-1)
-      }),
-      {
-        eventId: "evt-dashboard-malformed",
-        sessionId: "s-dashboard",
-        slug: "malformed",
-        word: "Malformed",
-        questionType: "due_review",
-        result: "correct",
-        responseMs: 900,
-        createdAt: minutesFromNow(-1),
-        boxAfter: 1,
-        weakScoreBefore: 0.2,
-        weakScoreAfter: 0.1
-      },
-      makeReviewEvent({
-        eventId: "evt-dashboard-future",
-        slug: "future",
-        createdAt: minutesFromNow(60)
-      })
-    ]
-  });
-
   await page.goto(baseUrl, { waitUntil: "networkidle" });
-
-  const weeklyMetric = page
-    .locator(".dashboard-card--metric")
-    .filter({ hasText: "Weekly Reviewed Words" });
-
-  await expect(weeklyMetric.locator(".dashboard-card__metric")).toHaveText("1");
-
-  await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
+  expect(new URL(page.url()).pathname).toBe("/dashboard");
   await expect(page.locator(".dashboard-v2-mission-card")).toBeVisible();
   await expect(page.getByText("Weekly Reviewed Words")).toHaveCount(0);
 });

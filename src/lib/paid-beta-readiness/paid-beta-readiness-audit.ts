@@ -555,7 +555,7 @@ export const PAID_BETA_ROUTE_INVENTORY = [
     label: "Home dashboard",
     status: "private_beta_ready",
     severity: "P0",
-    currentBehavior: "Renders the Track B dashboard mission surface.",
+    currentBehavior: "Redirects to the canonical /dashboard Track B entry.",
     privateBetaReady: true,
     publicBetaReady: false,
     manualQaRequired: true,
@@ -570,7 +570,7 @@ export const PAID_BETA_ROUTE_INVENTORY = [
     status: "private_beta_ready",
     severity: "P0",
     currentBehavior:
-      "Shows Today Memory Mission, review CTAs, weak sprint access, alias search, and local progress.",
+      "Shows Today Memory Mission, review CTAs, weak sprint access, and local progress. Canonical DashboardV2 exposes no learner-facing alias-search UI.",
     privateBetaReady: true,
     publicBetaReady: false,
     manualQaRequired: true,
@@ -1038,7 +1038,8 @@ export const PAID_BETA_TEST_INVENTORY = [
     area: "multilingual_alias_search",
     status: "needs_review",
     severity: "P1",
-    coverage: "Alias resolver, known canonical slugs, alias search UI, and unknown no-action state.",
+    coverage:
+      "Alias resolver, known canonical slugs, route-independent safe word/save targets, and unknown no-action state.",
     requiredForPrivateBeta: true,
     requiredForPublicBeta: true,
     notes: "Vocabulary breadth still needs review."

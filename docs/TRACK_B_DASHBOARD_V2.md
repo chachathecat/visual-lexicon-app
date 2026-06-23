@@ -24,12 +24,14 @@ Visual metaphor -> Active recall -> Mistake record -> Spaced review -> Mastery s
 
 ## Runtime Scope
 
-This parity pass changes `/dashboard` composition only.
+This parity pass makes `/dashboard` the canonical Track B app entry.
 
-- `/dashboard` now uses `TrackBAppShell`, `TrackBMetricCard`, and
+- `/` redirects to `/dashboard` from `src/app/page.tsx`.
+- `/dashboard` uses `TrackBAppShell`, `TrackBMetricCard`, and
   `TrackBEmptyState`.
-- The existing root route remains on the older dashboard view so this PR does
-  not unintentionally rebuild `/`.
+- `DashboardV2View` remains the dashboard renderer.
+- The legacy `DashboardView` remains in the codebase but is no longer the root
+  entry route.
 - Review Session, Saved Library, Packs pages, Pricing, SRS engine behavior,
   route handlers, middleware, auth, billing, and provider integrations are not
   changed.

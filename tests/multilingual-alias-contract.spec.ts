@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import {
   getAliasesForSlug,
@@ -11,28 +11,42 @@ import {
 import { mockQuizWords } from '../src/lib/packs/mock-data';
 
 const knownMockSlugs = new Set(mockQuizWords.map((word) => word.slug));
-const baseUrl =
-  process.env.PLAYWRIGHT_BASE_URL ??
-  process.env.NEXT_PUBLIC_APP_URL ??
-  'http://127.0.0.1:3006';
 
-async function openAliasSearch(page: Page) {
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+function getRequiredAlias(slug: string, sourceLanguage: 'ko' | 'ja') {
+  const aliasEntry = mockAliasEntries.find(
+    (entry) => entry.slug === slug && entry.sourceLanguage === sourceLanguage,
+  );
 
-  return page.getByRole('region', { name: 'Alias search' });
+  expect(aliasEntry, `${sourceLanguage} alias for ${slug}`).toBeTruthy();
+
+  return aliasEntry!;
+}
+
+function getSafeAliasTargets(slug: string) {
+  return {
+    saveHref: `/save?slug=${slug}&source=alias_search`,
+    wordHref: `/word/${slug}`,
+  };
 }
 
 test.describe('Visual Lexicon multilingual alias contract', () => {
   test('Korean aliases resolve to existing English visual card slugs', () => {
-    expect(resolveAliasQuery('불협화음')).toMatchObject({
+    const dissonanceAlias = getRequiredAlias('dissonance', 'ko');
+    const obfuscateAlias = getRequiredAlias('obfuscate', 'ko');
+
+    expect(resolveAliasQuery(dissonanceAlias.alias)).toMatchObject({
       slug: 'dissonance',
       word: 'Dissonance',
       sourceLanguage: 'ko',
       targetLanguage: 'en',
       matchSource: 'alias_pack',
     });
+    expect(resolveAliasQuery('불협화음')).toMatchObject({
+      slug: 'dissonance',
+      sourceLanguage: 'ko',
+    });
 
-    expect(resolveAliasQuery('모호하게 하다')).toMatchObject({
+    expect(resolveAliasQuery(obfuscateAlias.alias)).toMatchObject({
       slug: 'obfuscate',
       word: 'Obfuscate',
       sourceLanguage: 'ko',
@@ -41,7 +55,10 @@ test.describe('Visual Lexicon multilingual alias contract', () => {
   });
 
   test('Japanese aliases resolve to existing English visual card slugs', () => {
-    expect(resolveAliasQuery('不協和音')).toMatchObject({
+    const dissonanceAlias = getRequiredAlias('dissonance', 'ja');
+    const obfuscateAlias = getRequiredAlias('obfuscate', 'ja');
+
+    expect(resolveAliasQuery(dissonanceAlias.alias)).toMatchObject({
       slug: 'dissonance',
       word: 'Dissonance',
       sourceLanguage: 'ja',
@@ -49,24 +66,32 @@ test.describe('Visual Lexicon multilingual alias contract', () => {
       matchSource: 'alias_pack',
     });
 
-    expect(resolveAliasQuery('曖昧にする')).toMatchObject({
+    expect(resolveAliasQuery(obfuscateAlias.alias)).toMatchObject({
       slug: 'obfuscate',
       word: 'Obfuscate',
       sourceLanguage: 'ja',
       targetLanguage: 'en',
     });
+    expect(resolveAliasQuery('曖昧にする')).toMatchObject({
+      slug: 'obfuscate',
+      sourceLanguage: 'ja',
+    });
   });
 
   test('unknown aliases return null and empty match lists', () => {
-    expect(resolveAliasQuery('없는 별칭')).toBeNull();
+    expect(resolveAliasQuery('not-a-visual-lexicon-alias')).toBeNull();
     expect(resolveAliasMatches('not-a-visual-lexicon-alias')).toEqual([]);
   });
 
   test('getAliasesForSlug returns Korean and Japanese aliases for known slugs', () => {
     const aliases = getAliasesForSlug('dissonance');
+    const expectedAliases = [
+      getRequiredAlias('dissonance', 'ko').alias,
+      getRequiredAlias('dissonance', 'ja').alias,
+    ];
 
     expect(aliases.map((entry) => entry.alias)).toEqual(
-      expect.arrayContaining(['불협화음', '不協和音']),
+      expect.arrayContaining(expectedAliases),
     );
     expect(aliases.every((entry) => entry.slug === 'dissonance')).toBe(true);
     expect(aliases.every((entry) => entry.sourceLanguage !== 'en')).toBe(true);
@@ -81,12 +106,13 @@ test.describe('Visual Lexicon multilingual alias contract', () => {
   });
 
   test('normalization handles extra spaces and English casing', () => {
-    expect(normalizeAliasQuery('  DISSONANCE  ', 'en')).toBe('dissonance');
-    expect(normalizeAliasQuery('  모호하게    하다  ', 'ko')).toBe(
-      '모호하게 하다',
-    );
+    const koAlias = getRequiredAlias('obfuscate', 'ko').alias;
+    const expandedKoAlias = koAlias.replace(' ', '    ');
 
-    expect(resolveAliasQuery('  모호하게    하다  ')).toMatchObject({
+    expect(normalizeAliasQuery('  DISSONANCE  ', 'en')).toBe('dissonance');
+    expect(normalizeAliasQuery(`  ${expandedKoAlias}  `, 'ko')).toBe(koAlias);
+
+    expect(resolveAliasQuery(`  ${expandedKoAlias}  `)).toMatchObject({
       slug: 'obfuscate',
       sourceLanguage: 'ko',
     });
@@ -100,13 +126,13 @@ test.describe('Visual Lexicon multilingual alias contract', () => {
     const missingSlugEntry: VlxAliasEntry = {
       sourceLanguage: 'ko',
       targetLanguage: 'en',
-      alias: '존재하지 않는 카드',
+      alias: 'missing-card-alias',
       slug: 'missing-card',
       word: 'Missing Card',
     };
 
     expect(
-      resolveAliasQuery('존재하지 않는 카드', {
+      resolveAliasQuery('missing-card-alias', {
         entries: [missingSlugEntry],
         knownSlugs: [...knownMockSlugs],
       }),
@@ -114,98 +140,46 @@ test.describe('Visual Lexicon multilingual alias contract', () => {
   });
 });
 
-test.describe('Visual Lexicon multilingual alias search UI', () => {
-  test('Korean alias resolves to the existing Dissonance card actions', async ({
-    page,
-  }) => {
-    await page.addInitScript(() => {
-      (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
+test.describe('Visual Lexicon multilingual alias route-independent actions', () => {
+  test('Korean alias resolves to the existing Dissonance safe action targets', () => {
+    const aliasEntry = getRequiredAlias('dissonance', 'ko');
+    const match = resolveAliasQuery(aliasEntry.alias);
+
+    expect(match).toMatchObject({
+      slug: 'dissonance',
+      word: 'Dissonance',
+      sourceLanguage: 'ko',
+      targetLanguage: 'en',
     });
-
-    const aliasSearch = await openAliasSearch(page);
-
-    await aliasSearch.getByLabel('Search alias').fill('불협화음');
-
-    await expect(aliasSearch.getByText('불협화음')).toBeVisible();
-    await expect(
-      aliasSearch.getByRole('heading', { name: 'Dissonance' }),
-    ).toBeVisible();
-    await expect(aliasSearch.getByText('Korean to English')).toBeVisible();
-    await expect(aliasSearch.getByText('slug: dissonance')).toBeVisible();
-
-    await expect(aliasSearch.getByRole('link', { name: 'View card' })).toHaveAttribute(
-      'href',
-      '/word/dissonance',
-    );
-    await expect(
-      aliasSearch.getByRole('link', { name: 'Save to review' }),
-    ).toHaveAttribute('href', '/save?slug=dissonance&source=alias_search');
-
-    await expect
-      .poll(async () => {
-        return await page.evaluate(() => {
-          const dataLayer = (window as Window & { dataLayer?: unknown[] })
-            .dataLayer;
-
-          if (!Array.isArray(dataLayer)) return null;
-
-          return (
-            dataLayer.find((item) => {
-              if (!item || typeof item !== 'object' || Array.isArray(item)) {
-                return false;
-              }
-
-              const event = item as Record<string, unknown>;
-
-              return (
-                event.event === 'vlx_alias_search' &&
-                event.source === 'alias_search' &&
-                event.slug === 'dissonance' &&
-                event.result === 'matched'
-              );
-            }) ?? null
-          );
-        });
-      })
-      .toBeTruthy();
+    expect(knownMockSlugs.has(match!.slug)).toBe(true);
+    expect(getSafeAliasTargets(match!.slug)).toEqual({
+      saveHref: '/save?slug=dissonance&source=alias_search',
+      wordHref: '/word/dissonance',
+    });
   });
 
-  test('Japanese alias resolves to the existing Obfuscate card actions', async ({
-    page,
-  }) => {
-    const aliasSearch = await openAliasSearch(page);
+  test('Japanese alias resolves to the existing Obfuscate safe action targets', () => {
+    const aliasEntry = getRequiredAlias('obfuscate', 'ja');
+    const match = resolveAliasQuery(aliasEntry.alias);
 
-    await aliasSearch.getByLabel('Search alias').fill('曖昧にする');
-
-    await expect(aliasSearch.getByText('曖昧にする')).toBeVisible();
-    await expect(
-      aliasSearch.getByRole('heading', { name: 'Obfuscate' }),
-    ).toBeVisible();
-    await expect(aliasSearch.getByText('Japanese to English')).toBeVisible();
-    await expect(aliasSearch.getByText('slug: obfuscate')).toBeVisible();
-
-    await expect(aliasSearch.getByRole('link', { name: 'View card' })).toHaveAttribute(
-      'href',
-      '/word/obfuscate',
-    );
-    await expect(
-      aliasSearch.getByRole('link', { name: 'Save to review' }),
-    ).toHaveAttribute('href', '/save?slug=obfuscate&source=alias_search');
+    expect(match).toMatchObject({
+      slug: 'obfuscate',
+      word: 'Obfuscate',
+      sourceLanguage: 'ja',
+      targetLanguage: 'en',
+    });
+    expect(knownMockSlugs.has(match!.slug)).toBe(true);
+    expect(getSafeAliasTargets(match!.slug)).toEqual({
+      saveHref: '/save?slug=obfuscate&source=alias_search',
+      wordHref: '/word/obfuscate',
+    });
   });
 
-  test('unknown alias shows the no-match state without fake actions', async ({
-    page,
-  }) => {
-    const aliasSearch = await openAliasSearch(page);
+  test('unknown alias creates no card or save action target', () => {
+    const match = resolveAliasQuery('not-a-visual-lexicon-alias');
 
-    await aliasSearch.getByLabel('Search alias').fill('없는 별칭');
-
-    await expect(aliasSearch.getByText('No alias match found')).toBeVisible();
-    await expect(aliasSearch.getByRole('link', { name: 'View card' })).toHaveCount(
-      0,
-    );
-    await expect(
-      aliasSearch.getByRole('link', { name: 'Save to review' }),
-    ).toHaveCount(0);
+    expect(match).toBeNull();
+    expect(resolveAliasMatches('not-a-visual-lexicon-alias')).toEqual([]);
+    expect(match ? getSafeAliasTargets(match.slug) : null).toBeNull();
   });
 });

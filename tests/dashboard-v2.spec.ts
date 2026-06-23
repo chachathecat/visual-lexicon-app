@@ -192,6 +192,61 @@ async function seedDashboardMission(page: Page) {
 }
 
 test.describe("Dashboard Figma source parity", () => {
+  test("uses /dashboard as the canonical Track B app entry", async ({
+    page,
+    request
+  }) => {
+    const rootRoute = readFileSync(
+      join(workspaceRoot, "src", "app", "page.tsx"),
+      "utf8"
+    );
+    const dashboardRoute = readFileSync(
+      join(workspaceRoot, "src", "app", "dashboard", "page.tsx"),
+      "utf8"
+    );
+
+    expect(rootRoute).toContain('import { redirect } from "next/navigation";');
+    expect(rootRoute).toContain('redirect("/dashboard");');
+    expect(rootRoute).not.toContain("DashboardView");
+    expect(dashboardRoute).toContain("DashboardV2View");
+    expect(dashboardRoute).toContain("return <DashboardV2View />;");
+
+    const rootResponse = await request.get(`${baseUrl}/`, { maxRedirects: 0 });
+    const rootLocation = rootResponse.headers().location;
+
+    expect(rootResponse.status()).toBe(307);
+    expect(rootLocation).toBeTruthy();
+    expect(new URL(rootLocation ?? "", baseUrl).pathname).toBe("/dashboard");
+
+    const followedResponse = await page.goto(`${baseUrl}/`, {
+      waitUntil: "networkidle"
+    });
+
+    expect(followedResponse?.status()).toBe(200);
+    expect(new URL(page.url()).pathname).toBe("/dashboard");
+    await expect(page.locator(".dashboard-v2-mission-card")).toBeVisible();
+  });
+
+  test("serves /dashboard directly without a redirect loop", async ({
+    page,
+    request
+  }) => {
+    const dashboardResponse = await request.get(`${baseUrl}/dashboard`, {
+      maxRedirects: 0
+    });
+
+    expect(dashboardResponse.status()).toBe(200);
+    expect(dashboardResponse.headers().location).toBeUndefined();
+
+    const pageResponse = await page.goto(`${baseUrl}/dashboard`, {
+      waitUntil: "networkidle"
+    });
+
+    expect(pageResponse?.status()).toBe(200);
+    expect(new URL(page.url()).pathname).toBe("/dashboard");
+    await expect(page.locator(".dashboard-v2-mission-card")).toBeVisible();
+  });
+
   test("renders only the requested first-screen learning loop", async ({ page }) => {
     await seedDashboardMission(page);
 
@@ -251,6 +306,7 @@ test.describe("Dashboard Figma source parity", () => {
   }) => {
     await seedDashboardMission(page);
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
+    await expect(page.locator(".dashboard-v2-due-row")).toHaveCount(3);
 
     const visuals = await page
       .locator(".dashboard-v2-due-row__image")

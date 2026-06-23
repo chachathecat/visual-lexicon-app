@@ -104,21 +104,22 @@ Signals:
 
 The selector does not mutate inputs.
 
-## Dashboard Metric Source
+## Dashboard Route Boundary
 
 Route wiring:
 
-- `/` renders `DashboardView` from `src/app/page.tsx`.
+- `/` redirects to `/dashboard` from `src/app/page.tsx`.
 - `/dashboard` renders `DashboardV2View` from `src/app/dashboard/page.tsx`.
 
-The legacy root dashboard metric uses:
+Weekly Reviewed Words remains a retention selector and analytics metric:
 
 ```ts
 getRetentionSignals(savedWords, reviewEvents, now).weeklyReviewedWords
 ```
 
-It reuses the saved words and review events already read for the dashboard
-snapshot. This applies to `/`, not `/dashboard`.
+It is covered by direct selector tests over `vlx_review_events_v1` and
+`vlx_saved_words_v1`. It is not a visible `/` UI assertion, and this gate does
+not add it as a DashboardV2 card, chart, module, or label.
 
 The shipped `/dashboard` V2 screen has no "Reviewed this week" or Weekly
 Reviewed Words card. No card, chart, module, label, or screenshot baseline was
@@ -150,8 +151,8 @@ future work.
 | `/review/due` | PASS | Same review contract, due queue source. |
 | `/review/weak` | PASS | Same review contract, weak queue source. |
 | `/review/weak-sprint` | PASS | Same review contract, weak sprint source. |
-| `/dashboard` | PASS | Renders DashboardV2View. V2 layout preserved; no Weekly Reviewed Words card added. |
-| `/` | PASS | Renders DashboardView. Existing Weekly Reviewed Words metric uses canonical selector. |
+| `/dashboard` | PASS | Canonical Track B app entry. Renders DashboardV2View. V2 layout preserved; no Weekly Reviewed Words card added. |
+| `/` | PASS | Redirects to `/dashboard`; it does not render the legacy dashboard. |
 | `/pricing` | PASS | Interest-only event; entitlement unchanged. |
 | `/saved` | PASS | Existing saved-library view event remains local and count-based. |
 | `/word/[slug]` | PASS | Existing word memory state view event remains local and state-based. |
@@ -176,9 +177,9 @@ future work.
 
 | Requirement | Assertion coverage |
 | --- | --- |
-| `/` uses `DashboardView`; `/dashboard` uses `DashboardV2View`. | `tests/track-b-analytics-retention-gate.spec.ts` root legacy dashboard test reads both route files and asserts `DashboardView` / `DashboardV2View`. |
+| `/` redirects to `/dashboard`; `/dashboard` uses `DashboardV2View`. | `tests/dashboard-v2.spec.ts` asserts the root redirect, direct dashboard render, and no `/dashboard` redirect loop. |
 | Do not add a new DashboardV2 card or metric. | `tests/track-b-analytics-retention-gate.spec.ts` asserts `/dashboard` has `.dashboard-v2-mission-card` and no Weekly Reviewed Words or Reviewed this week text. |
-| Legacy `/` Weekly Reviewed Words uses canonical selector. | `tests/track-b-analytics-retention-gate.spec.ts` asserts `DashboardView` contains `getRetentionSignals(savedWords, reviewEvents, now)` and root renders value `1` after invalid/future events are seeded. |
+| Weekly Reviewed Words remains selector-only for this route gate. | `tests/track-b-analytics-retention-core.spec.ts` and `tests/track-b-analytics-retention-gate.spec.ts` exercise `getRetentionSignals(...)` directly. |
 | No-saved-words conversion rate is `null`. | `tests/track-b-analytics-retention-core.spec.ts`; `tests/track-b-analytics-retention-gate.spec.ts` retention conversion test. |
 | Review before `savedAt` does not count. | `tests/track-b-analytics-retention-core.spec.ts`; `tests/track-b-analytics-retention-gate.spec.ts` retention conversion test. |
 | Review at or after `savedAt` counts. | `tests/track-b-analytics-retention-core.spec.ts`; `tests/track-b-analytics-retention-gate.spec.ts` retention conversion test. |
@@ -204,7 +205,7 @@ future work.
 | Weekly Reviewed Words is unique slug count over seven UTC dates. | `tests/track-b-analytics-retention-core.spec.ts`; `tests/track-b-analytics-retention-gate.spec.ts` retention selector test. |
 | Duplicate review of one slug counts once. | `tests/track-b-analytics-retention-gate.spec.ts` retention selector test. |
 | Duplicate eventId counts once. | `tests/track-b-analytics-retention-gate.spec.ts` retention selector test. |
-| Malformed and future events are excluded. | `tests/track-b-analytics-retention-gate.spec.ts` retention selector and root dashboard tests. |
+| Malformed and future events are excluded. | `tests/track-b-analytics-retention-gate.spec.ts` retention selector test. |
 | Exact UTC boundary behavior. | `tests/track-b-analytics-retention-gate.spec.ts` retention selector test. |
 | `reviewedTodayWords`, `activeReviewDays7d`, and consecutive-day evidence. | `tests/track-b-analytics-retention-gate.spec.ts` retention selector test. |
 | `dueReviewedWords7d` and `weakRecoveredWords7d`. | `tests/track-b-analytics-retention-gate.spec.ts` retention selector test. |
