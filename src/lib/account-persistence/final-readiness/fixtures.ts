@@ -61,7 +61,6 @@ export const ACCOUNT_SYNC_FINAL_READINESS_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api",
   "src/pages/api",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/final-readiness/route.ts",
   "src/lib/account-persistence/final-readiness/preview",
   "src/lib/account-persistence/final-readiness/apply",

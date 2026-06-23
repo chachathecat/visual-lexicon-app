@@ -394,7 +394,6 @@ test.describe('account sync auth ownership boundary', () => {
       'src/app/api',
       'src/pages/api',
       'middleware.ts',
-      'src/middleware.ts',
     ];
 
     for (const relativePath of forbiddenPaths) {

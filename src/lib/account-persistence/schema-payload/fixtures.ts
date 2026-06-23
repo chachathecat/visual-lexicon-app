@@ -147,7 +147,6 @@ export const ACCOUNT_SYNC_SCHEMA_PAYLOAD_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api/account/sync",
   "src/pages/api/account/sync",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/schema-payload/route.ts",
   "src/lib/account-persistence/schema-payload/preview",
   "src/lib/account-persistence/schema-payload/apply",

@@ -2,7 +2,10 @@
 
 Track B app scaffold for `app.visuallexicon.org`.
 
-This repository is for the learning app only. It does not include Webflow publishing, Cloudflare Worker changes, authentication, payment, or production data writes.
+This repository is for the learning app only. It does not include Webflow
+publishing, Cloudflare Worker changes, payment, Account Sync, production data
+writes, or production deployment settings. Track B has a minimal Supabase Magic
+Link session flow for private unpaid dogfood only.
 
 ## Local Development
 
@@ -55,6 +58,18 @@ When no URL is configured, the app stays local, records interest in
 `vlx_upgrade_interest_v1`, and shows: `Paid beta interest noted locally. Billing
 is not connected.` No checkout route, payment SDK, billing setting, or real
 subscription is created by this app.
+
+Optional private dogfood auth configuration:
+
+```txt
+NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_example
+NEXT_PUBLIC_APP_URL=http://127.0.0.1:3006
+```
+
+These values enable existing-user Supabase email Magic Link login only. Public
+signup remains disabled through `shouldCreateUser:false`, and no Account Sync,
+learning-data upload, entitlement, checkout, or billing behavior is added.
 
 ## Verification
 
@@ -194,6 +209,7 @@ Production paid launch planning docs:
 - [Auth Provider Evaluation Checklist](docs/AUTH_PROVIDER_EVALUATION_CHECKLIST.md)
 - [Auth Implementation P0 Requirements](docs/AUTH_IMPLEMENTATION_P0_REQUIREMENTS.md)
 - [Track B Auth Principal Foundation](docs/TRACK_B_AUTH_PRINCIPAL_FOUNDATION.md)
+- [Track B Minimal Auth Session Flow](docs/TRACK_B_MINIMAL_AUTH_SESSION_FLOW.md)
 - [Account Persistence Contracts](docs/ACCOUNT_PERSISTENCE_CONTRACTS.md)
 - [Server SRS Sync Architecture](docs/SERVER_SRS_SYNC_ARCHITECTURE.md)
 - [Server SRS Sync Contract](docs/SERVER_SRS_SYNC_CONTRACT.md)
@@ -237,7 +253,8 @@ Production paid launch planning docs:
 These docs recommend against a full paid SaaS launch until account persistence,
 server-side SRS sync, billing/entitlement, production deployment readiness,
 analytics/reporting, support/refund/legal systems, content readiness, and launch
-QA are complete. They do not change runtime behavior or implement real auth.
+QA are complete. The minimal auth session doc records the only current runtime
+auth flow; the other planning docs do not change runtime behavior.
 
 ## World-Class Operating System
 
@@ -269,8 +286,10 @@ beta hardening. They do not change runtime behavior.
 - Local paid beta placeholder surfaces and upgrade interest capture
 - Extension bridge and multilingual alias search contracts
 
-Auth, real payment, Webflow publishing, Cloudflare production integration,
-production user data, and deployment settings are outside this repository scope.
+Account Sync, real payment, Webflow publishing, Cloudflare production
+integration, production user data, and deployment settings are outside this
+repository scope. Minimal existing-user Supabase Magic Link auth is present only
+for private unpaid dogfood sessions.
 
 ## Track B Monetization v1
 

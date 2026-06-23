@@ -114,7 +114,6 @@ export const ACCOUNT_SYNC_ROUTE_SKELETON_FORBIDDEN_DIRECT_DEPENDENCIES = [
   "io-ts",
   "runtypes",
   "class-validator",
-  "@supabase/supabase-js",
   "@neondatabase/serverless",
   "@vercel/postgres",
   "firebase",

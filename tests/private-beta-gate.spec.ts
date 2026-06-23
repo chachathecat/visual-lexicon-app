@@ -470,7 +470,9 @@ test.describe("private beta gate prep", () => {
       (relativePath) => basename(relativePath) === "route.ts"
     );
 
-    expect(appRouteHandlers).toEqual([]);
+    expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/auth/confirm/route.ts"
+    ]);
   });
 
   test("no forbidden provider SDKs auth database payment logging or worker dependencies are added", () => {

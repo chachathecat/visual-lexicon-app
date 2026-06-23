@@ -500,14 +500,16 @@ test.describe("Track B simplicity reset", () => {
     expect(moduleReadme).toContain("does not wire into routes or components");
   });
 
-  test("this contract does not add route handlers middleware or API directories", () => {
+  test("this contract allows only the minimal auth route handler and middleware exception", () => {
     const appRouteHandlers = collectFiles("src/app").filter(
       (relativePath) => basename(relativePath) === "route.ts"
     );
 
-    expect(appRouteHandlers).toEqual([]);
+    expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/auth/confirm/route.ts"
+    ]);
     expect(existsSync(join(workspaceRoot, "src", "app", "api"))).toBe(false);
-    expect(existsSync(join(workspaceRoot, "src", "middleware.ts"))).toBe(false);
+    expect(existsSync(join(workspaceRoot, "src", "middleware.ts"))).toBe(true);
     expect(existsSync(join(workspaceRoot, "middleware.ts"))).toBe(false);
   });
 });

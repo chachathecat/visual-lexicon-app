@@ -8,11 +8,13 @@ import { Navigation } from "@/components/navigation";
 
 const trackBAppShellRoutePrefixes = [
   "/dashboard",
+  "/login",
   "/packs",
   "/pricing",
   "/review",
   "/save",
-  "/saved"
+  "/saved",
+  "/settings"
 ] as const;
 
 function isTrackBAppShellRoute(pathname: string) {
@@ -40,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="app-main">
         <div className="top-strip" aria-label="Workspace status">
           <span>app.visuallexicon.org</span>
-          <span>Mock learning workspace</span>
+          <span>Local learning workspace</span>
         </div>
         {children}
       </main>

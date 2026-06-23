@@ -105,7 +105,6 @@ export const ACCOUNT_SYNC_IMPLEMENTATION_SPIKE_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api/account/sync",
   "src/pages/api/account/sync",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/implementation-spike-plan/route.ts",
   "src/lib/account-persistence/implementation-spike-plan/preview",
   "src/lib/account-persistence/implementation-spike-plan/apply",
@@ -135,7 +134,6 @@ export const ACCOUNT_SYNC_IMPLEMENTATION_SPIKE_FORBIDDEN_DIRECT_DEPENDENCIES = [
   "io-ts",
   "runtypes",
   "class-validator",
-  "@supabase/supabase-js",
   "@neondatabase/serverless",
   "@vercel/postgres",
   "firebase",
@@ -176,6 +174,8 @@ export const ACCOUNT_SYNC_IMPLEMENTATION_SPIKE_EXPECTED_PACKAGE_MANIFEST = {
     "test:packs": "playwright test tests/exam-pack-preview.spec.ts"
   },
   dependencies: {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
     next: "^14.2.35",
     react: "18.3.1",
     "react-dom": "18.3.1"

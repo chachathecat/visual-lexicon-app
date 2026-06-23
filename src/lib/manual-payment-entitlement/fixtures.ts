@@ -39,7 +39,6 @@ export const MANUAL_PAYMENT_FORBIDDEN_ACTUAL_PATHS = [
   "src/app/api",
   "src/pages/api",
   "middleware.ts",
-  "src/middleware.ts",
   "src/app/payment",
   "src/app/payments",
   "src/app/billing",

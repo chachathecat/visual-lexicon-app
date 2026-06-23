@@ -88,7 +88,6 @@ export const PRIVATE_BETA_DRY_RUN_SMOKE_FORBIDDEN_ACTUAL_PATHS = [
   "src/app/checkout",
   "src/app/billing",
   "src/app/payment",
-  "src/middleware.ts",
   "prisma",
   "drizzle",
   "migrations",
@@ -97,7 +96,6 @@ export const PRIVATE_BETA_DRY_RUN_SMOKE_FORBIDDEN_ACTUAL_PATHS = [
 ] as const;
 
 export const PRIVATE_BETA_DRY_RUN_SMOKE_FORBIDDEN_DIRECT_DEPENDENCIES = [
-  "@supabase/supabase-js",
   "@neondatabase/serverless",
   "@vercel/postgres",
   "@clerk/nextjs",
@@ -115,7 +113,6 @@ export const PRIVATE_BETA_DRY_RUN_SMOKE_FORBIDDEN_DIRECT_DEPENDENCIES = [
   "sqlite",
   "@cloudflare/d1",
   "@cloudflare/workers-types",
-  "@supabase/supabase-js",
   "stripe",
   "paddle",
   "openai",
