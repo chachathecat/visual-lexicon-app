@@ -1,0 +1,413 @@
+{
+  "version": "1.0.0",
+  "effective_from": "2026-06-23",
+  "currency_display": {
+    "KRW": "VAT-inclusive final price where legally required",
+    "USD": "Tax calculated at checkout where applicable"
+  },
+  "pricing_page_visible_plans": [
+    "free",
+    "lite",
+    "pro"
+  ],
+  "account_states": [
+    "guest",
+    "free",
+    "lite",
+    "pro",
+    "educator"
+  ],
+  "inheritance_order": [
+    "guest",
+    "free",
+    "lite",
+    "pro"
+  ],
+  "plans": {
+    "guest": {
+      "name": "Guest",
+      "is_public_plan": false,
+      "price": {
+        "KRW": {
+          "monthly": 0,
+          "annual": 0
+        },
+        "USD": {
+          "monthly": 0,
+          "annual": 0
+        }
+      },
+      "positioning": "검색 유입자가 비주얼 기억 경험을 맛보는 상태",
+      "entitlements": {
+        "ads": {
+          "public_page_units_max": 2,
+          "app_native_slots_max": 0,
+          "review_session": false
+        },
+        "assets": {
+          "display_variant": "watermarked",
+          "clean_asset_url_exposed": false
+        },
+        "downloads": {
+          "enabled": false,
+          "monthly_total": 0,
+          "max_long_edge_px": 0,
+          "formats": []
+        },
+        "learning": {
+          "saved_words_limit": 10,
+          "storage_scope": "local_only",
+          "daily_review_cards": 5,
+          "due_queue": "sample",
+          "history_days": 0,
+          "custom_decks": 0
+        },
+        "srs": {
+          "enabled": "sample",
+          "weak_words": "none",
+          "weak_sprint": false,
+          "mastery_test": false
+        },
+        "question_types": [
+          "image_to_word",
+          "definition_to_word_demo"
+        ],
+        "packs": {
+          "hub_access": "public_preview",
+          "exam_preview_cards": 5,
+          "exam_access": "none"
+        },
+        "ai": {
+          "static_approved_feedback": true,
+          "personalized_mistake_explanations_monthly": 0,
+          "confusion_resolver_monthly": 0,
+          "memory_hooks_monthly": 0,
+          "daily_coach_per_day": 0
+        },
+        "support": "self_service",
+        "license_scope": "view_only"
+      }
+    },
+    "free": {
+      "name": "Free",
+      "is_public_plan": true,
+      "price": {
+        "KRW": {
+          "monthly": 0,
+          "annual": 0
+        },
+        "USD": {
+          "monthly": 0,
+          "annual": 0
+        }
+      },
+      "positioning": "첫 50개 단어를 저장하고 기본 복습 습관을 만드는 무료 계정",
+      "entitlements": {
+        "ads": {
+          "public_page_units_max": 1,
+          "app_native_slots_max": 1,
+          "review_session": false
+        },
+        "assets": {
+          "display_variant": "watermarked",
+          "clean_asset_url_exposed": false
+        },
+        "downloads": {
+          "enabled": false,
+          "monthly_total": 0,
+          "max_long_edge_px": 0,
+          "formats": []
+        },
+        "learning": {
+          "saved_words_limit": 50,
+          "storage_scope": "account_sync",
+          "daily_review_cards": 10,
+          "due_queue": "top_10",
+          "history_days": 7,
+          "custom_decks": 1
+        },
+        "srs": {
+          "enabled": "basic_5_box",
+          "weak_words": "top_3_preview",
+          "weak_sprint": false,
+          "mastery_test": false
+        },
+        "question_types": [
+          "image_to_word",
+          "definition_to_word"
+        ],
+        "packs": {
+          "hub_access": "starter",
+          "exam_preview_cards": 10,
+          "exam_access": "purchased_only"
+        },
+        "ai": {
+          "static_approved_feedback": true,
+          "personalized_mistake_explanations_monthly": 0,
+          "confusion_resolver_monthly": 0,
+          "memory_hooks_monthly": 0,
+          "daily_coach_per_day": 0
+        },
+        "support": "self_service",
+        "license_scope": "view_only"
+      }
+    },
+    "lite": {
+      "name": "Lite",
+      "is_public_plan": true,
+      "price": {
+        "KRW": {
+          "monthly": 7900,
+          "annual": 59000
+        },
+        "USD": {
+          "monthly": 7.99,
+          "annual": 59.99
+        }
+      },
+      "positioning": "무광고·무워터마크·전체 기본 복습과 표준 다운로드",
+      "entitlements": {
+        "ads": {
+          "public_page_units_max": 0,
+          "app_native_slots_max": 0,
+          "review_session": false
+        },
+        "assets": {
+          "display_variant": "clean_standard",
+          "clean_asset_url_exposed": false
+        },
+        "downloads": {
+          "enabled": true,
+          "monthly_total": 100,
+          "standard_monthly": 100,
+          "hd_monthly": 0,
+          "max_long_edge_px": 1600,
+          "formats": [
+            "jpg",
+            "webp"
+          ],
+          "batch_size": 1
+        },
+        "learning": {
+          "saved_words_limit": null,
+          "storage_scope": "account_sync",
+          "daily_review_cards": null,
+          "due_queue": "full",
+          "history_days": 90,
+          "custom_decks": 5
+        },
+        "srs": {
+          "enabled": "full_5_box",
+          "weak_words": "full_list_basic_review",
+          "weak_sprint": false,
+          "mastery_test": false
+        },
+        "question_types": [
+          "image_to_word",
+          "definition_to_word",
+          "word_to_image",
+          "cloze"
+        ],
+        "packs": {
+          "hub_access": "all_standard_hubs",
+          "exam_preview_cards": 10,
+          "exam_access": "purchased_only"
+        },
+        "ai": {
+          "static_approved_feedback": true,
+          "personalized_mistake_explanations_monthly": 0,
+          "confusion_resolver_monthly": 0,
+          "memory_hooks_monthly": 0,
+          "daily_coach_per_day": 0
+        },
+        "support": "standard",
+        "license_scope": "personal_noncommercial"
+      }
+    },
+    "pro": {
+      "name": "Pro",
+      "is_public_plan": true,
+      "price": {
+        "KRW": {
+          "monthly": 14900,
+          "annual": 119000
+        },
+        "USD": {
+          "monthly": 14.99,
+          "annual": 119.99
+        }
+      },
+      "positioning": "시험팩·약점 집중훈련·AI 오답치료·HD 출력",
+      "entitlements": {
+        "ads": {
+          "public_page_units_max": 0,
+          "app_native_slots_max": 0,
+          "review_session": false
+        },
+        "assets": {
+          "display_variant": "clean_hd",
+          "clean_asset_url_exposed": false
+        },
+        "downloads": {
+          "enabled": true,
+          "monthly_total": 500,
+          "standard_monthly": 500,
+          "hd_monthly": 500,
+          "max_long_edge_px": 3000,
+          "formats": [
+            "jpg",
+            "png",
+            "pdf"
+          ],
+          "batch_size": 20
+        },
+        "learning": {
+          "saved_words_limit": null,
+          "storage_scope": "account_sync",
+          "daily_review_cards": null,
+          "due_queue": "full_advanced_priority",
+          "history_days": null,
+          "custom_decks": null
+        },
+        "srs": {
+          "enabled": "full_5_box_advanced_priority",
+          "weak_words": "full_list_advanced",
+          "weak_sprint": true,
+          "mastery_test": true
+        },
+        "question_types": [
+          "image_to_word",
+          "definition_to_word",
+          "word_to_image",
+          "cloze",
+          "confusable_pair",
+          "weak_sprint",
+          "mastery_test"
+        ],
+        "packs": {
+          "hub_access": "all",
+          "exam_preview_cards": null,
+          "exam_access": "all_while_active"
+        },
+        "ai": {
+          "static_approved_feedback": true,
+          "personalized_mistake_explanations_monthly": 200,
+          "confusion_resolver_monthly": 100,
+          "memory_hooks_monthly": 50,
+          "daily_coach_per_day": 1
+        },
+        "support": "priority",
+        "license_scope": "personal_and_internal_noncommercial_asset_policy_applies"
+      }
+    },
+    "educator": {
+      "name": "Educator",
+      "is_public_plan": false,
+      "price": {
+        "KRW": {
+          "monthly": null,
+          "annual": 399000
+        },
+        "USD": {
+          "monthly": null,
+          "annual": 249
+        }
+      },
+      "positioning": "교사 1명과 학생 최대 30명의 수업·과제·리포트",
+      "entitlements": {
+        "inherits": "pro",
+        "classroom_seats": 30,
+        "downloads_monthly": 2000,
+        "class_decks": true,
+        "assignments": true,
+        "student_progress": true,
+        "csv_roster": true,
+        "printable_answer_keys": true,
+        "license_scope": "classroom_distribution_subject_to_asset_policy"
+      }
+    }
+  },
+  "additive_products": {
+    "exam_pack_academic": {
+      "type": "one_time_pack",
+      "price_KRW": 39000,
+      "price_USD": 29,
+      "entitlement": "pack:academic",
+      "updates_months": 12
+    },
+    "exam_pack_ielts": {
+      "type": "one_time_pack",
+      "price_KRW": 59000,
+      "price_USD": 49,
+      "entitlement": "pack:ielts-writing",
+      "updates_months": 12
+    },
+    "exam_pack_gre": {
+      "type": "one_time_pack",
+      "price_KRW": 79000,
+      "price_USD": 69,
+      "entitlement": "pack:gre-verbal",
+      "updates_months": 12
+    },
+    "exam_pack_bundle": {
+      "type": "one_time_pack",
+      "price_KRW": 149000,
+      "price_USD": 119,
+      "entitlements": [
+        "pack:academic",
+        "pack:ielts-writing",
+        "pack:gre-verbal"
+      ],
+      "updates_months": 12
+    }
+  },
+  "promotions": {
+    "welcome_ai_demo": {
+      "applies_to": [
+        "free",
+        "lite"
+      ],
+      "grant": {
+        "personalized_mistake_explanation_credits": 3
+      },
+      "period": "lifetime_once_per_account",
+      "pricing_table_visible": false,
+      "note": "프로모션 크레딧이며 Free/Lite 기본 플랜 권한이 아니다."
+    }
+  },
+  "resolution": {
+    "formula": "base_plan + active_one_time_purchases + active_promotions + audited_manual_grants",
+    "server_authoritative": true,
+    "client_plan_state_trusted": false,
+    "manual_grants_require": [
+      "reason",
+      "issued_by",
+      "issued_at",
+      "expires_at",
+      "audit_log"
+    ]
+  },
+  "lifecycle": {
+    "active": "full plan entitlements",
+    "canceled_at_period_end": "full entitlements until current_period_end",
+    "past_due_grace": {
+      "days": 7,
+      "learning_and_history": true,
+      "new_clean_downloads": false,
+      "new_ai_calls": false
+    },
+    "expired": "fall back to Free; preserve learning data",
+    "refunded_or_chargeback": "revoke paid grants after verified event; preserve learning data; flag support review"
+  },
+  "asset_policy": {
+    "commercial_rights_are_not_implied_by_watermark_removal": true,
+    "per_asset_rights_field_required": true,
+    "fields": [
+      "rights_status",
+      "license_scope",
+      "commercial_eligible",
+      "source_type",
+      "attribution_required"
+    ]
+  }
+}

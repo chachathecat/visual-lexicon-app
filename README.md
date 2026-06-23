@@ -270,3 +270,9 @@ beta hardening. They do not change runtime behavior.
 
 Auth, real payment, Webflow publishing, Cloudflare production integration,
 production user data, and deployment settings are outside this repository scope.
+
+## Track B Monetization v1
+
+Canonical source pack:
+
+- [`docs/monetization/v1/README.md`](docs/monetization/v1/README.md)
