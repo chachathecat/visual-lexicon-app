@@ -954,7 +954,8 @@ export const PAID_BETA_MANUAL_QA_SCENARIOS = [
     steps: [
       {
         order: 1,
-        action: "Use alias search on `/dashboard` or open the alias save route directly.",
+        action:
+          "Open the alias save route directly; DashboardV2 currently exposes no learner-facing alias-search UI.",
         expectedResultIds: ["alias_save_resolves_slug"],
         evidenceIds: ["alias_route_screenshot"]
       },

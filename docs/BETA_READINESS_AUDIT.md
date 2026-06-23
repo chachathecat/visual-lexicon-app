@@ -45,7 +45,8 @@ Not implemented for production paid launch:
 - Full Chrome extension integration beyond route helpers and source tagging.
 - Production analytics pipeline beyond local dataLayer event emission.
 
-Important implementation note: `/dashboard`, `/save`, `/review`, `/saved`, and
+Important implementation note: `/dashboard` is the canonical Track B app entry.
+`/` redirects to `/dashboard`. `/dashboard`, `/save`, `/review`, `/saved`, and
 the memory panel on `/word/[slug]` use the local SRS stores. `/word/[slug]`
 still uses static/mock word content for the word title, definition, visual cue,
 example, and memory hook; it must not be presented as production content-pack
@@ -55,8 +56,8 @@ readiness.
 
 | Route | Current behavior | Beta readiness |
 | --- | --- | --- |
-| `/` | Renders `DashboardView`, same learning dashboard as `/dashboard`. | OK for beta if dashboard counts pass QA. |
-| `/dashboard` | Reads local saved words, review state, review events, daily stats, and plan state. Shows due, weak, new saved, mastered, hub progress, saved library preview, alias search, and paywall prompts. | OK for beta. Must not show fake counts. |
+| `/` | Redirects to `/dashboard`. It is not a separate dashboard surface. | OK for beta if the redirect lands on the canonical dashboard without a loop. |
+| `/dashboard` | Canonical Track B app entry. Renders `DashboardV2View`, reads local saved words, review state, and review events, and shows Today's Memory Mission plus real Due, Weak, New, and Mastered state. | OK for beta. Must not show fake counts. |
 | `/saved` | Reads `vlx_saved_words_v1`, `vlx_review_state_v1`, and `vlx_review_events_v1` in the browser. Shows real saved library entries, local due/weak/new-saved counts, review CTAs, and an honest empty state when no saved words exist. | OK for beta. Must not show sample words or fake mastery as saved state. |
 | `/save?slug=dissonance&source=word_page` | Resolves the word, writes `vlx_saved_words_v1`, creates `vlx_review_state_v1`, and tags source as `word_page` on first save. | P0 if it fails. Covered by smoke/regression tests. |
 | `/save?slug=dissonance&source=alias_search` | Same save flow with accepted `alias_search` source. Duplicate saves preserve existing review progress and do not duplicate queue entries. | P0 if alias source creates fake or unsafe save behavior. |
@@ -139,7 +140,7 @@ Current Playwright suites:
 | `tests/paywall-triggers.spec.ts` | Save/review/exam/weak/mastery/mistake paywall trigger evaluator and no checkout/payment SDK guard. |
 | `tests/paywall-surfaces.spec.ts` | Product paywall prompts, pricing Lite/Pro interest capture, configured external paid beta URLs, no prompt for paid preview plans. |
 | `tests/entitlements.spec.ts` | Local entitlement skeleton, pricing plans, local billing disclaimer, no payment route directories. |
-| `tests/multilingual-alias-contract.spec.ts` | Alias resolver, known canonical slugs, alias search UI, unknown alias no-action state. |
+| `tests/multilingual-alias-contract.spec.ts` | Alias resolver, known canonical slugs, route-independent safe word/save targets, and unknown alias no-action state. |
 | `tests/analytics-events.spec.ts` | Local paid beta analytics contract, sanitized dataLayer payloads, save/saved/word/review/pricing event coverage, no analytics/payment SDK guard. |
 
 Focused commands for narrow regression runs:
@@ -199,9 +200,9 @@ Minimum manual pass before any paid beta invite:
 - [x] Alias resolver normalizes English casing and whitespace.
 - [x] Korean/Japanese alias fixtures resolve only to known canonical English slugs.
 - [x] Unknown aliases return no match and no fake actions.
-- [x] Alias search UI links to `/word/[slug]` and `/save?slug=[slug]&source=alias_search`.
+- [x] Alias-search save sources route through `/save?slug=[slug]&source=alias_search`.
 - [x] Alias entries pointing to missing slugs are skipped.
-- [ ] Manual QA should verify alias search UI still works after local storage reset.
+- [ ] Manual QA should use direct alias-search save URLs until a future approved UI surface exists.
 - [ ] P2: full multilingual pages and production alias pack loading remain future work.
 
 ## Weak Words Sprint Checklist
@@ -255,7 +256,7 @@ No `TODO` or `FIXME` matches were found in the searched code/docs.
 | Review starter deck and distractor fallback use mock pack words | `src/components/views/review-session-view.tsx` | OK for beta; P1 before paid launch | The SRS loop is real; content remains starter/mock. Avoid claiming full content readiness. |
 | Local paid beta analytics contract | `src/lib/analytics/types.ts`, `src/lib/analytics/events.ts`, `tests/analytics-events.spec.ts` | OK for beta; P1 before paid launch | Local dataLayer events are sanitized and covered by tests. Production analytics reporting is still not connected. |
 | Paywall trigger copy references planned Pro tools | `src/lib/paywall/triggers.ts`, `tests/paywall-triggers.spec.ts` | Needs copy clarification | Safe for internal beta, but should be reviewed so users do not infer active paid entitlements. |
-| Alias search input placeholder examples | `src/components/multilingual-alias-search.tsx` | OK for beta | UI placeholder only. Alias safety is covered by tests. |
+| Legacy alias search component | `src/components/multilingual-alias-search.tsx` | Deferred from canonical dashboard | Kept in the codebase, but `/dashboard` must not expose it in this canonical-entry PR. Alias resolver and save-source safety are covered by tests. |
 | Roadmap and data contract mock/planned references | `ROADMAP.md`, `DATA_CONTRACT.md`, `AGENTS.md` | OK for beta | Planning/reference docs, not shipped app claims. |
 | Test fixtures assert mock/fallback/planned behavior | `tests/*.spec.ts` | OK for beta | These are evidence that placeholder behavior remains honest. |
 
@@ -275,7 +276,7 @@ manual QA:
 | Due, Weak, and Mastered remain truthful. | Selectors and delayed mastery are tested; no fake mastery found. |
 | Pack progress remains truthful. | Tests assert no fake planned pack progress and completion from real answers. |
 | Upgrade interest capture works without real payment. | Paywall/pricing tests cover local interest records. |
-| Alias search only links known safe canonical slugs. | Alias contract tests cover known/missing slugs and unknown no-action state. |
+| Alias search source only uses known safe canonical slugs. | Alias contract tests cover known/missing slugs, route-independent safe word/save targets, direct alias-search save source, and unknown no-action state. |
 | Weak sprint updates real SRS state. | Review route tests cover sprint state update. |
 | No-real-payment safety remains intact. | Tests assert no payment route directories and code has no payment SDK. |
 | Production safety boundaries are not touched. | Hardening work must remain local to Track B app code, docs, tests, and safe mock/static data. |

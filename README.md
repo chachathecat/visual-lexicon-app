@@ -24,6 +24,13 @@ Open:
 http://localhost:3000
 ```
 
+App entry:
+
+```txt
+/ redirects to /dashboard
+/dashboard is the canonical Track B app entry
+```
+
 Optional static pack source:
 
 ```txt

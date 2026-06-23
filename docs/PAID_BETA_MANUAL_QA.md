@@ -118,13 +118,13 @@ Expected:
 - `saved.obfuscate.source` is `"alias_search"`.
 - `Boolean(state.obfuscate)` is `true`.
 
-Optional alias UI check:
+Current alias UI state:
 
-- Open `/dashboard`.
-- Use the Alias search panel.
-- Confirm a known alias shows a canonical English card, a "View card" link, and
-  a "Save to review" link.
-- Confirm an unknown alias shows no card and no save action.
+- Alias resolver/data contracts remain available.
+- Canonical DashboardV2 currently exposes no learner-facing alias-search UI.
+- Use direct alias-search save routes for manual source-attribution QA.
+- A future approved product surface is required before restoring alias-search
+  UI tests.
 
 ## 4. Save Extension Source Word
 

@@ -81,7 +81,7 @@ Open these route targets manually:
 | Route | QA purpose |
 | --- | --- |
 | `/` | Clean guest first visit and dashboard load. |
-| `/dashboard` | Today Memory Mission, review CTAs, alias search, and local counts. |
+| `/dashboard` | Today Memory Mission, review CTAs, and local counts. Canonical DashboardV2 exposes no learner-facing alias-search UI. |
 | `/saved` | Saved library review entry and no fake mastery. |
 | `/save?slug=dissonance&source=word_page` | Word-page save attribution. |
 | `/save?slug=dissonance&source=alias_search` | Alias-search canonical save. |
@@ -326,7 +326,10 @@ Record these as P2:
 
 ## Alias Search QA Checklist
 
-- Use dashboard alias search when available.
+- Alias resolver/data contracts remain available.
+- Canonical DashboardV2 currently exposes no learner-facing alias-search UI.
+- Use direct alias-search save routes until a future approved product surface exists.
+- Restore UI checks only after that future approved product surface exists.
 - Confirm known alias routes save canonical `dissonance`.
 - Confirm unknown aliases do not create fake words.
 - Confirm source attribution is `alias_search`.

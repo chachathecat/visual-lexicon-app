@@ -78,8 +78,8 @@ QA or Product/UI readiness evidence, not account sync implementation.
 
 | Route | Status | Notes |
 | --- | --- | --- |
-| `/` | Private-beta ready | Dashboard mission surface. Counts must come from real local state. |
-| `/dashboard` | Private-beta ready | Today Memory Mission, review CTAs, weak sprint, alias search, and local progress. |
+| `/` | Private-beta ready | Redirects to `/dashboard`, the canonical Track B app entry. |
+| `/dashboard` | Private-beta ready | Today Memory Mission, review CTAs, weak sprint, and local progress. Canonical DashboardV2 exposes no learner-facing alias-search UI. |
 | `/saved` | Private-beta ready | Reads saved words, review state, and event counts. No fake mastery. |
 | `/save?slug=dissonance&source=word_page` | Private-beta ready | Saves known word with word page attribution and creates review item. |
 | `/save?slug=dissonance&source=alias_search` | Private-beta ready | Saves canonical known word with alias search attribution. |
@@ -135,7 +135,7 @@ Relevant suites:
 | `tests/paywall-triggers.spec.ts` | Trigger evaluator and no payment SDK guard. |
 | `tests/paywall-surfaces.spec.ts` | Pricing and paywall interest capture. |
 | `tests/entitlements.spec.ts` | Local entitlement skeleton and no payment route directories. |
-| `tests/multilingual-alias-contract.spec.ts` | Alias resolver and alias search UI safety. |
+| `tests/multilingual-alias-contract.spec.ts` | Alias resolver, known canonical slugs, route-independent safe word/save targets, and unknown alias no-action state. |
 | `tests/analytics-events.spec.ts` | Sanitized local dataLayer events. |
 | `tests/paid-beta-readiness-audit.spec.ts` | Static readiness contract, blockers, docs links, and safety guards. |
 
