@@ -81,7 +81,6 @@ export const ACCOUNT_SYNC_ROLLOUT_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api/account/sync",
   "src/pages/api/account/sync",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/rollout-gate/route.ts",
   "src/lib/account-persistence/rollout-gate/preview",
   "src/lib/account-persistence/rollout-gate/apply",

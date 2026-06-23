@@ -120,7 +120,6 @@ export const PAID_BETA_READINESS_FORBIDDEN_ACTUAL_PATHS = [
   "src/app/api",
   "src/pages/api",
   "middleware.ts",
-  "src/middleware.ts",
   "src/app/payment",
   "src/app/payments",
   "src/app/billing",
@@ -132,7 +131,6 @@ export const PAID_BETA_READINESS_FORBIDDEN_ACTUAL_PATHS = [
 ] as const;
 
 export const PAID_BETA_READINESS_FORBIDDEN_DIRECT_DEPENDENCIES = [
-  "@supabase/supabase-js",
   "@neondatabase/serverless",
   "@vercel/postgres",
   "firebase",

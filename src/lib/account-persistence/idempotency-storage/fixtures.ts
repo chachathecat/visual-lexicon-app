@@ -265,7 +265,6 @@ export const ACCOUNT_SYNC_IDEMPOTENCY_STORAGE_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api/account/sync",
   "src/pages/api/account/sync",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/idempotency-storage/route.ts",
   "src/lib/account-persistence/idempotency-storage/preview",
   "src/lib/account-persistence/idempotency-storage/apply",

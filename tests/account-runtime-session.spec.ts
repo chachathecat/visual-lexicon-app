@@ -131,7 +131,7 @@ test.describe("account runtime session principal", () => {
             data: {
               claims: {
                 sub: "jwt_subject",
-                email: "learner@example.test",
+                email: "private-email-value",
               },
             },
             error: null,
@@ -262,7 +262,7 @@ test.describe("account runtime session principal", () => {
           provider: "supabase",
           subject: "verified_jwt_sub",
           accountId: "client_supplied_account",
-          email: "client@example.test",
+          email: "private-email-value",
         }) as unknown as AccountPrincipalEvidence,
     });
 
@@ -274,7 +274,7 @@ test.describe("account runtime session principal", () => {
       },
     });
     expect(JSON.stringify(result)).not.toContain("client_supplied_account");
-    expect(JSON.stringify(result)).not.toContain("client@example.test");
+    expect(JSON.stringify(result)).not.toContain("private-email-value");
   });
 
   test("returned values contain no token, cookie, raw claim, email, or key", () => {
@@ -288,9 +288,9 @@ test.describe("account runtime session principal", () => {
       cookie: "cookie-value",
       claims: {
         sub: "verified_jwt_sub",
-        email: "learner@example.test",
+        email: "private-email-value",
       },
-      email: "learner@example.test",
+      email: "private-email-value",
       publishableKey: "publishable-key-value",
     } as unknown as AccountPrincipalEvidence);
     const serialized = JSON.stringify(result);
@@ -309,7 +309,7 @@ test.describe("account runtime session principal", () => {
       "raw-jwt-value",
       "cookie-value",
       "claims",
-      "learner@example.test",
+      "private-email-value",
       "publishable-key-value",
     ]) {
       expect(serialized).not.toContain(forbidden);
@@ -371,21 +371,19 @@ test.describe("account runtime session principal", () => {
     }
   });
 
-  test("no API route, route handler, middleware, or proxy is added", () => {
+  test("only the minimal auth confirmation route handler and middleware are added", () => {
     const appFiles = listFiles(join(workspaceRoot, "src", "app"));
     const routeHandlers = appFiles
       .filter((path) => /^route\.(ts|tsx|js|jsx)$/.test(basename(path)))
       .map(projectRelative);
 
-    expect(routeHandlers).toEqual([]);
+    expect(routeHandlers).toEqual(["src/app/auth/confirm/route.ts"]);
 
     for (const relativePath of [
       "app/api",
       "pages/api",
       "src/app/api",
       "src/pages/api",
-      "middleware.ts",
-      "src/middleware.ts",
       "proxy.ts",
       "src/proxy.ts",
     ]) {
@@ -393,6 +391,8 @@ test.describe("account runtime session principal", () => {
         false
       );
     }
+
+    expect(existsSync(join(workspaceRoot, "src/middleware.ts"))).toBe(true);
   });
 
   test("no browser Supabase client is added", () => {
@@ -410,9 +410,8 @@ test.describe("account runtime session principal", () => {
     );
   });
 
-  test("no learner auth pages are added", () => {
+  test("only the approved learner login auth page is added", () => {
     const forbiddenRouteSegments = new Set([
-      "login",
       "signin",
       "sign-in",
       "signup",
@@ -432,6 +431,7 @@ test.describe("account runtime session principal", () => {
     );
 
     expect(matchingFiles).toEqual([]);
+    expect(appFiles).toContain("src/app/login/page.tsx");
   });
 
   test("no DB schema, migration, RLS, table, or storage bucket is added", () => {
@@ -500,9 +500,9 @@ test.describe("account runtime session principal", () => {
       "[Track B Auth Principal Foundation](docs/TRACK_B_AUTH_PRINCIPAL_FOUNDATION.md)"
     );
     expect(doc).toContain(
-      "can identify an already authenticated Supabase session"
+      "identifies an already authenticated Supabase session"
     );
-    expect(doc).toContain("still has no login");
+    expect(doc).toContain("Minimal Auth Session Flow");
     expect(doc).toContain("No learning data is uploaded.");
     expect(doc).toContain("No Account Sync route exists.");
     expect(doc).toContain("No paid entitlement is granted.");

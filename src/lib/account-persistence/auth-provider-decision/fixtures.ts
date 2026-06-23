@@ -140,7 +140,6 @@ export const ACCOUNT_SYNC_AUTH_PROVIDER_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api",
   "src/pages/api",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/auth-provider-decision/route.ts",
   "src/lib/account-persistence/auth-provider-decision/preview",
   "src/lib/account-persistence/auth-provider-decision/apply",

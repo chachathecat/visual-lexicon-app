@@ -2,11 +2,12 @@
 
 ## Purpose
 
-This foundation can identify an already authenticated Supabase session on the
-server and normalize it to a minimal Track B account principal.
+This foundation identifies an already authenticated Supabase session on the
+server and normalizes it to a minimal Track B account principal.
 
-It does not create a learner-facing sign-in flow. Track B still has no login,
-signup, callback, logout, password reset, or account-management UI in this PR.
+The follow-up Minimal Auth Session Flow adds existing-user Magic Link login,
+confirmation, logout, and session refresh while preserving this foundation's
+principal boundary.
 
 ## Runtime Boundary
 
@@ -30,7 +31,7 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
 
-No provider secret key, service-role key, or production secret is used.
+No provider secret, service-role credential, or production secret is used.
 
 ## Principal Contract
 
@@ -70,12 +71,31 @@ Returned values must not include access tokens, refresh tokens, raw JWTs,
 cookies, full claims, email, provider response bodies, publishable keys, or
 secret keys.
 
+## Minimal Auth Session Flow Follow-Up
+
+The follow-up flow is documented in:
+
+```txt
+docs/TRACK_B_MINIMAL_AUTH_SESSION_FLOW.md
+```
+
+It adds:
+
+- `/login`
+- `/auth/confirm`
+- `src/middleware.ts`
+- `/settings` account status and logout
+
+It still does not add public signup, Account Sync, learning-data upload,
+database tables, migrations, RLS policies, entitlements, paid access, checkout,
+billing, payment SDKs, or production-data mutation.
+
 ## Non-Goals
 
 - No learning data is uploaded.
 - No Account Sync route exists.
-- No API route, route handler, middleware, proxy, database schema, migration,
-  RLS policy, table, or storage bucket is added.
+- No Account Sync API route, database schema, migration, RLS policy, table, or
+  storage bucket is added.
 - No paid entitlement is granted.
 - No billing, checkout, subscription, invoice, payment SDK, or billing portal
   behavior is added.
@@ -87,7 +107,7 @@ Public paid beta remains **No-Go**. This PR creates only the smallest
 runtime-capable authenticated-principal reader needed before future auth and
 sync work.
 
-The next PR is:
+The Minimal Auth Session Flow follow-up is:
 
 ```txt
 feat/minimal-auth-session-flow-v1

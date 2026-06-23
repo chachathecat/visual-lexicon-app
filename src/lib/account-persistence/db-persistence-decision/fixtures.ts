@@ -105,7 +105,6 @@ export const ACCOUNT_SYNC_DB_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api",
   "src/pages/api",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/db-persistence-decision/route.ts",
   "src/lib/account-persistence/db-persistence-decision/preview",
   "src/lib/account-persistence/db-persistence-decision/apply",

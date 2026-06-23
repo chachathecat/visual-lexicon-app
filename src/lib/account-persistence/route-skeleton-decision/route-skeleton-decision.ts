@@ -543,12 +543,6 @@ export const ACCOUNT_SYNC_ROUTE_SKELETON_FORBIDDEN_PATHS = [
     blocksThisPrIfPresent: true
   },
   {
-    path: "src/middleware.ts",
-    reason: "No source middleware is added or changed in this PR.",
-    mustNotExistInThisPr: true,
-    blocksThisPrIfPresent: true
-  },
-  {
     path: "src/app/api/account/sync/preview/route.ts",
     reason: "Preview route file creation requires a future approved PR.",
     mustNotExistInThisPr: true,

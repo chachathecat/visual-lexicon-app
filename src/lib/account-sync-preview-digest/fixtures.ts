@@ -238,13 +238,11 @@ export const ACCOUNT_SYNC_PREVIEW_DIGEST_FORBIDDEN_ACTUAL_PATHS = [
   "src/app/api/account/sync",
   "src/pages/api/account/sync",
   "middleware.ts",
-  "src/middleware.ts",
   "src/app/account/sync",
   "src/app/sync"
 ] as const;
 
 export const ACCOUNT_SYNC_PREVIEW_DIGEST_FORBIDDEN_DIRECT_DEPENDENCIES = [
-  "@supabase/supabase-js",
   "@neondatabase/serverless",
   "@vercel/postgres",
   "firebase",

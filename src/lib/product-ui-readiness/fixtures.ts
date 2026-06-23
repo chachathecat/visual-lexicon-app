@@ -72,7 +72,6 @@ export const TRACK_B_PRODUCT_UI_FORBIDDEN_ACTUAL_PATHS = [
   "src/app/api",
   "src/pages/api",
   "middleware.ts",
-  "src/middleware.ts",
   "src/app/payment",
   "src/app/payments",
   "src/app/billing",
@@ -84,7 +83,6 @@ export const TRACK_B_PRODUCT_UI_FORBIDDEN_ACTUAL_PATHS = [
 ] as const;
 
 export const TRACK_B_PRODUCT_UI_FORBIDDEN_DIRECT_DEPENDENCIES = [
-  "@supabase/supabase-js",
   "@neondatabase/serverless",
   "@vercel/postgres",
   "firebase",

@@ -547,7 +547,9 @@ test.describe("Visual Lexicon paid beta manual QA checklist contract", () => {
       (relativePath) => basename(relativePath) === "route.ts"
     );
 
-    expect(appRouteHandlers).toEqual([]);
+    expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/auth/confirm/route.ts"
+    ]);
   });
 
   test("no runtime route or component integration imports the manual QA contract", () => {

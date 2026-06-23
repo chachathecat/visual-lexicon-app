@@ -418,7 +418,9 @@ test.describe("owner private beta launch decision", () => {
     const appRouteHandlers = collectFiles("src/app").filter(
       (relativePath) => basename(relativePath) === "route.ts"
     );
-    expect(appRouteHandlers).toEqual([]);
+    expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/auth/confirm/route.ts"
+    ]);
 
     for (const fileName of ["package.json", "package-lock.json"] as const) {
       const dependencies = readRootPackageDependencies(fileName);

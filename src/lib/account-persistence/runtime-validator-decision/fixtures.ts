@@ -131,7 +131,6 @@ export const ACCOUNT_SYNC_RUNTIME_VALIDATOR_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api/account/sync",
   "src/pages/api/account/sync",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/runtime-validator-decision/route.ts",
   "src/lib/account-persistence/runtime-validator-decision/preview",
   "src/lib/account-persistence/runtime-validator-decision/apply",

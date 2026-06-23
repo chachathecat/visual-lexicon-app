@@ -207,7 +207,6 @@ export const ACCOUNT_SYNC_AUDIT_REDACTION_FORBIDDEN_ACTUAL_ROUTE_PATHS = [
   "src/app/api/account/sync",
   "src/pages/api/account/sync",
   "middleware.ts",
-  "src/middleware.ts",
   "src/lib/account-persistence/audit-redaction/route.ts",
   "src/lib/account-persistence/audit-redaction/preview",
   "src/lib/account-persistence/audit-redaction/apply",
