@@ -391,7 +391,7 @@ test.describe('account sync auth ownership boundary', () => {
       ...ACCOUNT_SYNC_AUTH_OWNERSHIP_FORBIDDEN_ACTUAL_ROUTE_PATHS,
       'app/api',
       'pages/api',
-      'src/app/api',
+      'src/app/api/account',
       'src/pages/api',
       'middleware.ts',
     ];

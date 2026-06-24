@@ -548,6 +548,7 @@ test.describe("Visual Lexicon paid beta manual QA checklist contract", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"
     ]);
   });

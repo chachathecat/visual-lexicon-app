@@ -506,9 +506,12 @@ test.describe("Track B simplicity reset", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"
     ]);
-    expect(existsSync(join(workspaceRoot, "src", "app", "api"))).toBe(false);
+    expect(
+      existsSync(join(workspaceRoot, "src", "app", "api", "account"))
+    ).toBe(false);
     expect(existsSync(join(workspaceRoot, "src", "middleware.ts"))).toBe(true);
     expect(existsSync(join(workspaceRoot, "middleware.ts"))).toBe(false);
   });

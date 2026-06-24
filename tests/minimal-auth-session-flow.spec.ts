@@ -31,6 +31,8 @@ const baseUrl =
 
 const workspaceRoot = process.cwd();
 const allowedAuthRouteHandler = "src/app/auth/confirm/route.ts";
+const allowedEntitlementReadRouteHandler =
+  "src/app/api/me/entitlements/route.ts";
 const allowedMiddleware = "src/middleware.ts";
 const approvedLearnerEmail = `approved-learner@${"visuallexicon.test"}`;
 const missingLearnerEmail = `missing-learner@${"visuallexicon.test"}`;
@@ -602,9 +604,18 @@ test.describe("Minimal Auth Session Flow v1", () => {
       .toBe(true);
   });
 
-  test("no Account Sync DB entitlement or payment implementation is added", () => {
+  test("no Account Sync DB usage billing or payment implementation is added", () => {
     for (const relativePath of [
-      "src/app/api",
+      "src/app/api/account",
+      "src/app/api/admin",
+      "src/app/api/billing",
+      "src/app/api/checkout",
+      "src/app/api/downloads",
+      "src/app/api/me/usage",
+      "src/app/api/payment",
+      "src/app/api/payments",
+      "src/app/api/packs",
+      "src/app/api/usage",
       "src/pages/api",
       "pages/api",
       "supabase/migrations",
@@ -628,7 +639,10 @@ test.describe("Minimal Auth Session Flow v1", () => {
       .filter((path) => basename(path) === "route.ts")
       .map(projectRelative);
 
-    expect(appRouteHandlers).toEqual([allowedAuthRouteHandler]);
+    expect(appRouteHandlers).toEqual([
+      allowedEntitlementReadRouteHandler,
+      allowedAuthRouteHandler,
+    ]);
     expect(existsSync(join(workspaceRoot, allowedMiddleware))).toBe(true);
   });
 

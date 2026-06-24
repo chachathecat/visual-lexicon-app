@@ -689,8 +689,8 @@ test.describe("Track B entitlement domain core", () => {
     }
 
     expect(
-      existsSync(join(workspaceRoot, "src", "app", "api", "me", "entitlements"))
-    ).toBe(false);
+      readWorkspaceFile("src/app/api/me/entitlements/route.ts")
+    ).not.toContain("local-entitlements");
     expect(existsSync(join(workspaceRoot, "middleware.ts"))).toBe(false);
 
     const sourceMiddlewarePath = join(workspaceRoot, "src", "middleware.ts");

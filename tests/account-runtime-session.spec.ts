@@ -371,18 +371,30 @@ test.describe("account runtime session principal", () => {
     }
   });
 
-  test("only the minimal auth confirmation route handler and middleware are added", () => {
+  test("only the approved auth and entitlement read route handlers and middleware are added", () => {
     const appFiles = listFiles(join(workspaceRoot, "src", "app"));
     const routeHandlers = appFiles
       .filter((path) => /^route\.(ts|tsx|js|jsx)$/.test(basename(path)))
       .map(projectRelative);
 
-    expect(routeHandlers).toEqual(["src/app/auth/confirm/route.ts"]);
+    expect(routeHandlers).toEqual([
+      "src/app/api/me/entitlements/route.ts",
+      "src/app/auth/confirm/route.ts",
+    ]);
 
     for (const relativePath of [
       "app/api",
       "pages/api",
-      "src/app/api",
+      "src/app/api/account",
+      "src/app/api/admin",
+      "src/app/api/billing",
+      "src/app/api/checkout",
+      "src/app/api/downloads",
+      "src/app/api/me/usage",
+      "src/app/api/payment",
+      "src/app/api/payments",
+      "src/app/api/packs",
+      "src/app/api/usage",
       "src/pages/api",
       "proxy.ts",
       "src/proxy.ts",
