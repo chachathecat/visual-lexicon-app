@@ -1,9 +1,8 @@
 name: CI Repair Loop
+
 on:
-  workflow_run:
-    workflows: ["ci.yml"]
-    types:
-      - completed
+  workflow_dispatch:
+
 jobs:
   repair:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
