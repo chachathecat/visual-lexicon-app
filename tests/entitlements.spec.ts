@@ -325,6 +325,9 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
         filePath.split("\\").join("/").endsWith(
           "src/app/auth/confirm/route.ts"
         )
+        || filePath.split("\\").join("/").endsWith(
+          "src/app/api/me/entitlements/route.ts"
+        )
       ) {
         continue;
       }

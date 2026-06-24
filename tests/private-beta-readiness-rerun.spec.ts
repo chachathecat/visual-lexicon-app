@@ -427,6 +427,7 @@ test.describe("private beta readiness rerun", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"
     ]);
 

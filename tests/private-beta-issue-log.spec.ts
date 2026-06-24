@@ -562,6 +562,7 @@ test.describe("private beta issue log", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"
     ]);
 
