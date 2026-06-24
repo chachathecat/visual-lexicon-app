@@ -1,0 +1,15 @@
+name: Limited Auto Merge
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - name: Check risk label and status
+        run: echo "TODO: Implement limited auto-merge logic"

@@ -1,0 +1,60 @@
+name: Agent-ready task
+description: A task that Codex may complete independently
+title: "[Agent] "
+labels: ["agent-ready"]
+body:
+  - type: textarea
+    attributes:
+      label: Goal
+      description: What user or system outcome must change?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Acceptance criteria
+      description: Observable pass/fail conditions
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Non-goals
+      description: What must not change?
+      value: |
+        - [ ]
+    validations:
+      required: false
+
+  - type: dropdown
+    attributes:
+      label: Initial risk
+      options:
+        - low
+        - medium
+        - high
+        - unknown
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Required validation
+      description: Tests or user flows that must pass
+      value: |
+        - [ ]
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Human decision boundary
+      description: What decision, if encountered, requires stopping?
+      value: |
+        - [ ]
+    validations:
+      required: false

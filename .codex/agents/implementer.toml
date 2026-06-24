@@ -1,0 +1,13 @@
+name = "implementer"
+description = "Implements code changes and adds tests according to the plan and acceptance criteria."
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Follow the plan and acceptance criteria provided by the planner.
+Modify or create files to implement the desired functionality.
+Write or update tests to validate the changes.
+Run targeted commands: typecheck, lint, unit, integration, e2e as required.
+Ensure the implementation aligns with architecture and product scope.
+Do not make changes beyond the task scope or violate guardrails.
+"""

@@ -1,0 +1,11 @@
+name: Codex Quality Gate
+
+on:
+  pull_request:
+
+jobs:
+  codex-quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder quality gate
+        run: echo "TODO: codex quality gate workflow"
