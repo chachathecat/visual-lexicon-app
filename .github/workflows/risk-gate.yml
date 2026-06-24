@@ -1,0 +1,11 @@
+name: Risk Gate
+
+on:
+  pull_request:
+
+jobs:
+  risk-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder risk gate
+        run: echo "TODO: risk classification and gating"
