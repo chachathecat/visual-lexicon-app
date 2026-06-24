@@ -1,7 +1,7 @@
 name: Codex Quality Gate
 
 on:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   codex-quality-gate:
