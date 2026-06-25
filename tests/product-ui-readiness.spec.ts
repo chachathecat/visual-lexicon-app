@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const baseUrl =
@@ -419,6 +419,24 @@ function queueSection(page: Page, heading: string) {
 }
 
 test.describe("Track B product/UI readiness rendered audit", () => {
+  test("documents rendered-audit precedence over the static typed baseline", () => {
+    const auditReport = readFileSync(
+      "docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md",
+      "utf8"
+    );
+
+    expect(auditReport).toContain("Report version: 2");
+    expect(auditReport).toContain(
+      "supersedes the static typed product/UI readiness baseline v1"
+    );
+    expect(auditReport).toContain(
+      "must not be used as the current automated release gate"
+    );
+    expect(auditReport).toContain(
+      "does not supersede canonical non-UI blockers"
+    );
+  });
+
   test("audited routes resolve, expose primary content, and avoid critical browser errors", async ({
     page
   }) => {

@@ -14,6 +14,24 @@ accepts browser-local learning state, no real checkout, no account sync, and the
 known mobile overflow on the legacy word-detail route. It is not ready for public
 paid beta.
 
+## Report status and precedence
+
+- Report type: rendered-application evidence audit
+- Report version: 2
+- Audited commit: 13141144a18e7192435b035478f2b0e7f469300f
+- This report supersedes the static typed product/UI readiness baseline v1 in
+  `src/lib/product-ui-readiness/product-ui-readiness-audit.ts` only for
+  product/UI Go/No-Go decisions on the audited commit.
+- The typed v1 contract remains historical and contains pre-rendered-audit
+  assumptions, including missing full-route QA and incomplete
+  accessibility/mobile evidence.
+- The typed v1 `getP0Blockers()` helper must not be used as the current automated release gate until a separate contract-reconciliation PR updates it.
+- This report does not supersede canonical non-UI blockers involving payment,
+  billing, account sync, support, privacy, refunds, production operations, or
+  deployment.
+- Screen-reader behavior remains unverified and is an accepted risk only for the
+  owner-managed, invite-only, manual private beta recommendation.
+
 ## Audit method
 
 - Environment: Windows PowerShell, Next.js dev server at
