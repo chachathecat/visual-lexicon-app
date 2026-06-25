@@ -29,8 +29,14 @@ audit. The public audience has one confirmed public-beta P0 blocker:
 P0 release-gate reads must be audience-specific:
 
 ```ts
-getP0Blockers("private"); // []
-getP0Blockers("public"); // ["VLX-AUDIT-P0-001"]
+const privateBlockers = getP0Blockers("private");
+// []
+
+const publicBlockers = getP0Blockers("public");
+// [{ id: "VLX-AUDIT-P0-001", ... }]
+
+const publicBlockerIds = publicBlockers.map((finding) => finding.id);
+// ["VLX-AUDIT-P0-001"]
 ```
 
 Do not use an ambiguous no-argument P0 helper as a release gate. The helper

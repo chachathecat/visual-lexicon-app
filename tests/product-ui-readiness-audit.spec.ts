@@ -613,6 +613,27 @@ test.describe("Track B product/UI readiness audit contract", () => {
     expect(moduleReadme).toContain('getP0Blockers("private")');
     expect(moduleReadme).toContain('getP0Blockers("public")');
     expect(moduleReadme).toContain(
+      'const publicBlockers = getP0Blockers("public");'
+    );
+    expect(moduleReadme).toContain(
+      '// [{ id: "VLX-AUDIT-P0-001", ... }]'
+    );
+    expect(moduleReadme).toContain(
+      "const publicBlockerIds = publicBlockers.map((finding) => finding.id);"
+    );
+    expect(moduleReadme).toContain('// ["VLX-AUDIT-P0-001"]');
+    expect(moduleReadme).not.toContain(
+      'getP0Blockers("public"); // ["VLX-AUDIT-P0-001"]'
+    );
+    expect(getP0Blockers("public")).toEqual([
+      expect.objectContaining({
+        id: "VLX-AUDIT-P0-001"
+      })
+    ]);
+    expect(getP0Blockers("public").map((finding) => finding.id)).toEqual([
+      "VLX-AUDIT-P0-001"
+    ]);
+    expect(moduleReadme).toContain(
       "Do not use an ambiguous no-argument P0 helper as a release gate."
     );
     expect(moduleReadme).toContain(
