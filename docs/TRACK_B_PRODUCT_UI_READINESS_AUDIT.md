@@ -69,9 +69,9 @@ paid beta.
     - First run timed out after 904 seconds before returning counts.
     - Second run exited 1 because the manual QA dev server still owned
       `127.0.0.1:3006` (`EADDRINUSE`).
-    - Final run exited 0: 930 passed, 1 skipped/fixme in 8.6 minutes.
+    - Final run exited 0: 931 passed, 1 skipped/fixme in 7.3 minutes.
   - `npx.cmd playwright test tests/product-ui-readiness.spec.ts --workers=1`
-    - Final run exited 0: 7 passed, 1 skipped/fixme in 1.5 minutes.
+    - Final run exited 0: 8 passed, 1 skipped/fixme in 1.2 minutes.
 
 ## Current product mental model
 
