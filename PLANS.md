@@ -69,19 +69,26 @@ The factory becomes operational only after:
 5. `FCT-050` bounded CI repair
 6. `FCT-060` release guard and evidence sync
 
+`FCT-010` is not schedulable until `FCT-000` is merged and verified. The roadmap
+must keep dependency-blocked tasks blocked; agents may not start implementation
+work by treating an `in_review` dependency as complete.
+
 Auto-merge remains deferred and is not required to finish the product.
 
 ## Immediate PR Queue
 
-1. Merge the owner-reviewed master source and roadmap.
-2. Implement `FCT-010`.
+1. Merge the owner-reviewed master source and roadmap, then record `FCT-000` as
+   verified only after the owner accepts that source lock.
+2. After `FCT-000` is verified, implement `FCT-010`.
 3. Implement `FCT-020`.
 4. Implement `FCT-030`.
 5. Implement `FCT-040`.
 6. Implement `FCT-050`.
 7. Implement `FCT-060`.
-8. Implement `COM-010` canonical catalog migration.
-9. Record `BIL-010` payment-provider decision with owner approval.
+8. Record `BIL-010` payment-provider and catalog-migration decision with owner
+   approval.
+9. Implement `COM-010` canonical catalog migration only after explicit owner
+   approval unblocks that high-risk `blocked_human` task.
 10. Prepare `ACC-010` schema/RLS and `AST-010` asset-rights contracts as
     separate high-risk draft PRs.
 11. Continue strictly from the dependency-ready tasks in the roadmap JSON.
