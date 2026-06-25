@@ -6,6 +6,7 @@
 - Public paid beta: **No-Go**
 - Audit date: 2026-06-24
 - Audited commit SHA: `13141144a18e7192435b035478f2b0e7f469300f`
+- Source PR: #119
 - Repository: `chachathecat/visual-lexicon-app`
 - Branch: `release/track-b-product-ui-readiness-audit`
 
@@ -18,17 +19,24 @@ paid beta.
 
 - Report type: rendered-application evidence audit
 - Report version: 2
+- Source PR: #119
 - Audited commit: 13141144a18e7192435b035478f2b0e7f469300f
-- This report supersedes the static typed product/UI readiness baseline v1 in
-  `src/lib/product-ui-readiness/product-ui-readiness-audit.ts` only for
-  product/UI Go/No-Go decisions on the audited commit.
-- The typed v1 contract remains historical and contains pre-rendered-audit
-  assumptions, including missing full-route QA and incomplete
-  accessibility/mobile evidence.
-- The typed v1 `getP0Blockers()` helper must not be used as the current automated release gate until a separate contract-reconciliation PR updates it.
-- This report does not supersede canonical non-UI blockers involving payment,
-  billing, account sync, support, privacy, refunds, production operations, or
-  deployment.
+- Audit date: 2026-06-24
+- Typed contract v2 is reconciled in
+  `src/lib/product-ui-readiness/product-ui-readiness-audit.ts` for product/UI
+  Go/No-Go decisions on the audited commit.
+- Private P0 blockers: 0
+- Public P0 blockers: 1
+- Confirmed P0 findings: 1
+- Confirmed P1 findings: 2
+- Confirmed P2 findings: 2
+- Suspected P1 risks: 1
+- Suspected P2 risks: 1
+- `getP0Blockers("private") returns no confirmed P0 blockers`.
+- `getP0Blockers("public") returns the confirmed public-beta P0:
+  VLX-AUDIT-P0-001`.
+- This report and typed contract cover rendered product/UI evidence. It does not supersede canonical non-UI blockers involving payment, billing, account sync,
+  support, privacy, refunds, production operations, or deployment.
 - Screen-reader behavior remains unverified and is an accepted risk only for the
   owner-managed, invite-only, manual private beta recommendation.
 
@@ -271,27 +279,20 @@ rollback readiness before public sale.
 - `VLX-AUDIT-P2-002`: Move Settings diagnostics out of the learner-facing UI.
 - Run a screen-reader pass for the review answer and feedback loop.
 
-## Proposed implementation sequence
+## Follow-up sequence
 
-Use small, reviewable PR phases:
+Use small, reviewable phases after this contract reconciliation:
 
-1. **#73 Track B design tokens / app shell v2**  
-   Keep current Track B shell and token work stable; no rollback needed.
-2. **#74 Dashboard v2: Today's Memory Mission**  
-   Maintain the current Today-first dashboard and protect real SRS counts.
-3. **#75 Review Session v2**  
-   Preserve confidence-before-feedback and atomic event/state writes; add
-   assistive-tech QA evidence.
-4. **#76 Saved Library v2**  
-   Keep queue sections tied to Due, Weak, New, and Mastered selectors.
-5. **#77 Packs v2**  
-   Keep planned pack placeholders honest; avoid paid claims for missing content.
-6. **#78 Pricing / Paywall v2**  
-   Continue interest-only paid beta capture until explicit billing approval.
-7. **#79 Manual QA execution report**  
-   Record the private beta manual run, including `/word/[slug]` overflow status.
-8. Add a narrow follow-up PR to move `/word/[slug]` into the Track B shell or fix
-   legacy AppShell responsive width.
+1. Preserve the current Today-first dashboard and protect real SRS counts.
+2. Preserve confidence-before-feedback and atomic review event/state writes.
+3. Keep Saved as a queue organized around Due, Weak, New, and Mastered state.
+4. Keep planned pack placeholders honest and out of paid claims until content is
+   available.
+5. Continue interest-only paid beta capture until explicit billing approval.
+6. Record a private-beta manual run, including `/word/[slug]` overflow status
+   and assistive-technology evidence.
+7. Move `/word/[slug]` into the Track B shell or fix legacy AppShell responsive
+   width in a separate runtime PR.
 
 ## Explicit Go / No-Go recommendation
 
@@ -304,7 +305,7 @@ Use small, reviewable PR phases:
 
 ## Untouched systems
 
-This audit PR changed only:
+PR #119 changed only:
 
 - `docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md`
 - `tests/product-ui-readiness.spec.ts`

@@ -492,12 +492,16 @@ test.describe("Track B product/UI readiness rendered audit", () => {
       "utf8"
     );
 
+    expect(auditReport).toContain("Report type: rendered-application evidence audit");
     expect(auditReport).toContain("Report version: 2");
+    expect(auditReport).toContain("Source PR: #119");
     expect(auditReport).toContain(
-      "supersedes the static typed product/UI readiness baseline v1"
+      "Typed contract v2 is reconciled"
     );
+    expect(auditReport).toContain("Private P0 blockers: 0");
+    expect(auditReport).toContain("Public P0 blockers: 1");
     expect(auditReport).toContain(
-      "must not be used as the current automated release gate"
+      'getP0Blockers("private") returns no confirmed P0 blockers'
     );
     expect(auditReport).toContain(
       "does not supersede canonical non-UI blockers"
