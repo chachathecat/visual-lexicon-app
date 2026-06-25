@@ -8,6 +8,7 @@ import {
   TRACK_B_PRODUCT_UI_READINESS_VERSION,
   TRACK_B_PRODUCT_UI_SAFETY_POLICY,
   TRACK_B_PRODUCT_UI_SOURCE_METADATA,
+  TRACK_B_PRODUCT_UI_STOP_CONDITIONS,
   getConfirmedFindingsBySeverity,
   getFindingById,
   getFindingsBySeverity,
@@ -404,6 +405,33 @@ test.describe("Track B product/UI readiness audit contract", () => {
         allowed: false
       });
     }
+  });
+
+  test("keeps required stop conditions without duplicates", () => {
+    const fakeMasteryStopCondition =
+      "Stop if a proposed UI would imply fake mastery, fake paid access, fake pack progress, or fake streaks.";
+    const routeScopeStopCondition =
+      "Stop if a rebuild would add large route groups beyond the approved Track B route set.";
+
+    expect(TRACK_B_PRODUCT_UI_STOP_CONDITIONS).toContain(
+      fakeMasteryStopCondition
+    );
+    expect(TRACK_B_PRODUCT_UI_STOP_CONDITIONS).toContain(
+      routeScopeStopCondition
+    );
+    expect(
+      TRACK_B_PRODUCT_UI_STOP_CONDITIONS.filter(
+        (condition) => condition === fakeMasteryStopCondition
+      )
+    ).toHaveLength(1);
+    expect(
+      TRACK_B_PRODUCT_UI_STOP_CONDITIONS.filter(
+        (condition) => condition === routeScopeStopCondition
+      )
+    ).toHaveLength(1);
+    expect(new Set(TRACK_B_PRODUCT_UI_STOP_CONDITIONS).size).toBe(
+      TRACK_B_PRODUCT_UI_STOP_CONDITIONS.length
+    );
   });
 
   test("does not add actual API routes, route handlers, middleware, or payment route directories", () => {

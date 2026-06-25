@@ -543,7 +543,8 @@ export const TRACK_B_PRODUCT_UI_STOP_CONDITIONS = [
   "Stop and ask for approval before Webflow publishing, Cloudflare Worker changes, DNS changes, deployment changes, or production setting changes.",
   "Stop and ask for approval before payment, billing, checkout, subscription, invoice, or entitlement implementation.",
   "Stop and ask for approval before auth, account sync API routes, database providers, migrations, or production data mutation.",
-  "Stop if a proposed UI would imply fake mastery, fake paid access, fake pack progress, or fake streaks."
+  "Stop if a proposed UI would imply fake mastery, fake paid access, fake pack progress, or fake streaks.",
+  "Stop if a rebuild would add large route groups beyond the approved Track B route set."
 ] as const;
 
 export const TRACK_B_PRODUCT_UI_VALIDATION_COMMANDS = [
