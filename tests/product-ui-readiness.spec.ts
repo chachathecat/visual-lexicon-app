@@ -138,6 +138,34 @@ const trackBShellMobileRoutes = [
   "/settings"
 ] as const;
 
+const wordOverflowDiagnosticSelectors = [
+  ".sidebar",
+  ".brand",
+  ".nav-list",
+  ".app-main",
+  ".page",
+  ".detail-grid"
+] as const;
+
+type WordOverflowDiagnostics = {
+  clientWidth: number;
+  geometry: Record<
+    string,
+    {
+      bottom: number;
+      clientWidth: number;
+      height: number;
+      left: number;
+      right: number;
+      scrollWidth: number;
+      top: number;
+      width: number;
+    }
+  >;
+  overflowPx: number;
+  scrollWidth: number;
+};
+
 function oneMinuteAgo() {
   return new Date(Date.now() - 60_000).toISOString();
 }
@@ -399,6 +427,45 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
+async function getWordOverflowDiagnostics(
+  page: Page
+): Promise<WordOverflowDiagnostics> {
+  return page.evaluate((selectors) => {
+    const geometry: WordOverflowDiagnostics["geometry"] = {};
+
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+
+      if (!element) {
+        continue;
+      }
+
+      const rect = element.getBoundingClientRect();
+
+      geometry[selector] = {
+        bottom: rect.bottom,
+        clientWidth: element.clientWidth,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        scrollWidth: element.scrollWidth,
+        top: rect.top,
+        width: rect.width
+      };
+    }
+
+    const scrollWidth = document.documentElement.scrollWidth;
+    const clientWidth = document.documentElement.clientWidth;
+
+    return {
+      clientWidth,
+      geometry,
+      overflowPx: scrollWidth - clientWidth,
+      scrollWidth
+    };
+  }, wordOverflowDiagnosticSelectors);
+}
+
 async function expectTabReaches(page: Page, target: Locator) {
   for (let index = 0; index < 30; index += 1) {
     if (await target.evaluate((node) => node === document.activeElement)) {
@@ -440,6 +507,8 @@ test.describe("Track B product/UI readiness rendered audit", () => {
   test("audited routes resolve, expose primary content, and avoid critical browser errors", async ({
     page
   }) => {
+    test.setTimeout(60_000);
+
     await seedVlxLocalStorage(page, makeReadySeed());
 
     const criticalConsoleErrors = await collectCriticalConsoleErrors(
@@ -476,11 +545,46 @@ test.describe("Track B product/UI readiness rendered audit", () => {
     }
   });
 
-  test("VLX-AUDIT-P1-001 /word mobile overflow is a confirmed blocker", async () => {
-    test.fixme(
-      true,
-      "VLX-AUDIT-P1-001: /word/dissonance uses the legacy AppShell; 390px audit measured 259px horizontal overflow from .sidebar/.nav-list."
+  test("VLX-AUDIT-P1-001 characterizes the current /word mobile overflow", async ({
+    page
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await seedVlxLocalStorage(page, makeReadySeed());
+
+    const criticalConsoleErrors = await collectCriticalConsoleErrors(
+      page,
+      async () => {
+        const response = await page.goto(`${baseUrl}/word/dissonance`, {
+          waitUntil: "domcontentloaded"
+        });
+
+        expect(response?.status()).toBeLessThan(400);
+        await page
+          .getByRole("heading", { level: 1, name: "Dissonance" })
+          .waitFor({
+            state: "visible",
+            timeout: 20000
+          });
+        await expect(
+          page.locator("[data-nextjs-dialog], .nextjs-container-errors-header")
+        ).toHaveCount(0);
+      }
     );
+
+    expect(criticalConsoleErrors).toEqual([]);
+
+    const diagnostics = await getWordOverflowDiagnostics(page);
+    const diagnosticContext = JSON.stringify(diagnostics, null, 2);
+
+    expect(diagnostics.clientWidth, diagnosticContext).toBe(390);
+    expect(diagnostics.scrollWidth, diagnosticContext).toBeGreaterThan(
+      diagnostics.clientWidth
+    );
+    expect(diagnostics.overflowPx, diagnosticContext).toBeGreaterThanOrEqual(250);
+    expect(diagnostics.overflowPx, diagnosticContext).toBeLessThanOrEqual(270);
+
+    // The separate runtime-fix PR must replace this characterization assertion
+    // with expectNoHorizontalOverflow(page).
   });
 
   test("keyboard focus can reach principal learning actions", async ({ page }) => {

@@ -57,21 +57,18 @@ paid beta.
   `/word/dissonance` had 259px overflow at 390px viewport.
 - Validation commands:
   - `npm.cmd run typecheck`
-    - First run exited 1 while authoring the new spec:
-      `tests/product-ui-readiness.spec.ts(387,26): error TS2345`.
-    - Final run exited 0 after tightening the route readiness helper.
+    - Final run exited 0.
   - `npm.cmd run lint`
-    - Exited 0: `next lint` reported no ESLint warnings or errors.
+    - Final run exited 0: `next lint` reported no ESLint warnings or errors.
   - `npm.cmd run build`
-    - Exited 0: production build compiled successfully and generated 27 static
-      app pages.
-  - `npm.cmd run test -- --workers=1`
-    - First run timed out after 904 seconds before returning counts.
-    - Second run exited 1 because the manual QA dev server still owned
-      `127.0.0.1:3006` (`EADDRINUSE`).
-    - Final run exited 0: 931 passed, 1 skipped/fixme in 7.3 minutes.
+    - Final run exited 0: production build compiled successfully and generated
+      27 static app pages.
+  - `npx.cmd playwright test tests/product-ui-readiness.spec.ts --workers=1 --repeat-each=3`
+    - Final run exited 0: 27 passed in 2.4 minutes.
   - `npx.cmd playwright test tests/product-ui-readiness.spec.ts --workers=1`
-    - Final run exited 0: 8 passed, 1 skipped/fixme in 1.2 minutes.
+    - Final run exited 0: 9 passed in 54.8 seconds.
+  - `npm.cmd run test -- --workers=1`
+    - Final run exited 0: 932 passed in 7.7 minutes.
 
 ## Current product mental model
 
