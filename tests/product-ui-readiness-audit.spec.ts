@@ -529,6 +529,16 @@ test.describe("Track B product/UI readiness audit contract", () => {
       join(workspaceRoot, "docs", "TRACK_B_PRODUCT_UI_READINESS_AUDIT.md"),
       "utf8"
     );
+    const moduleReadme = readFileSync(
+      join(
+        workspaceRoot,
+        "src",
+        "lib",
+        "product-ui-readiness",
+        "README.md"
+      ),
+      "utf8"
+    );
 
     expect(TRACK_B_PRODUCT_UI_DOC_FILES).toEqual([
       "docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md"
@@ -549,13 +559,88 @@ test.describe("Track B product/UI readiness audit contract", () => {
     expect(auditDoc).toContain("Confirmed P2 findings: 2");
     expect(auditDoc).toContain("Suspected P1 risks: 1");
     expect(auditDoc).toContain("Suspected P2 risks: 1");
+    expect(moduleReadme).toContain("Track B product/UI readiness version 2");
+    expect(moduleReadme).toContain("PR #119");
+    expect(moduleReadme).toContain("Audit date: 2026-06-24");
+    expect(moduleReadme).toContain(
+      "Audited commit: `13141144a18e7192435b035478f2b0e7f469300f`"
+    );
+    expect(moduleReadme).toContain(
+      `Private paid beta: ${TRACK_B_PRODUCT_UI_READINESS_AUDIT.privatePaidBetaRecommendation}`
+    );
+    expect(moduleReadme).toContain(
+      `Public paid beta: ${TRACK_B_PRODUCT_UI_READINESS_AUDIT.publicPaidBetaRecommendation}`
+    );
 
     for (const finding of TRACK_B_PRODUCT_UI_READINESS_AUDIT.findings) {
       expect(auditDoc, finding.id).toContain(finding.id);
+      expect(moduleReadme, finding.id).toContain(finding.id);
     }
   });
 
-  test("contract and source audit doc do not present stale v1 PR metadata as current work", () => {
+  test("module README documents the v2 helper and audience contract", () => {
+    const auditDoc = readFileSync(
+      join(workspaceRoot, "docs", "TRACK_B_PRODUCT_UI_READINESS_AUDIT.md"),
+      "utf8"
+    );
+    const moduleReadme = readFileSync(
+      join(
+        workspaceRoot,
+        "src",
+        "lib",
+        "product-ui-readiness",
+        "README.md"
+      ),
+      "utf8"
+    );
+
+    expect(moduleReadme).toContain(
+      "static TypeScript contract for Track B product/UI readiness version 2"
+    );
+    expect(moduleReadme).toContain("source PR #119");
+    expect(moduleReadme).toContain(
+      TRACK_B_PRODUCT_UI_READINESS_AUDIT.source.auditedCommit
+    );
+    expect(moduleReadme).toContain(
+      TRACK_B_PRODUCT_UI_READINESS_AUDIT.source.auditDate
+    );
+    expect(moduleReadme).toContain(
+      "The private audience has zero confirmed product/UI P0 blockers"
+    );
+    expect(moduleReadme).toContain(
+      "The public audience has one confirmed public-beta P0 blocker"
+    );
+    expect(moduleReadme).toContain('getP0Blockers("private")');
+    expect(moduleReadme).toContain('getP0Blockers("public")');
+    expect(moduleReadme).toContain(
+      "Do not use an ambiguous no-argument P0 helper as a release gate."
+    );
+    expect(moduleReadme).toContain(
+      "Confirmed findings and suspected risks remain distinct"
+    );
+    expect(moduleReadme).toContain(
+      "do not supersede canonical non-UI blockers"
+    );
+    expect(moduleReadme).toContain(
+      "billing, account sync, support, refund, privacy, operations, and deployment"
+    );
+    expect(moduleReadme).toContain(
+      TRACK_B_PRODUCT_UI_READINESS_AUDIT.privatePaidBetaRecommendation
+    );
+    expect(moduleReadme).toContain(
+      TRACK_B_PRODUCT_UI_READINESS_AUDIT.publicPaidBetaRecommendation
+    );
+    expect(auditDoc).toContain(
+      TRACK_B_PRODUCT_UI_READINESS_AUDIT.privatePaidBetaRecommendation
+    );
+    expect(auditDoc).toContain(
+      TRACK_B_PRODUCT_UI_READINESS_AUDIT.publicPaidBetaRecommendation
+    );
+    expect(moduleReadme).not.toContain("PR #72");
+    expect(moduleReadme).not.toMatch(/#7[3-9]\b/);
+  });
+
+  test("current contract sources do not present stale v1 PR metadata as current work", () => {
     const contractText = readFileSync(
       join(
         workspaceRoot,
@@ -570,8 +655,18 @@ test.describe("Track B product/UI readiness audit contract", () => {
       join(workspaceRoot, "docs", "TRACK_B_PRODUCT_UI_READINESS_AUDIT.md"),
       "utf8"
     );
+    const moduleReadme = readFileSync(
+      join(
+        workspaceRoot,
+        "src",
+        "lib",
+        "product-ui-readiness",
+        "README.md"
+      ),
+      "utf8"
+    );
 
-    for (const text of [contractText, auditDoc]) {
+    for (const text of [contractText, auditDoc, moduleReadme]) {
       expect(text).not.toMatch(/PR #7[1-9]\b/);
       expect(text).not.toMatch(/#7[1-9]\b/);
       expect(text).not.toMatch(/typed\s+v1/);
