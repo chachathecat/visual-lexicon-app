@@ -1,11 +1,13 @@
 name: Risk Gate
 
 on:
-  pull_request:
+  workflow_dispatch:
+
+permissions: {}
 
 jobs:
-  risk-gate:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder risk gate
-        run: echo "TODO: risk classification and gating"
+      - name: Report no-op status
+        run: echo "Automated risk classification is not implemented. No risk decision is being made."

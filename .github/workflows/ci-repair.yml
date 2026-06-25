@@ -1,15 +1,13 @@
 name: CI Repair Loop
+
 on:
-  workflow_run:
-    workflows: ["ci.yml"]
-    types:
-      - completed
+  workflow_dispatch:
+
+permissions: {}
+
 jobs:
-  repair:
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Placeholder for Codex CI repair
-        run: echo "TODO: Add CI repair logic with Codex"
+      - name: Report disabled status
+        run: echo "CI repair automation is disabled and not yet implemented."

@@ -1,11 +1,13 @@
 name: Codex Quality Gate
 
 on:
-  pull_request:
+  workflow_dispatch:
+
+permissions: {}
 
 jobs:
-  codex-quality-gate:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - name: Placeholder quality gate
-        run: echo "TODO: codex quality gate workflow"
+      - name: Report no-op status
+        run: echo "Codex quality gate is a manual no-op. No production quality decision is being made."
