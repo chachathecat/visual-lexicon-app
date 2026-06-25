@@ -2,7 +2,7 @@
 
 ## Executive decision
 
-- Private paid beta: Conditional Go — owner-managed, invite-only, manual-only.
+- Private paid beta: **Conditional / Manual-only** — a Conditional Go for owner-managed, invite-only use.
 - Public paid beta: **No-Go**
 - Audit date: 2026-06-24
 - Audited commit SHA: `13141144a18e7192435b035478f2b0e7f469300f`
