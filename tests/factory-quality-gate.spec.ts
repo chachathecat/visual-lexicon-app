@@ -132,7 +132,12 @@ function readRoadmapTask(taskId: string) {
     "vlx-autonomous-factory-roadmap.v1.json"
   );
   const roadmap = JSON.parse(readFileSync(roadmapPath, "utf8")) as {
-    tasks: Array<{ id: string; status: string }>;
+    tasks: Array<{
+      id: string;
+      status: string;
+      evidence?: string[];
+      depends_on?: string[];
+    }>;
   };
   const task = roadmap.tasks.find((candidate) => candidate.id === taskId);
 
@@ -768,9 +773,21 @@ test.describe("factory quality gate", () => {
     );
   });
 
-  test("FCT-030 or later task is not implemented", () => {
-    expect(readRoadmapTask("FCT-020").status).toBe("ready");
-    expect(readRoadmapTask("FCT-030").status).toBe("blocked_dependency");
+  test("FCT-020 verification sync unblocks FCT-030 without implementing later tasks", () => {
+    const fct020 = readRoadmapTask("FCT-020");
+    const fct030 = readRoadmapTask("FCT-030");
+
+    expect(fct020.status).toBe("verified");
+    expect(fct020.evidence).toEqual(
+      expect.arrayContaining([
+        "PR #126",
+        "merge commit 4b3d7526448371539ca5c0694dfc2622019402c2"
+      ])
+    );
+    expect(fct030.status).toBe("ready");
+    expect(fct030.depends_on).toEqual(
+      expect.arrayContaining(["FCT-010", "FCT-020"])
+    );
     expect(readRoadmapTask("FCT-040").status).toBe("blocked_dependency");
   });
 });
