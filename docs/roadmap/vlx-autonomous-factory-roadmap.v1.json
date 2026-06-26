@@ -314,7 +314,7 @@
       "id": "FCT-000",
       "phase": "factory_bootstrap",
       "title": "Lock revenue and autonomous-factory master source",
-      "status": "in_review",
+      "status": "verified",
       "risk": "high",
       "depends_on": [
         "FND-005"
@@ -332,13 +332,17 @@
         "documentation link check"
       ],
       "human_gate": true,
-      "auto_merge_eligible": false
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #122",
+        "merge commit f6247d552e2bdd011ad5f31d760b865696a6fdc2"
+      ]
     },
     {
       "id": "FCT-010",
       "phase": "factory_bootstrap",
       "title": "Implement deterministic risk-classification contract",
-      "status": "blocked_dependency",
+      "status": "ready",
       "risk": "high",
       "depends_on": [
         "FCT-000"
