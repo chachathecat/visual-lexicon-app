@@ -342,7 +342,7 @@
       "id": "FCT-010",
       "phase": "factory_bootstrap",
       "title": "Implement deterministic risk-classification contract",
-      "status": "ready",
+      "status": "verified",
       "risk": "high",
       "depends_on": [
         "FCT-000"
@@ -360,13 +360,17 @@
         "workflow fixture tests"
       ],
       "human_gate": true,
-      "auto_merge_eligible": false
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #124",
+        "merge commit 818f96f492bc5b5beb23cf449bc2d9d6355eb5f0"
+      ]
     },
     {
       "id": "FCT-020",
       "phase": "factory_bootstrap",
       "title": "Implement truthful quality gate",
-      "status": "blocked_dependency",
+      "status": "ready",
       "risk": "high",
       "depends_on": [
         "FCT-010"
