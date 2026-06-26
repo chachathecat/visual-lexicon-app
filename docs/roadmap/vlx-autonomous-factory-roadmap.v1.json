@@ -338,7 +338,7 @@
       "id": "FCT-010",
       "phase": "factory_bootstrap",
       "title": "Implement deterministic risk-classification contract",
-      "status": "ready",
+      "status": "blocked_dependency",
       "risk": "high",
       "depends_on": [
         "FCT-000"
