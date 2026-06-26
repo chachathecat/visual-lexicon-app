@@ -120,6 +120,19 @@ test.describe("factory risk classifier", () => {
     });
   });
 
+  test("factory-named tests-only paths classify as low risk", () => {
+    expect(classifySingle("tests/factory-risk-classifier.spec.ts")).toMatchObject({
+      risk: "low",
+      protectedPaths: [],
+      requiresOwnerApproval: false,
+      autoMergeEligible: false,
+      reasons: [
+        "low_path:tests/factory-risk-classifier.spec.ts:tests_only",
+        "auto_merge_disabled_v1"
+      ]
+    });
+  });
+
   test("fixture-only safe paths classify as low risk", () => {
     expect(classifySingle("src/lib/packs/fixtures.ts")).toMatchObject({
       risk: "low",
@@ -250,6 +263,28 @@ test.describe("factory risk classifier", () => {
       reasons: [
         "low_path:docs/product-copy-notes.md:docs_only",
         "high_path:src/lib/auth/session-flow.ts:auth_session",
+        "high_risk_requires_owner_approval",
+        "auto_merge_disabled_v1"
+      ]
+    });
+  });
+
+  test("current PR self-classification keeps only the classifier module protected", () => {
+    expect(
+      classifyFactoryRisk({
+        changedFiles: [
+          "src/lib/factory/risk-classifier.ts",
+          "tests/factory-risk-classifier.spec.ts"
+        ]
+      })
+    ).toMatchObject({
+      risk: "high",
+      protectedPaths: ["src/lib/factory/risk-classifier.ts"],
+      requiresOwnerApproval: true,
+      autoMergeEligible: false,
+      reasons: [
+        "high_path:src/lib/factory/risk-classifier.ts:roadmap_release_control_plane",
+        "low_path:tests/factory-risk-classifier.spec.ts:tests_only",
         "high_risk_requires_owner_approval",
         "auto_merge_disabled_v1"
       ]

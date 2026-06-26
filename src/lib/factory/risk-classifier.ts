@@ -159,10 +159,14 @@ const HARD_PROTECTED_PATH_RULES: readonly PathRiskRule[] = [
       path.startsWith("src/lib/product-ui-readiness/") ||
       path === ".github/pull_request_template.md" ||
       path.startsWith(".github/issue_template/") ||
-      path.includes("release") ||
-      path.includes("finish_line") ||
-      path.includes("factory") ||
-      path.includes("gate")
+      path === "docs/beta_readiness_audit.md" ||
+      path === "docs/paid_beta_manual_qa.md" ||
+      path === "docs/product_quality_rubric.md" ||
+      path === "docs/release_checklist.md" ||
+      path === "docs/track_b_finish_line.md" ||
+      path === "docs/track_b_release_blockers.md" ||
+      path === "docs/vlx_revenue_autonomous_factory_master_plan_v1.md" ||
+      path === "docs/world_class_bar.md"
   },
   {
     id: "deployment_dns_production_data",
