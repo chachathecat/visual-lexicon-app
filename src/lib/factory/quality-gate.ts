@@ -312,6 +312,13 @@ function getRequiredChecks(
     return uniqueRequiredCheckOrder(requiredChecks);
   }
 
+  if (
+    taskSurface === "non_behavioral_refactor" &&
+    hasRuntimeSourceChange(changedFiles)
+  ) {
+    return [...MEDIUM_REQUIRED_CHECKS];
+  }
+
   return ["targeted_tests"];
 }
 
@@ -763,6 +770,14 @@ function hasTestChange(changedFiles: readonly string[]) {
       path.endsWith(".spec.tsx") ||
       path.endsWith(".test.ts") ||
       path.endsWith(".test.tsx")
+  );
+}
+
+function hasRuntimeSourceChange(changedFiles: readonly string[]) {
+  return changedFiles.some(
+    (path) =>
+      path.startsWith("src/") &&
+      (path.endsWith(".ts") || path.endsWith(".tsx"))
   );
 }
 

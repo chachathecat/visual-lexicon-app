@@ -412,6 +412,124 @@ test.describe("factory quality gate", () => {
     expect(passingResult.status).toBe("pass");
   });
 
+  test("low docs-only and tests-only behavior remains unchanged", () => {
+    const docsResult = gate({
+      risk: "low",
+      taskSurface: "docs_only",
+      changedFiles: [
+        "docs/roadmap/vlx-autonomous-factory-roadmap.v1.json"
+      ],
+      reportedChecks: [
+        passedCheck("roadmap_json_parse"),
+        passedCheck("roadmap_structural_check")
+      ]
+    });
+    const testsResult = gate({
+      risk: "low",
+      taskSurface: "tests_only",
+      changedFiles: ["tests/factory-quality-gate.spec.ts"],
+      reportedChecks: [passedCheck("targeted_tests")]
+    });
+
+    expect(docsResult.requiredChecks).toEqual([
+      "roadmap_json_parse",
+      "roadmap_structural_check"
+    ]);
+    expect(docsResult.status).toBe("pass");
+    expect(testsResult.requiredChecks).toEqual(["targeted_tests"]);
+    expect(testsResult.status).toBe("pass");
+  });
+
+  test("low non-behavioral runtime refactor requires typecheck lint build and targeted tests", () => {
+    const result = gate({
+      risk: "low",
+      taskSurface: "non_behavioral_refactor",
+      changedFiles: ["src/lib/srs/selectors.ts"],
+      reportedChecks: []
+    });
+
+    expect(result.status).toBe("fail");
+    expect(result.requiredChecks).toEqual([
+      "typecheck",
+      "lint",
+      "build",
+      "targeted_tests"
+    ]);
+    expect(result.missingChecks).toEqual([
+      "typecheck",
+      "lint",
+      "build",
+      "targeted_tests"
+    ]);
+    expect(result.requiresOwnerApproval).toBe(false);
+  });
+
+  test("low non-behavioral runtime refactor fails when typecheck lint or build is missing", () => {
+    const cases = [
+      {
+        missing: "typecheck",
+        checks: [
+          passedCheck("lint"),
+          passedCheck("build"),
+          passedCheck("targeted_tests")
+        ]
+      },
+      {
+        missing: "lint",
+        checks: [
+          passedCheck("typecheck"),
+          passedCheck("build"),
+          passedCheck("targeted_tests")
+        ]
+      },
+      {
+        missing: "build",
+        checks: [
+          passedCheck("typecheck"),
+          passedCheck("lint"),
+          passedCheck("targeted_tests")
+        ]
+      }
+    ] as const;
+
+    for (const { missing, checks } of cases) {
+      const result = gate({
+        risk: "low",
+        taskSurface: "non_behavioral_refactor",
+        changedFiles: ["src/components/views/dashboard-view.tsx"],
+        reportedChecks: checks
+      });
+
+      expect(result.status, missing).toBe("fail");
+      expect(result.missingChecks, missing).toEqual([missing]);
+      expect(result.reasons, missing).toContain(
+        `missing_required_check:${missing}`
+      );
+    }
+  });
+
+  test("low non-behavioral runtime refactor passes with all four explicit checks", () => {
+    const result = gate({
+      risk: "low",
+      taskSurface: "non_behavioral_refactor",
+      changedFiles: ["src/lib/srs/selectors.ts"],
+      reportedChecks: mediumRequiredChecks()
+    });
+
+    expect(result).toMatchObject({
+      status: "pass",
+      requiredChecks: [
+        "typecheck",
+        "lint",
+        "build",
+        "targeted_tests"
+      ],
+      missingChecks: [],
+      failedChecks: [],
+      requiresOwnerApproval: false
+    });
+  });
+
   test("medium app logic requires typecheck lint build and targeted tests", () => {
     const result = gate({
       risk: "medium",
