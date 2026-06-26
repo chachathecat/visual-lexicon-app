@@ -1,0 +1,1605 @@
+{
+  "schema_version": "1.0.0",
+  "updated_at": "2026-06-25",
+  "repository": "chachathecat/visual-lexicon-app",
+  "owner": "chachathecat",
+  "source_document": "docs/VLX_REVENUE_AUTONOMOUS_FACTORY_MASTER_PLAN_V1.md",
+  "north_star": "weekly_reviewed_words",
+  "factory_goal": "Use human-gated autonomous agents to finish Track B Production v1 without weakening safety, tests, or release truth.",
+  "current_factory_mode": "control_plane_safe_no_op",
+  "target_factory_mode": "human_gated_autonomous_pr_factory",
+  "status_values": [
+    "done",
+    "verified",
+    "in_review",
+    "ready",
+    "blocked_dependency",
+    "blocked_human",
+    "in_progress",
+    "pr_open",
+    "failed",
+    "deferred"
+  ],
+  "risk_policy": {
+    "low": "Docs, tests, fixtures, and non-behavioral refactors outside protected paths.",
+    "medium": "Product UI or server logic with no production credential, schema, billing, entitlement, or deployment mutation.",
+    "high": "Auth, database/RLS, account sync, billing, entitlements, usage, private assets, AI provider, secrets, workflows, deployment, DNS, or production data.",
+    "auto_merge": "Disabled now. May later be enabled only for deterministic low-risk tasks after owner approval.",
+    "max_parallel_runtime_prs": 2,
+    "max_parallel_high_risk_prs": 1,
+    "max_ci_repair_attempts": 3
+  },
+  "commercial_sequence": [
+    "clean_download_credit_packs",
+    "lite_subscription",
+    "pro_subscription_with_ai"
+  ],
+  "commercial_targets": {
+    "clean_download_10": {
+      "kind": "one_time_additive_credit",
+      "price": {
+        "KRW": 3900,
+        "USD": 2.99
+      },
+      "standard_download_credits": 10,
+      "validity_months": 12,
+      "max_long_edge_px": 1600,
+      "formats": [
+        "jpg",
+        "webp"
+      ],
+      "license_scope": "personal_noncommercial",
+      "status": "target_contract_pending_catalog_migration"
+    },
+    "clean_download_30": {
+      "kind": "one_time_additive_credit",
+      "price": {
+        "KRW": 6900,
+        "USD": 5.99
+      },
+      "standard_download_credits": 30,
+      "validity_months": 12,
+      "max_long_edge_px": 1600,
+      "formats": [
+        "jpg",
+        "webp"
+      ],
+      "license_scope": "personal_noncommercial",
+      "status": "target_contract_pending_catalog_migration"
+    },
+    "lite": {
+      "kind": "subscription",
+      "price_monthly": {
+        "KRW": 7900,
+        "USD": 7.99
+      },
+      "price_annual": {
+        "KRW": 59000,
+        "USD": 59.99
+      },
+      "standard_downloads_monthly": 100,
+      "status": "canonical_v1_target_not_sellable_yet"
+    },
+    "pro": {
+      "kind": "subscription",
+      "price_monthly": {
+        "KRW": 14900,
+        "USD": 14.99
+      },
+      "price_annual": {
+        "KRW": 119000,
+        "USD": 119.99
+      },
+      "downloads_monthly": 500,
+      "personalized_ai_explanations_monthly": 200,
+      "status": "canonical_v1_target_not_sellable_yet"
+    }
+  },
+  "release_gates": [
+    {
+      "id": "G0_FACTORY_READY",
+      "description": "The repository can materialize dependency-ready tasks into bounded draft PRs, run deterministic checks, and report truthful risk without relying on no-op workflows.",
+      "required_tasks": [
+        "FCT-010",
+        "FCT-020",
+        "FCT-030",
+        "FCT-040",
+        "FCT-050",
+        "FCT-060"
+      ]
+    },
+    {
+      "id": "G1_PAID_BETA_READY",
+      "description": "Account persistence, server entitlements, usage ledger, protected assets, billing lifecycle, support/refund, monitoring, and rollback are verified.",
+      "required_tasks": [
+        "ACC-010",
+        "ACC-020",
+        "ACC-030",
+        "ACC-040",
+        "ACC-050",
+        "COM-010",
+        "COM-020",
+        "USG-010",
+        "AST-010",
+        "AST-020",
+        "AST-030",
+        "AST-040",
+        "AST-050",
+        "BIL-010",
+        "BIL-020",
+        "BIL-030",
+        "BIL-040",
+        "BIL-045",
+        "OPS-010",
+        "LEG-010",
+        "QA-010"
+      ]
+    },
+    {
+      "id": "G2_DOWNLOAD_CREDITS_PUBLIC",
+      "description": "One-time clean-download credit packs can be sold publicly with rights, quota, delivery, refund, and analytics evidence.",
+      "required_tasks": [
+        "REV-010",
+        "REV-020",
+        "REV-030",
+        "REV-040",
+        "REL-010"
+      ]
+    },
+    {
+      "id": "G3_LITE_PUBLIC",
+      "description": "Lite subscription is sellable only after cross-device learning state and subscription lifecycle are verified.",
+      "required_tasks": [
+        "BIL-050",
+        "LRN-010",
+        "LRN-020",
+        "LRN-030",
+        "REL-020"
+      ]
+    },
+    {
+      "id": "G4_PRO_AI_PUBLIC",
+      "description": "Pro is sellable only after HD/batch delivery and bounded, evaluated, metered AI mistake explanations are verified.",
+      "required_tasks": [
+        "LRN-040",
+        "AI-010",
+        "AI-020",
+        "AI-030",
+        "AI-040",
+        "AI-050",
+        "REL-030"
+      ]
+    },
+    {
+      "id": "G5_TRACK_B_PRODUCTION_V1",
+      "description": "Every criterion in docs/TRACK_B_FINISH_LINE.md passes and the owner records final sign-off.",
+      "required_tasks": [
+        "REL-040"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "FND-001",
+      "phase": "baseline",
+      "title": "Auth principal foundation",
+      "status": "done",
+      "risk": "high",
+      "depends_on": [],
+      "deliverables": [
+        "Server principal contract and ownership boundary"
+      ],
+      "acceptance": [
+        "Browser localStorage and client-submitted IDs are not identity"
+      ],
+      "validation": [
+        "typecheck",
+        "lint",
+        "build",
+        "targeted tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #112"
+      ]
+    },
+    {
+      "id": "FND-002",
+      "phase": "baseline",
+      "title": "Minimal Supabase Magic Link session flow",
+      "status": "done",
+      "risk": "high",
+      "depends_on": [
+        "FND-001"
+      ],
+      "deliverables": [
+        "Sign-in, sign-out, token confirmation, truthful session states"
+      ],
+      "acceptance": [
+        "Existing users can authenticate without client-trusted identity"
+      ],
+      "validation": [
+        "typecheck",
+        "lint",
+        "build",
+        "auth tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #113"
+      ]
+    },
+    {
+      "id": "FND-003",
+      "phase": "baseline",
+      "title": "Pure entitlement domain core",
+      "status": "done",
+      "risk": "high",
+      "depends_on": [
+        "FND-001"
+      ],
+      "deliverables": [
+        "Canonical plan normalization and resolver"
+      ],
+      "acceptance": [
+        "Client plan labels cannot grant paid access"
+      ],
+      "validation": [
+        "typecheck",
+        "lint",
+        "build",
+        "entitlement-domain tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #114"
+      ]
+    },
+    {
+      "id": "FND-004",
+      "phase": "baseline",
+      "title": "Server entitlement read model",
+      "status": "done",
+      "risk": "high",
+      "depends_on": [
+        "FND-002",
+        "FND-003"
+      ],
+      "deliverables": [
+        "GET /api/me/entitlements read-only snapshot"
+      ],
+      "acceptance": [
+        "Authenticated accounts resolve to Free only until a server grant store exists"
+      ],
+      "validation": [
+        "typecheck",
+        "lint",
+        "build",
+        "entitlement route tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #115"
+      ]
+    },
+    {
+      "id": "FND-005",
+      "phase": "baseline",
+      "title": "Autonomous control-plane skeleton",
+      "status": "done",
+      "risk": "high",
+      "depends_on": [],
+      "deliverables": [
+        "Agent roles, policies, CODEOWNERS, safe manual no-op workflows"
+      ],
+      "acceptance": [
+        "No workflow claims to perform risk, quality, repair, or merge decisions"
+      ],
+      "validation": [
+        "workflow YAML parse",
+        "CODEOWNERS validation"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #116",
+        "PR #120"
+      ]
+    },
+    {
+      "id": "FCT-000",
+      "phase": "factory_bootstrap",
+      "title": "Lock revenue and autonomous-factory master source",
+      "status": "in_review",
+      "risk": "high",
+      "depends_on": [
+        "FND-005"
+      ],
+      "deliverables": [
+        "Master specification",
+        "Machine-readable roadmap",
+        "AGENTS and PLANS references"
+      ],
+      "acceptance": [
+        "One product sequence and one dependency graph exist without conflicting runtime claims"
+      ],
+      "validation": [
+        "JSON parse",
+        "documentation link check"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "FCT-010",
+      "phase": "factory_bootstrap",
+      "title": "Implement deterministic risk-classification contract",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "FCT-000"
+      ],
+      "deliverables": [
+        "Versioned path/rule classifier",
+        "Human override and audit output"
+      ],
+      "acceptance": [
+        "Protected areas are always high-risk",
+        "Unknown risk fails closed"
+      ],
+      "validation": [
+        "unit tests",
+        "workflow fixture tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "FCT-020",
+      "phase": "factory_bootstrap",
+      "title": "Implement truthful quality gate",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "FCT-010"
+      ],
+      "deliverables": [
+        "Required-check matrix by task type",
+        "Machine-readable evidence report"
+      ],
+      "acceptance": [
+        "No no-op workflow can count as product approval",
+        "Missing checks fail closed"
+      ],
+      "validation": [
+        "workflow tests",
+        "negative fixtures"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "FCT-030",
+      "phase": "factory_bootstrap",
+      "title": "Implement roadmap-to-issue materializer",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "FCT-010",
+        "FCT-020"
+      ],
+      "deliverables": [
+        "Read roadmap JSON",
+        "Create/update one issue per ready task",
+        "Dependency and duplicate protection"
+      ],
+      "acceptance": [
+        "No issue is created for blocked tasks",
+        "Repeated runs are idempotent"
+      ],
+      "validation": [
+        "dry-run fixtures",
+        "GitHub API mock tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "FCT-040",
+      "phase": "factory_bootstrap",
+      "title": "Implement bounded draft-PR orchestrator",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "FCT-030"
+      ],
+      "deliverables": [
+        "Branch and draft PR creation",
+        "Planner/explorer/implementer/tester/security/release-guard handoff"
+      ],
+      "acceptance": [
+        "One task maps to one scoped PR",
+        "High-risk PRs never merge automatically"
+      ],
+      "validation": [
+        "sandbox integration test",
+        "PR body contract test"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "FCT-050",
+      "phase": "factory_bootstrap",
+      "title": "Implement bounded CI repair loop",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "FCT-040"
+      ],
+      "deliverables": [
+        "Failure classification",
+        "At most three minimal repair attempts",
+        "Escalation report"
+      ],
+      "acceptance": [
+        "Tests are never weakened or skipped",
+        "Attempt limit is enforced"
+      ],
+      "validation": [
+        "failure fixture suite",
+        "permission test"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "FCT-060",
+      "phase": "factory_bootstrap",
+      "title": "Implement release guard and roadmap evidence sync",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "FCT-020",
+        "FCT-040"
+      ],
+      "deliverables": [
+        "Risk/evidence/rollback report",
+        "Status transition proposal"
+      ],
+      "acceptance": [
+        "Only verified evidence can move a task to verified",
+        "High-risk completion requires owner approval"
+      ],
+      "validation": [
+        "state-machine tests",
+        "tamper tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "FCT-070",
+      "phase": "factory_bootstrap",
+      "title": "Optional low-risk auto-merge",
+      "status": "deferred",
+      "risk": "high",
+      "depends_on": [
+        "FCT-060"
+      ],
+      "deliverables": [
+        "Low-risk-only merge policy and kill switch"
+      ],
+      "acceptance": [
+        "No protected path or medium/high-risk PR can auto-merge"
+      ],
+      "validation": [
+        "permission tests",
+        "branch protection review"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "ACC-010",
+      "phase": "account_and_learning_data",
+      "title": "Create persistent learning schema, indexes, migrations, and RLS",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "FND-002",
+        "FCT-060"
+      ],
+      "deliverables": [
+        "saved_words",
+        "review_states",
+        "review_events",
+        "daily_stats",
+        "pack_progress",
+        "RLS policies"
+      ],
+      "acceptance": [
+        "Rows are account-owned",
+        "Review events have unique idempotency keys",
+        "Rollback migration exists"
+      ],
+      "validation": [
+        "migration tests",
+        "RLS tests",
+        "schema review"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "ACC-020",
+      "phase": "account_and_learning_data",
+      "title": "Implement server persistence repositories",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "ACC-010"
+      ],
+      "deliverables": [
+        "Typed server repositories for all learning entities"
+      ],
+      "acceptance": [
+        "No browser-supplied account ID is trusted",
+        "Writes are idempotent"
+      ],
+      "validation": [
+        "unit tests",
+        "integration tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "ACC-030",
+      "phase": "account_and_learning_data",
+      "title": "Implement account sync API and client adapter",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "ACC-020"
+      ],
+      "deliverables": [
+        "Read/write sync endpoints",
+        "Offline retry queue",
+        "Server hydration"
+      ],
+      "acceptance": [
+        "Local learning loop remains usable during transient failures",
+        "No silent data loss"
+      ],
+      "validation": [
+        "integration tests",
+        "offline/retry E2E"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "ACC-040",
+      "phase": "account_and_learning_data",
+      "title": "Implement guest-to-account migration",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "ACC-030"
+      ],
+      "deliverables": [
+        "One-time local-to-server migration",
+        "Migration receipt and rollback backup"
+      ],
+      "acceptance": [
+        "Saved/review linkage is preserved",
+        "Repeated migration is idempotent"
+      ],
+      "validation": [
+        "migration E2E",
+        "duplicate-event tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "ACC-050",
+      "phase": "account_and_learning_data",
+      "title": "Implement cross-device conflict resolution",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "ACC-030",
+        "ACC-040"
+      ],
+      "deliverables": [
+        "Versioning/conflict rules",
+        "Newer server state protection"
+      ],
+      "acceptance": [
+        "Due, Weak, and Mastered converge across devices",
+        "No stale overwrite"
+      ],
+      "validation": [
+        "multi-device integration tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "ACC-060",
+      "phase": "account_and_learning_data",
+      "title": "Move trusted retention analytics to server events",
+      "status": "blocked_dependency",
+      "risk": "medium",
+      "depends_on": [
+        "ACC-020"
+      ],
+      "deliverables": [
+        "Weekly Reviewed Words server query",
+        "Sanitized funnel events"
+      ],
+      "acceptance": [
+        "North-star metric is account/server-backed",
+        "No sensitive payload leakage"
+      ],
+      "validation": [
+        "analytics contract tests",
+        "privacy review"
+      ],
+      "human_gate": false,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "COM-010",
+      "phase": "commercial_contracts",
+      "title": "Migrate canonical catalog to download-credit product contract",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "FCT-000",
+        "FND-003"
+      ],
+      "deliverables": [
+        "Versioned canonical JSON/types for clean_download_10 and clean_download_30",
+        "Track B no-ad policy"
+      ],
+      "acceptance": [
+        "Credit packs are additive products, not plans",
+        "Current Lite/Pro prices remain unchanged",
+        "Runtime and docs match"
+      ],
+      "validation": [
+        "JSON schema tests",
+        "catalog tests",
+        "pricing snapshot tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "COM-020",
+      "phase": "commercial_contracts",
+      "title": "Extend entitlement resolver for additive download credits",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "COM-010",
+        "FND-004"
+      ],
+      "deliverables": [
+        "Download-credit grant type",
+        "Expiry/refund/chargeback handling",
+        "Effective credit snapshot"
+      ],
+      "acceptance": [
+        "Client cannot mint credits",
+        "Pack credits do not unlock clean browsing, HD, AI, or learning plan features"
+      ],
+      "validation": [
+        "resolver tests",
+        "lifecycle tests",
+        "tamper tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "USG-010",
+      "phase": "commercial_contracts",
+      "title": "Implement server usage ledger and reservation model",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "ACC-010",
+        "COM-020"
+      ],
+      "deliverables": [
+        "Usage buckets",
+        "Reservation/finalize/release flow",
+        "Idempotency and audit events"
+      ],
+      "acceptance": [
+        "Failed delivery does not consume credit",
+        "Duplicate retry does not double-consume",
+        "Negative balance is impossible"
+      ],
+      "validation": [
+        "concurrency tests",
+        "idempotency tests",
+        "rollback tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "COM-030",
+      "phase": "commercial_contracts",
+      "title": "Render pricing from canonical server-safe catalog",
+      "status": "blocked_dependency",
+      "risk": "medium",
+      "depends_on": [
+        "COM-010",
+        "COM-020"
+      ],
+      "deliverables": [
+        "Free, credit packs, Lite, Pro comparison",
+        "Truthful unavailable/coming-soon states"
+      ],
+      "acceptance": [
+        "No checkout CTA appears before corresponding gate is enabled",
+        "Taxes and renewal terms are explicit"
+      ],
+      "validation": [
+        "pricing UI tests",
+        "accessibility tests"
+      ],
+      "human_gate": false,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AST-010",
+      "phase": "asset_security_and_delivery",
+      "title": "Create asset rights and variant contract",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "FCT-000"
+      ],
+      "deliverables": [
+        "assets",
+        "asset_variants",
+        "asset_rights schema/contracts",
+        "downloadable decision"
+      ],
+      "acceptance": [
+        "Every sellable asset is rights-cleared",
+        "Watermark removal never implies commercial rights"
+      ],
+      "validation": [
+        "schema tests",
+        "rights fixture audit"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AST-020",
+      "phase": "asset_security_and_delivery",
+      "title": "Build deterministic derivative pipeline",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AST-010"
+      ],
+      "deliverables": [
+        "Watermarked public",
+        "Clean standard",
+        "Clean HD derivative jobs"
+      ],
+      "acceptance": [
+        "Outputs are reproducible",
+        "Original/source objects never enter public manifests"
+      ],
+      "validation": [
+        "fixture generation tests",
+        "hash checks",
+        "visual QA"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AST-030",
+      "phase": "asset_security_and_delivery",
+      "title": "Build private asset access gateway",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AST-020",
+        "FND-004"
+      ],
+      "deliverables": [
+        "Server-mediated variant selection",
+        "Short-lived delivery tokens or proxy"
+      ],
+      "acceptance": [
+        "Permanent clean/source URLs never reach page source, localStorage, or public JSON"
+      ],
+      "validation": [
+        "authorization tests",
+        "URL leakage tests",
+        "cache tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AST-040",
+      "phase": "asset_security_and_delivery",
+      "title": "Implement quota-checked download delivery",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AST-030",
+        "USG-010"
+      ],
+      "deliverables": [
+        "Authorize/reserve/deliver/finalize API",
+        "Single and batch semantics",
+        "Download audit trail"
+      ],
+      "acceptance": [
+        "One successful asset export consumes one eligible credit",
+        "Retries are idempotent",
+        "Denied rights consume zero"
+      ],
+      "validation": [
+        "E2E download tests",
+        "concurrency tests",
+        "failure recovery tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AST-050",
+      "phase": "asset_security_and_delivery",
+      "title": "Add abuse, leak, and rollback gates",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AST-040"
+      ],
+      "deliverables": [
+        "Rate limits",
+        "Token expiry",
+        "kill switch",
+        "asset rollback procedure"
+      ],
+      "acceptance": [
+        "Clean access can be disabled without breaking public watermarked previews or SRS"
+      ],
+      "validation": [
+        "penetration fixtures",
+        "rollback drill"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "BIL-010",
+      "phase": "billing",
+      "title": "Record payment-provider and merchant-of-record decision",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "FCT-000"
+      ],
+      "deliverables": [
+        "ADR covering countries, tax, refunds, subscriptions, one-time purchases, fees, and migration"
+      ],
+      "acceptance": [
+        "Owner approves provider and legal operating model before SDK or credentials are added"
+      ],
+      "validation": [
+        "ADR review"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "BIL-020",
+      "phase": "billing",
+      "title": "Implement provider adapter and customer mapping in test mode",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "BIL-010",
+        "ACC-010"
+      ],
+      "deliverables": [
+        "Provider adapter",
+        "billing customer mapping",
+        "test-mode configuration contract"
+      ],
+      "acceptance": [
+        "No secret reaches browser",
+        "Account/customer linkage is unique and auditable"
+      ],
+      "validation": [
+        "adapter tests",
+        "secret-boundary tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "BIL-030",
+      "phase": "billing",
+      "title": "Implement idempotent webhook event ledger",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "BIL-020",
+        "COM-020"
+      ],
+      "deliverables": [
+        "Signature verification",
+        "event deduplication",
+        "replay-safe state transitions"
+      ],
+      "acceptance": [
+        "Duplicate/out-of-order events cannot duplicate grants",
+        "Unknown events fail safely"
+      ],
+      "validation": [
+        "webhook fixture suite",
+        "replay tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "BIL-040",
+      "phase": "billing",
+      "title": "Implement one-time clean-download credit checkout",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "BIL-030",
+        "USG-010"
+      ],
+      "deliverables": [
+        "Checkout session",
+        "purchase record",
+        "credit grant",
+        "receipt linkage"
+      ],
+      "acceptance": [
+        "Success-page arrival alone never grants credits",
+        "Refund revokes unused credits through verified events"
+      ],
+      "validation": [
+        "checkout E2E in test mode",
+        "failure tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "BIL-045",
+      "phase": "billing",
+      "title": "Implement one-time purchase refund, chargeback, and support operations",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "BIL-040"
+      ],
+      "deliverables": [
+        "One-time purchase refund and chargeback handling",
+        "Support runbook",
+        "Purchase and grant audit"
+      ],
+      "acceptance": [
+        "Refund revokes unused credits through verified provider events",
+        "Used files are handled by support review without destructive learning-data action",
+        "Stop-sales and manual review paths exist"
+      ],
+      "validation": [
+        "support simulation",
+        "refund tests",
+        "chargeback replay tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "BIL-050",
+      "phase": "billing",
+      "title": "Implement Lite and Pro subscription lifecycle",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "BIL-030",
+        "ACC-050"
+      ],
+      "deliverables": [
+        "Subscription checkout",
+        "renewal",
+        "cancel-at-period-end",
+        "past-due grace",
+        "downgrade"
+      ],
+      "acceptance": [
+        "Learning data is preserved",
+        "New clean downloads and AI stop according to lifecycle policy"
+      ],
+      "validation": [
+        "subscription lifecycle tests",
+        "clock tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "BIL-060",
+      "phase": "billing",
+      "title": "Implement subscription billing portal and support lifecycle",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "BIL-050"
+      ],
+      "deliverables": [
+        "Self-service billing portal where supported",
+        "Cancellation and downgrade support runbook",
+        "Subscription audit and escalation path"
+      ],
+      "acceptance": [
+        "Customers can inspect and manage renewal according to provider capabilities",
+        "Cancellation preserves learning data",
+        "Support can reconcile subscription state with provider events"
+      ],
+      "validation": [
+        "portal E2E",
+        "cancel/downgrade support simulation",
+        "reconciliation tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REV-010",
+      "phase": "revenue_surface",
+      "title": "Implement clean-download CTA, login, and checkout entry",
+      "status": "blocked_dependency",
+      "risk": "medium",
+      "depends_on": [
+        "COM-030",
+        "BIL-040",
+        "AST-040"
+      ],
+      "deliverables": [
+        "Watermarked preview CTA",
+        "Account requirement",
+        "Checkout handoff"
+      ],
+      "acceptance": [
+        "Non-downloadable assets show no paid CTA",
+        "The page never exposes a clean URL"
+      ],
+      "validation": [
+        "funnel E2E",
+        "accessibility tests"
+      ],
+      "human_gate": false,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REV-020",
+      "phase": "revenue_surface",
+      "title": "Implement credit meter and download history",
+      "status": "blocked_dependency",
+      "risk": "medium",
+      "depends_on": [
+        "USG-010",
+        "REV-010"
+      ],
+      "deliverables": [
+        "Remaining credits",
+        "Expiry",
+        "usage history",
+        "error states"
+      ],
+      "acceptance": [
+        "Displayed balance comes from server",
+        "No client mutation changes authority"
+      ],
+      "validation": [
+        "UI tests",
+        "stale-cache tests"
+      ],
+      "human_gate": false,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REV-030",
+      "phase": "revenue_surface",
+      "title": "Implement upgrade rules without dark patterns",
+      "status": "blocked_dependency",
+      "risk": "medium",
+      "depends_on": [
+        "REV-020",
+        "BIL-050"
+      ],
+      "deliverables": [
+        "Lite nudge after high credit usage/repeat purchase",
+        "Pro nudge on HD, batch, exam, weak, or AI intent"
+      ],
+      "acceptance": [
+        "One-time buyers are not forced into subscription",
+        "Renewal and quota terms are visible"
+      ],
+      "validation": [
+        "paywall tests",
+        "copy review"
+      ],
+      "human_gate": false,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REV-040",
+      "phase": "revenue_surface",
+      "title": "Implement paid-funnel and margin analytics",
+      "status": "blocked_dependency",
+      "risk": "medium",
+      "depends_on": [
+        "ACC-060",
+        "REV-010",
+        "BIL-040"
+      ],
+      "deliverables": [
+        "CTA, checkout, purchase, first download, repurchase, upgrade, refund, denial events"
+      ],
+      "acceptance": [
+        "Events are server-reconcilable and privacy-safe",
+        "Revenue is not inferred from success-page views"
+      ],
+      "validation": [
+        "analytics tests",
+        "reconciliation test"
+      ],
+      "human_gate": false,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "LRN-010",
+      "phase": "learning_subscription",
+      "title": "Switch learning surfaces to account hydration with local fallback",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "ACC-050"
+      ],
+      "deliverables": [
+        "Dashboard/Saved/Review/Packs account reads",
+        "Explicit offline/local fallback"
+      ],
+      "acceptance": [
+        "Cross-device state is coherent",
+        "Local fallback cannot grant paid capabilities"
+      ],
+      "validation": [
+        "golden-flow E2E",
+        "offline E2E"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "LRN-020",
+      "phase": "learning_subscription",
+      "title": "Enforce review and plan limits server-side",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "LRN-010",
+        "USG-010",
+        "COM-020"
+      ],
+      "deliverables": [
+        "Daily review quota",
+        "history/custom-deck/feature gates"
+      ],
+      "acceptance": [
+        "Free/Lite/Pro limits are truthful and server-authoritative"
+      ],
+      "validation": [
+        "quota tests",
+        "tamper tests"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "LRN-030",
+      "phase": "learning_subscription",
+      "title": "Implement one-time exam-pack ownership and access",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "BIL-030",
+        "LRN-010",
+        "COM-020"
+      ],
+      "deliverables": [
+        "Pack purchase grants",
+        "Preview/access enforcement",
+        "progress ownership"
+      ],
+      "acceptance": [
+        "Pack access survives plan changes according to product contract"
+      ],
+      "validation": [
+        "pack entitlement tests",
+        "purchase E2E"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "LRN-040",
+      "phase": "learning_subscription",
+      "title": "Implement Pro HD, batch, Weak Sprint, and Mastery gates",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AST-040",
+        "LRN-020"
+      ],
+      "deliverables": [
+        "HD and batch export",
+        "Weak Sprint",
+        "Mastery Test",
+        "advanced priority"
+      ],
+      "acceptance": [
+        "Lite remains complete for daily learning",
+        "Pro-only capabilities cannot be reached by route guessing"
+      ],
+      "validation": [
+        "route authorization tests",
+        "batch E2E",
+        "review regression"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AI-010",
+      "phase": "pro_ai",
+      "title": "Define mistake taxonomy, static fallback, and evaluation set",
+      "status": "blocked_dependency",
+      "risk": "medium",
+      "depends_on": [
+        "LRN-020"
+      ],
+      "deliverables": [
+        "Mistake categories",
+        "Approved static feedback",
+        "Golden evaluation cases"
+      ],
+      "acceptance": [
+        "Every AI path has a non-AI fallback",
+        "No open-ended tutor scope"
+      ],
+      "validation": [
+        "eval fixture review",
+        "content review"
+      ],
+      "human_gate": false,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AI-020",
+      "phase": "pro_ai",
+      "title": "Define grounded AI explanation contract",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "AI-010",
+        "BIL-010"
+      ],
+      "deliverables": [
+        "Versioned prompt/input/output schema",
+        "Grounding and privacy rules",
+        "Provider abstraction"
+      ],
+      "acceptance": [
+        "Only bounded learning context is sent",
+        "Definitions and answers are grounded in approved data"
+      ],
+      "validation": [
+        "prompt tests",
+        "privacy review",
+        "provider ADR"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AI-030",
+      "phase": "pro_ai",
+      "title": "Implement metered AI explanation service",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AI-020",
+        "USG-010",
+        "BIL-050"
+      ],
+      "deliverables": [
+        "Server API",
+        "Pro quota",
+        "promotion credits",
+        "cache",
+        "timeout/fallback"
+      ],
+      "acceptance": [
+        "Client cannot bypass quota",
+        "Failure consumes no credit",
+        "Cost and latency are observable"
+      ],
+      "validation": [
+        "integration tests",
+        "quota tests",
+        "fault injection"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AI-040",
+      "phase": "pro_ai",
+      "title": "Run safety, quality, latency, and cost evaluation gate",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AI-030"
+      ],
+      "deliverables": [
+        "Automated eval report",
+        "Human sample review",
+        "launch thresholds"
+      ],
+      "acceptance": [
+        "No P0 grounding or harmful-output failure",
+        "Variable AI cost stays within approved guardrail"
+      ],
+      "validation": [
+        "eval suite",
+        "load test",
+        "red-team cases"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "AI-050",
+      "phase": "pro_ai",
+      "title": "Roll out AI explanation behind kill switch",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "AI-040",
+        "OPS-010"
+      ],
+      "deliverables": [
+        "Owner-only",
+        "invite cohort",
+        "percentage rollout",
+        "kill switch"
+      ],
+      "acceptance": [
+        "Static fallback remains available",
+        "Rollback does not affect SRS or billing data"
+      ],
+      "validation": [
+        "staged rollout smoke",
+        "rollback drill"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "OPS-010",
+      "phase": "operations_and_release",
+      "title": "Implement trusted monitoring, alerting, and stop-sales controls",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "ACC-060",
+        "AST-040",
+        "BIL-030"
+      ],
+      "deliverables": [
+        "Error and business alerts",
+        "Download/billing/AI kill switches",
+        "audit dashboards"
+      ],
+      "acceptance": [
+        "Owner can stop checkout, clean delivery, or AI independently"
+      ],
+      "validation": [
+        "alert tests",
+        "incident drill"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "LEG-010",
+      "phase": "operations_and_release",
+      "title": "Publish approved terms, privacy, billing, refund, cancellation, and license copy",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "BIL-010",
+        "AST-010"
+      ],
+      "deliverables": [
+        "Legal/support pages and checkout disclosures"
+      ],
+      "acceptance": [
+        "License scope and watermark limitations are explicit",
+        "Support contact and refund path are usable"
+      ],
+      "validation": [
+        "owner/legal review",
+        "link checks"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "QA-010",
+      "phase": "operations_and_release",
+      "title": "Pass full accessibility, performance, security, privacy, and golden-flow QA",
+      "status": "blocked_dependency",
+      "risk": "high",
+      "depends_on": [
+        "OPS-010",
+        "LEG-010",
+        "AST-050",
+        "BIL-045",
+        "LRN-020"
+      ],
+      "deliverables": [
+        "Release evidence packet",
+        "P0/P1 disposition",
+        "rollback evidence"
+      ],
+      "acceptance": [
+        "All required commands pass",
+        "No open P0",
+        "Accepted P1s are recorded"
+      ],
+      "validation": [
+        "typecheck",
+        "lint",
+        "build",
+        "full Playwright",
+        "manual QA",
+        "security review"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REL-010",
+      "phase": "operations_and_release",
+      "title": "Launch clean-download credit packs",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "QA-010",
+        "REV-040"
+      ],
+      "deliverables": [
+        "Owner-approved private cohort then public enablement"
+      ],
+      "acceptance": [
+        "First purchase through successful download and refund path is verified",
+        "Stop-sales trigger is tested"
+      ],
+      "validation": [
+        "production smoke",
+        "transaction reconciliation"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REL-020",
+      "phase": "operations_and_release",
+      "title": "Launch Lite subscription",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "REL-010",
+        "BIL-050",
+        "LRN-030",
+        "BIL-060"
+      ],
+      "deliverables": [
+        "Lite checkout and entitlement enablement"
+      ],
+      "acceptance": [
+        "Cross-device learning and subscription lifecycle are verified in production"
+      ],
+      "validation": [
+        "production smoke",
+        "cancel/downgrade test"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REL-030",
+      "phase": "operations_and_release",
+      "title": "Launch Pro and AI explanation",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "REL-020",
+        "LRN-040",
+        "AI-050"
+      ],
+      "deliverables": [
+        "Pro checkout",
+        "HD/batch",
+        "AI explanation rollout"
+      ],
+      "acceptance": [
+        "Quota, cost, safety, and rollback evidence pass"
+      ],
+      "validation": [
+        "production smoke",
+        "AI sample review",
+        "kill-switch drill"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    },
+    {
+      "id": "REL-040",
+      "phase": "operations_and_release",
+      "title": "Record Track B Production v1 owner sign-off",
+      "status": "blocked_human",
+      "risk": "high",
+      "depends_on": [
+        "REL-030"
+      ],
+      "deliverables": [
+        "Final finish-line report",
+        "Open-risk register",
+        "rollback owners"
+      ],
+      "acceptance": [
+        "docs/TRACK_B_FINISH_LINE.md is fully satisfied",
+        "All roadmap tasks required by G5 are verified"
+      ],
+      "validation": [
+        "owner sign-off"
+      ],
+      "human_gate": true,
+      "auto_merge_eligible": false
+    }
+  ]
+}

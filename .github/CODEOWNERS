@@ -1,21 +1,25 @@
 # High-risk areas requiring owner review
-/AGENTS.md                              @chachathecat
-/.codex/                                @chachathecat
-/.github/workflows/                     @chachathecat
-/.github/CODEOWNERS                     @chachathecat
-/docs/TRACK_B_FINISH_LINE.md            @chachathecat
-/docs/HUMAN_DECISION_BOUNDARIES.md      @chachathecat
-/docs/AUTONOMOUS_DELIVERY_POLICY.md     @chachathecat
-/docs/TRACK_B_RELEASE_BLOCKERS.md       @chachathecat
+/AGENTS.md                                      @chachathecat
+/PLANS.md                                       @chachathecat
+/.codex/                                        @chachathecat
+/.github/workflows/                             @chachathecat
+/.github/CODEOWNERS                             @chachathecat
+/docs/TRACK_B_FINISH_LINE.md                    @chachathecat
+/docs/HUMAN_DECISION_BOUNDARIES.md              @chachathecat
+/docs/AUTONOMOUS_DELIVERY_POLICY.md             @chachathecat
+/docs/TRACK_B_RELEASE_BLOCKERS.md               @chachathecat
+/docs/VLX_REVENUE_AUTONOMOUS_FACTORY_MASTER_PLAN_V1.md @chachathecat
+/docs/roadmap/                                  @chachathecat
+/docs/monetization/                             @chachathecat
 
 # Existing high-risk Track B source surfaces
-/src/app/auth/                          @chachathecat
-/src/app/api/me/entitlements/           @chachathecat
-/src/lib/auth/                          @chachathecat
-/src/lib/entitlements/                  @chachathecat
-/src/lib/billing-entitlements/          @chachathecat
+/src/app/auth/                                  @chachathecat
+/src/app/api/me/entitlements/                   @chachathecat
+/src/lib/auth/                                  @chachathecat
+/src/lib/entitlements/                          @chachathecat
+/src/lib/billing-entitlements/                  @chachathecat
 
 # Intentional future high-risk protected directories
-/db/migrations/                         @chachathecat
-/src/auth/                              @chachathecat
-/src/lib/billing/                       @chachathecat
+/db/migrations/                                 @chachathecat
+/src/auth/                                      @chachathecat
+/src/lib/billing/                               @chachathecat
