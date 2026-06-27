@@ -370,7 +370,7 @@
       "id": "FCT-020",
       "phase": "factory_bootstrap",
       "title": "Implement truthful quality gate",
-      "status": "ready",
+      "status": "verified",
       "risk": "high",
       "depends_on": [
         "FCT-010"
@@ -388,13 +388,17 @@
         "negative fixtures"
       ],
       "human_gate": true,
-      "auto_merge_eligible": false
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #126",
+        "merge commit 4b3d7526448371539ca5c0694dfc2622019402c2"
+      ]
     },
     {
       "id": "FCT-030",
       "phase": "factory_bootstrap",
       "title": "Implement roadmap-to-issue materializer",
-      "status": "blocked_dependency",
+      "status": "ready",
       "risk": "high",
       "depends_on": [
         "FCT-010",
