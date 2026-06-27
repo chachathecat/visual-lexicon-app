@@ -398,7 +398,7 @@
       "id": "FCT-030",
       "phase": "factory_bootstrap",
       "title": "Implement roadmap-to-issue materializer",
-      "status": "ready",
+      "status": "verified",
       "risk": "high",
       "depends_on": [
         "FCT-010",
@@ -418,13 +418,17 @@
         "GitHub API mock tests"
       ],
       "human_gate": true,
-      "auto_merge_eligible": false
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #128",
+        "merge commit 71c678140416fff3d959424c52c1ac85f546c169"
+      ]
     },
     {
       "id": "FCT-040",
       "phase": "factory_bootstrap",
       "title": "Implement bounded draft-PR orchestrator",
-      "status": "blocked_dependency",
+      "status": "ready",
       "risk": "high",
       "depends_on": [
         "FCT-030"
