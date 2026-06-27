@@ -773,21 +773,24 @@ test.describe("factory quality gate", () => {
     );
   });
 
-  test("FCT-020 verification sync unblocks FCT-030 without implementing later tasks", () => {
-    const fct020 = readRoadmapTask("FCT-020");
+  test("FCT-030 verification sync unblocks FCT-040 without implementing later tasks", () => {
     const fct030 = readRoadmapTask("FCT-030");
+    const fct040 = readRoadmapTask("FCT-040");
+    const fct050 = readRoadmapTask("FCT-050");
+    const fct060 = readRoadmapTask("FCT-060");
 
-    expect(fct020.status).toBe("verified");
-    expect(fct020.evidence).toEqual(
+    expect(fct030.status).toBe("verified");
+    expect(fct030.evidence).toEqual(
       expect.arrayContaining([
-        "PR #126",
-        "merge commit 4b3d7526448371539ca5c0694dfc2622019402c2"
+        "PR #128",
+        "merge commit 71c678140416fff3d959424c52c1ac85f546c169"
       ])
     );
-    expect(fct030.status).toBe("ready");
-    expect(fct030.depends_on).toEqual(
-      expect.arrayContaining(["FCT-010", "FCT-020"])
-    );
-    expect(readRoadmapTask("FCT-040").status).toBe("blocked_dependency");
+    expect(fct040.status).toBe("ready");
+    expect(fct040.status).not.toBe("verified");
+    expect(fct040.depends_on).toEqual(expect.arrayContaining(["FCT-030"]));
+    expect(fct040.evidence ?? []).toEqual([]);
+    expect(fct050.status).toBe("blocked_dependency");
+    expect(fct060.status).toBe("blocked_dependency");
   });
 });

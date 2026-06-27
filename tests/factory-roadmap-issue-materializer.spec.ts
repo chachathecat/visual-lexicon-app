@@ -324,6 +324,13 @@ test.describe("roadmap issue materializer", () => {
     expect(laterFactoryPlans).toEqual([]);
   });
 
+  test("FCT-040 is not marked verified", () => {
+    const roadmap = readRoadmap();
+
+    expect(findTask(roadmap, "FCT-040").status).toBe("ready");
+    expect(findTask(roadmap, "FCT-040").status).not.toBe("verified");
+  });
+
   test("roadmap verification boundary keeps only FCT-040 ready", () => {
     const roadmap = readRoadmap();
     const fct030 = findTask(roadmap, "FCT-030");
