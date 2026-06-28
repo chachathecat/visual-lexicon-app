@@ -485,7 +485,7 @@
       "id": "FCT-060",
       "phase": "factory_bootstrap",
       "title": "Implement release guard and roadmap evidence sync",
-      "status": "ready",
+      "status": "verified",
       "risk": "high",
       "depends_on": [
         "FCT-020",
@@ -504,7 +504,11 @@
         "tamper tests"
       ],
       "human_gate": true,
-      "auto_merge_eligible": false
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #134",
+        "merge commit 0819bcbe170288cbede12aa640d478339506c083"
+      ]
     },
     {
       "id": "FCT-070",

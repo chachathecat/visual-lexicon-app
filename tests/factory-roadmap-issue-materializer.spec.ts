@@ -42,6 +42,20 @@ function cloneRoadmap(overrides?: (roadmap: RoadmapLike) => void) {
   return roadmap;
 }
 
+function fct060ReadyRoadmap(overrides?: (roadmap: RoadmapLike) => void) {
+  return cloneRoadmap((draft) => {
+    const fct060 = findTask(draft, "FCT-060") as {
+      status?: string;
+      evidence?: string[];
+    };
+
+    fct060.status = "ready";
+    delete fct060.evidence;
+
+    overrides?.(draft);
+  });
+}
+
 function materialize(roadmap = readRoadmap()) {
   return materializeRoadmapIssues({ roadmap });
 }
@@ -67,14 +81,15 @@ test.describe("roadmap issue materializer", () => {
       result: {
         version: 1,
         status: "pass",
-        readyTaskIds: ["FCT-060"],
+        readyTaskIds: [],
+        issuePlans: [],
         dryRun: true
       }
     });
   });
 
   test("materializes FCT-060 when ready and dependencies are verified", () => {
-    const roadmap = readRoadmap();
+    const roadmap = fct060ReadyRoadmap();
     const fct060 = findTask(roadmap, "FCT-060");
     const dependencyStatuses = (fct060.depends_on ?? []).map(
       (dependencyId) => findTask(roadmap, dependencyId).status
@@ -118,7 +133,8 @@ test.describe("roadmap issue materializer", () => {
         "FCT-020",
         "FCT-030",
         "FCT-040",
-        "FCT-050"
+        "FCT-050",
+        "FCT-060"
       ])
     );
     expect(planFor(result, "FCT-010")).toBeUndefined();
@@ -149,15 +165,15 @@ test.describe("roadmap issue materializer", () => {
   });
 
   test("non-verified ready-task dependency fails closed", () => {
-    const roadmap = cloneRoadmap((draft) => {
-      findTask(draft, "FCT-060").depends_on = ["ACC-010"];
+    const roadmap = fct060ReadyRoadmap((draft) => {
+      findTask(draft, "FCT-060").depends_on = ["COM-010"];
     });
     const result = materialize(roadmap);
 
     expect(result.status).toBe("fail");
     expect(result.issuePlans).toEqual([]);
     expect(result.reasons).toContain(
-      "dependency_not_verified:FCT-060:ACC-010:blocked_human"
+      "dependency_not_verified:FCT-060:COM-010:blocked_human"
     );
   });
 
@@ -207,8 +223,9 @@ test.describe("roadmap issue materializer", () => {
   });
 
   test("existing issue prevents duplicate create", () => {
+    const roadmap = fct060ReadyRoadmap();
     const result = materializeRoadmapIssues({
-      roadmap: readRoadmap(),
+      roadmap,
       existingIssues: [
         {
           title: "[FCT-060] Implement release guard and roadmap evidence sync",
@@ -225,7 +242,8 @@ test.describe("roadmap issue materializer", () => {
   });
 
   test("existing issue update or skip plan is deterministic", () => {
-    const initial = materialize();
+    const roadmap = fct060ReadyRoadmap();
+    const initial = materialize(roadmap);
     const fct060Plan = planFor(initial, "FCT-060");
 
     if (!fct060Plan) {
@@ -233,7 +251,7 @@ test.describe("roadmap issue materializer", () => {
     }
 
     const first = materializeRoadmapIssues({
-      roadmap: readRoadmap(),
+      roadmap,
       existingIssues: [
         {
           title: fct060Plan.title,
@@ -245,7 +263,7 @@ test.describe("roadmap issue materializer", () => {
       ]
     });
     const second = materializeRoadmapIssues({
-      roadmap: readRoadmap(),
+      roadmap,
       existingIssues: [
         {
           title: fct060Plan.title,
@@ -262,7 +280,7 @@ test.describe("roadmap issue materializer", () => {
   });
 
   test("issue body contains acceptance, validation, human gate, and safety information", () => {
-    const result = materialize();
+    const result = materialize(fct060ReadyRoadmap());
     const body = planFor(result, "FCT-060")?.body ?? "";
 
     expect(body).toContain("## Acceptance Criteria");
@@ -276,7 +294,7 @@ test.describe("roadmap issue materializer", () => {
   });
 
   test("high-risk task includes owner approval label and note", () => {
-    const result = materialize();
+    const result = materialize(fct060ReadyRoadmap());
     const plan = planFor(result, "FCT-060");
 
     expect(result.requiresOwnerApproval).toBe(true);
@@ -329,6 +347,29 @@ test.describe("roadmap issue materializer", () => {
     expect(laterFactoryPlans).toEqual([]);
   });
 
+  test("live roadmap no longer materializes FCT-060 and keeps FCT-070 deferred", () => {
+    const roadmap = readRoadmap();
+    const result = materialize(roadmap);
+    const fct060 = findTask(roadmap, "FCT-060") as {
+      status?: string;
+      evidence?: readonly string[];
+    };
+    const fct070 = findTask(roadmap, "FCT-070");
+
+    expect(fct060.status).toBe("verified");
+    expect(fct060.evidence).toEqual(
+      expect.arrayContaining([
+        "PR #134",
+        "merge commit 0819bcbe170288cbede12aa640d478339506c083"
+      ])
+    );
+    expect(fct070.status).toBe("deferred");
+    expect(result.readyTaskIds).toEqual([]);
+    expect(result.issuePlans).toEqual([]);
+    expect(planFor(result, "FCT-060")).toBeUndefined();
+    expect(planFor(result, "FCT-070")).toBeUndefined();
+  });
+
   test("FCT-040 is verified with PR #130 merge evidence", () => {
     const roadmap = readRoadmap();
     const fct040 = findTask(roadmap, "FCT-040");
@@ -344,7 +385,7 @@ test.describe("roadmap issue materializer", () => {
     );
   });
 
-  test("roadmap verification boundary promotes FCT-050 and unblocks FCT-060", () => {
+  test("roadmap verification boundary verifies FCT-060 and keeps FCT-070 deferred", () => {
     const roadmap = readRoadmap();
     const fct040 = findTask(roadmap, "FCT-040");
     const fct040Evidence = (fct040 as { evidence?: readonly string[] })
@@ -355,6 +396,7 @@ test.describe("roadmap issue materializer", () => {
     const fct060 = findTask(roadmap, "FCT-060");
     const fct060Evidence = (fct060 as { evidence?: readonly string[] })
       .evidence;
+    const fct070 = findTask(roadmap, "FCT-070");
 
     expect(fct040.status).toBe("verified");
     expect(fct040Evidence).toEqual(
@@ -372,10 +414,16 @@ test.describe("roadmap issue materializer", () => {
         "merge commit 14393128a296ed09bebac700f7b4a86a2ceaf717"
       ])
     );
-    expect(fct060.status).toBe("ready");
+    expect(fct060.status).toBe("verified");
     expect(fct060.depends_on).toEqual(
       expect.arrayContaining(["FCT-020", "FCT-040"])
     );
-    expect(fct060Evidence).toBeUndefined();
+    expect(fct060Evidence).toEqual(
+      expect.arrayContaining([
+        "PR #134",
+        "merge commit 0819bcbe170288cbede12aa640d478339506c083"
+      ])
+    );
+    expect(fct070.status).toBe("deferred");
   });
 });
