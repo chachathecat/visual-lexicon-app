@@ -305,6 +305,59 @@ test.describe("factory draft PR orchestrator", () => {
     );
   });
 
+  test("existing matching branch without draft PR creates the missing draft PR plan", () => {
+    const initial = plan();
+    const draftPrPlan = planFor(initial, "FCT-040");
+
+    if (!draftPrPlan) {
+      throw new Error("Missing FCT-040 draft PR plan");
+    }
+
+    const result = planDraftPrOrchestration({
+      roadmap: readRoadmap(),
+      existingBranches: [
+        {
+          name: draftPrPlan.branchName,
+          taskId: draftPrPlan.taskId,
+          idempotencyKey: draftPrPlan.idempotencyKey
+        }
+      ]
+    });
+    const recoveredPlan = planFor(result, "FCT-040");
+
+    expect(result.status).toBe("pass");
+    expect(recoveredPlan?.action).toBe("create");
+    expect(result.duplicateProtections).toContain(
+      "existing_branch_name:FCT-040:active"
+    );
+    expect(result.duplicateProtections).not.toContain("blocked_plan:FCT-040");
+    expect(recoveredPlan?.action).not.toBe("block");
+  });
+
+  test("existing draft PR with task label is matched without duplicate creation", () => {
+    const result = planDraftPrOrchestration({
+      roadmap: readRoadmap(),
+      existingDraftPrs: [
+        {
+          title: "[Factory] Draft PR orchestration follow-up",
+          labels: ["factory", "draft-pr", "roadmap-task", "task:FCT-040"],
+          isDraft: true,
+          state: "open",
+          autoMergeEnabled: false
+        }
+      ]
+    });
+    const draftPrPlan = planFor(result, "FCT-040");
+
+    expect(result.status).toBe("pass");
+    expect(draftPrPlan?.action).toBe("update");
+    expect(result.duplicateProtections).toContain(
+      "existing_draft_pr_task_label:FCT-040:open"
+    );
+    expect(draftPrPlan?.action).not.toBe("create");
+    expect(draftPrPlan?.action).not.toBe("block");
+  });
+
   test("conflicting existing branch blocks instead of creating a duplicate", () => {
     const result = planDraftPrOrchestration({
       roadmap: readRoadmap(),

@@ -166,7 +166,12 @@ type ExistingBranchMatch = {
 
 type ExistingDraftPrMatch = {
   draftPr: NormalizedDraftPr;
-  reason: "task_id" | "idempotency_key" | "branch_name" | "title";
+  reason:
+    | "task_id"
+    | "idempotency_key"
+    | "branch_name"
+    | "task_label"
+    | "title";
 };
 
 const KNOWN_TASK_STATUSES: readonly DraftPrTaskStatus[] = [
@@ -579,6 +584,7 @@ function buildDraftPrPlan({
   const draftPrConflict = draftPrMatch
     ? draftPrMatchConflicts(
         draftPrMatch.draftPr,
+        draftPrMatch.reason,
         task,
         branchName,
         title,
@@ -819,7 +825,7 @@ function determineAction({
   }
 
   if (!draftPrMatch) {
-    return "update";
+    return "create";
   }
 
   const draftPr = draftPrMatch.draftPr;
@@ -892,6 +898,12 @@ function findExistingDraftPrMatch(
   }
 
   for (const draftPr of draftPrs) {
+    if (hasTaskLabel(draftPr.labels, expected.task.id)) {
+      return { draftPr, reason: "task_label" };
+    }
+  }
+
+  for (const draftPr of draftPrs) {
     if (draftPr.title === expected.title) {
       return { draftPr, reason: "title" };
     }
@@ -927,6 +939,7 @@ function branchMatchConflicts(
 
 function draftPrMatchConflicts(
   draftPr: NormalizedDraftPr,
+  matchReason: ExistingDraftPrMatch["reason"],
   task: NormalizedTask,
   branchName: string,
   title: string,
@@ -956,11 +969,21 @@ function draftPrMatchConflicts(
     return "branch_name_mismatch";
   }
 
-  if (draftPr.title && draftPr.title !== title) {
+  if (
+    matchReason !== "task_label" &&
+    draftPr.title &&
+    draftPr.title !== title
+  ) {
     return "title_mismatch";
   }
 
   return null;
+}
+
+function hasTaskLabel(labels: readonly string[], taskId: string) {
+  const taskLabel = normalizeComparable(`task:${taskId}`);
+
+  return labels.some((label) => normalizeComparable(label) === taskLabel);
 }
 
 function summarizeIssueContext(
