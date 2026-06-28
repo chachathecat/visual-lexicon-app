@@ -428,7 +428,7 @@
       "id": "FCT-040",
       "phase": "factory_bootstrap",
       "title": "Implement bounded draft-PR orchestrator",
-      "status": "ready",
+      "status": "verified",
       "risk": "high",
       "depends_on": [
         "FCT-030"
@@ -446,13 +446,17 @@
         "PR body contract test"
       ],
       "human_gate": true,
-      "auto_merge_eligible": false
+      "auto_merge_eligible": false,
+      "evidence": [
+        "PR #130",
+        "merge commit b67dc2c008f99051a17089485429d7261b9637b0"
+      ]
     },
     {
       "id": "FCT-050",
       "phase": "factory_bootstrap",
       "title": "Implement bounded CI repair loop",
-      "status": "blocked_dependency",
+      "status": "ready",
       "risk": "high",
       "depends_on": [
         "FCT-040"

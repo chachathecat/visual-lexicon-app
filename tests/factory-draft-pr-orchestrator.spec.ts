@@ -24,7 +24,7 @@ type MutableRoadmap = DraftPrRoadmapLike & {
 const typeSmoke: DraftPrOrchestratorTypeSurface = {
   version: DRAFT_PR_ORCHESTRATOR_VERSION,
   result: planDraftPrOrchestration({
-    roadmap: readRoadmap()
+    roadmap: fct040ReadyRoadmap()
   })
 };
 
@@ -47,7 +47,21 @@ function cloneRoadmap(overrides?: (roadmap: MutableRoadmap) => void) {
   return roadmap;
 }
 
-function plan(roadmap = readRoadmap()) {
+function fct040ReadyRoadmap(overrides?: (roadmap: MutableRoadmap) => void) {
+  return cloneRoadmap((draft) => {
+    const fct040 = findTask(draft, "FCT-040") as DraftPrRoadmapTaskLike & {
+      evidence?: string[];
+    };
+    const fct050 = findTask(draft, "FCT-050");
+
+    fct040.status = "ready";
+    delete fct040.evidence;
+    fct050.status = "blocked_dependency";
+    overrides?.(draft);
+  });
+}
+
+function plan(roadmap = fct040ReadyRoadmap()) {
   return planDraftPrOrchestration({ roadmap });
 }
 
@@ -123,7 +137,7 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("FCT-040 dependency on FCT-030 must be verified", () => {
-    const roadmap = readRoadmap();
+    const roadmap = fct040ReadyRoadmap();
     const fct040 = findTask(roadmap, "FCT-040");
     const dependencyStatuses = (fct040.depends_on ?? []).map(
       (dependencyId) => findTask(roadmap, dependencyId).status
@@ -137,7 +151,7 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("unverified dependency fails closed", () => {
-    const roadmap = cloneRoadmap((draft) => {
+    const roadmap = fct040ReadyRoadmap((draft) => {
       findTask(draft, "FCT-030").status = "done";
     });
     const result = plan(roadmap);
@@ -150,7 +164,7 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("missing dependency fails closed", () => {
-    const roadmap = cloneRoadmap((draft) => {
+    const roadmap = fct040ReadyRoadmap((draft) => {
       findTask(draft, "FCT-040").depends_on = ["FCT-999"];
     });
     const result = plan(roadmap);
@@ -161,7 +175,7 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("duplicate task IDs fail closed", () => {
-    const roadmap = cloneRoadmap((draft) => {
+    const roadmap = fct040ReadyRoadmap((draft) => {
       draft.tasks = [...draft.tasks, { ...findTask(draft, "FCT-040") }];
     });
     const result = plan(roadmap);
@@ -172,7 +186,7 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("unknown task status fails closed", () => {
-    const roadmap = cloneRoadmap((draft) => {
+    const roadmap = fct040ReadyRoadmap((draft) => {
       findTask(draft, "FCT-040").status = "mystery";
     });
     const result = plan(roadmap);
@@ -183,7 +197,7 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("unknown risk fails closed", () => {
-    const roadmap = cloneRoadmap((draft) => {
+    const roadmap = fct040ReadyRoadmap((draft) => {
       findTask(draft, "FCT-040").risk = "critical";
     });
     const result = plan(roadmap);
@@ -207,7 +221,7 @@ test.describe("factory draft PR orchestrator", () => {
 
   test("live mutation request fails closed", () => {
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       options: {
         dryRun: false,
         liveGitHubMutations: true
@@ -251,7 +265,7 @@ test.describe("factory draft PR orchestrator", () => {
 
   test("high-risk auto-merge request fails closed", () => {
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       options: {
         autoMerge: true
       }
@@ -272,7 +286,7 @@ test.describe("factory draft PR orchestrator", () => {
     }
 
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       existingBranches: [
         {
           name: draftPrPlan.branchName,
@@ -314,7 +328,7 @@ test.describe("factory draft PR orchestrator", () => {
     }
 
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       existingBranches: [
         {
           name: draftPrPlan.branchName,
@@ -336,7 +350,7 @@ test.describe("factory draft PR orchestrator", () => {
 
   test("existing draft PR with task label is matched without duplicate creation", () => {
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       existingDraftPrs: [
         {
           title: "[Factory] Draft PR orchestration follow-up",
@@ -360,7 +374,7 @@ test.describe("factory draft PR orchestrator", () => {
 
   test("conflicting existing branch blocks instead of creating a duplicate", () => {
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       existingBranches: [
         {
           name: "factory/fct-040-draft-pr-orchestrator",
@@ -382,7 +396,7 @@ test.describe("factory draft PR orchestrator", () => {
 
   test("conflicting existing draft PR blocks instead of creating a duplicate", () => {
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       existingDraftPrs: [
         {
           taskId: "FCT-040",
@@ -406,7 +420,7 @@ test.describe("factory draft PR orchestrator", () => {
 
   test("ambiguous existing idempotency key fails closed", () => {
     const result = planDraftPrOrchestration({
-      roadmap: readRoadmap(),
+      roadmap: fct040ReadyRoadmap(),
       existingDraftPrs: [
         {
           idempotencyKey: "vlx-draft-pr:FCT-040:v1",
@@ -499,7 +513,7 @@ test.describe("factory draft PR orchestrator", () => {
   test("output order is deterministic", () => {
     const first = plan();
     const second = plan(
-      cloneRoadmap((draft) => {
+      fct040ReadyRoadmap((draft) => {
         draft.tasks = [...draft.tasks].reverse();
       })
     );
@@ -508,13 +522,13 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("same input produces identical output", () => {
-    const roadmap = readRoadmap();
+    const roadmap = fct040ReadyRoadmap();
 
     expect(plan(roadmap)).toEqual(plan(roadmap));
   });
 
   test("FCT-040 is not marked verified", () => {
-    const roadmap = readRoadmap();
+    const roadmap = fct040ReadyRoadmap();
     const before = findTask(roadmap, "FCT-040").status;
     const result = plan(roadmap);
     const after = findTask(roadmap, "FCT-040").status;
@@ -525,7 +539,7 @@ test.describe("factory draft PR orchestrator", () => {
   });
 
   test("roadmap task statuses are not modified", () => {
-    const roadmap = readRoadmap();
+    const roadmap = fct040ReadyRoadmap();
     const before = roadmap.tasks.map((task) => [task.id, task.status]);
 
     plan(roadmap);
