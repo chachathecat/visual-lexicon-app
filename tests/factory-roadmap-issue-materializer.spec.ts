@@ -67,34 +67,34 @@ test.describe("roadmap issue materializer", () => {
       result: {
         version: 1,
         status: "pass",
-        readyTaskIds: ["FCT-050"],
+        readyTaskIds: ["FCT-060"],
         dryRun: true
       }
     });
   });
 
-  test("materializes FCT-050 when ready and dependencies are verified", () => {
+  test("materializes FCT-060 when ready and dependencies are verified", () => {
     const roadmap = readRoadmap();
-    const fct050 = findTask(roadmap, "FCT-050");
-    const dependencyStatuses = (fct050.depends_on ?? []).map(
+    const fct060 = findTask(roadmap, "FCT-060");
+    const dependencyStatuses = (fct060.depends_on ?? []).map(
       (dependencyId) => findTask(roadmap, dependencyId).status
     );
     const result = materialize(roadmap);
-    const plan = planFor(result, "FCT-050");
+    const plan = planFor(result, "FCT-060");
 
-    expect(dependencyStatuses).toEqual(["verified"]);
+    expect(dependencyStatuses).toEqual(["verified", "verified"]);
     expect(result.status).toBe("pass");
-    expect(result.readyTaskIds).toEqual(["FCT-050"]);
+    expect(result.readyTaskIds).toEqual(["FCT-060"]);
     expect(plan).toMatchObject({
-      taskId: "FCT-050",
-      title: "[FCT-050] Implement bounded CI repair loop",
-      idempotencyKey: "vlx-roadmap-task:FCT-050:v1",
+      taskId: "FCT-060",
+      title: "[FCT-060] Implement release guard and roadmap evidence sync",
+      idempotencyKey: "vlx-roadmap-task:FCT-060:v1",
       action: "create"
     });
     expect(plan?.labels).toEqual([
       "factory",
       "roadmap-task",
-      "task:FCT-050",
+      "task:FCT-060",
       "risk:high",
       "human-gate",
       "owner-approval-required",
@@ -102,23 +102,30 @@ test.describe("roadmap issue materializer", () => {
     ]);
   });
 
-  test("does not materialize blocked dependency factory tasks", () => {
+  test("does not materialize blocked dependency tasks", () => {
     const result = materialize();
 
-    expect(result.blockedTaskIds).toEqual(expect.arrayContaining(["FCT-060"]));
-    expect(planFor(result, "FCT-060")).toBeUndefined();
+    expect(result.blockedTaskIds).toEqual(expect.arrayContaining(["ACC-020"]));
+    expect(planFor(result, "ACC-020")).toBeUndefined();
   });
 
   test("does not materialize verified tasks", () => {
     const result = materialize();
 
     expect(result.skippedTaskIds).toEqual(
-      expect.arrayContaining(["FCT-010", "FCT-020", "FCT-030", "FCT-040"])
+      expect.arrayContaining([
+        "FCT-010",
+        "FCT-020",
+        "FCT-030",
+        "FCT-040",
+        "FCT-050"
+      ])
     );
     expect(planFor(result, "FCT-010")).toBeUndefined();
     expect(planFor(result, "FCT-020")).toBeUndefined();
     expect(planFor(result, "FCT-030")).toBeUndefined();
     expect(planFor(result, "FCT-040")).toBeUndefined();
+    expect(planFor(result, "FCT-050")).toBeUndefined();
   });
 
   test("does not materialize blocked_human tasks", () => {
@@ -143,14 +150,14 @@ test.describe("roadmap issue materializer", () => {
 
   test("non-verified ready-task dependency fails closed", () => {
     const roadmap = cloneRoadmap((draft) => {
-      findTask(draft, "FCT-050").depends_on = ["ACC-010"];
+      findTask(draft, "FCT-060").depends_on = ["ACC-010"];
     });
     const result = materialize(roadmap);
 
     expect(result.status).toBe("fail");
     expect(result.issuePlans).toEqual([]);
     expect(result.reasons).toContain(
-      "dependency_not_verified:FCT-050:ACC-010:blocked_human"
+      "dependency_not_verified:FCT-060:ACC-010:blocked_human"
     );
   });
 
@@ -204,35 +211,35 @@ test.describe("roadmap issue materializer", () => {
       roadmap: readRoadmap(),
       existingIssues: [
         {
-          title: "[FCT-050] Implement bounded CI repair loop",
-          taskId: "FCT-050",
+          title: "[FCT-060] Implement release guard and roadmap evidence sync",
+          taskId: "FCT-060",
           state: "open"
         }
       ]
     });
 
-    expect(planFor(result, "FCT-050")?.action).toBe("update");
+    expect(planFor(result, "FCT-060")?.action).toBe("update");
     expect(result.duplicateProtections).toEqual([
-      "existing_issue_task_id:FCT-050:open"
+      "existing_issue_task_id:FCT-060:open"
     ]);
   });
 
   test("existing issue update or skip plan is deterministic", () => {
     const initial = materialize();
-    const fct050Plan = planFor(initial, "FCT-050");
+    const fct060Plan = planFor(initial, "FCT-060");
 
-    if (!fct050Plan) {
-      throw new Error("Missing FCT-050 issue plan");
+    if (!fct060Plan) {
+      throw new Error("Missing FCT-060 issue plan");
     }
 
     const first = materializeRoadmapIssues({
       roadmap: readRoadmap(),
       existingIssues: [
         {
-          title: fct050Plan.title,
-          body: fct050Plan.body,
-          labels: [...fct050Plan.labels].reverse(),
-          idempotencyKey: fct050Plan.idempotencyKey,
+          title: fct060Plan.title,
+          body: fct060Plan.body,
+          labels: [...fct060Plan.labels].reverse(),
+          idempotencyKey: fct060Plan.idempotencyKey,
           state: "open"
         }
       ]
@@ -241,27 +248,27 @@ test.describe("roadmap issue materializer", () => {
       roadmap: readRoadmap(),
       existingIssues: [
         {
-          title: fct050Plan.title,
-          body: fct050Plan.body,
-          labels: fct050Plan.labels,
-          idempotencyKey: fct050Plan.idempotencyKey,
+          title: fct060Plan.title,
+          body: fct060Plan.body,
+          labels: fct060Plan.labels,
+          idempotencyKey: fct060Plan.idempotencyKey,
           state: "open"
         }
       ]
     });
 
-    expect(planFor(first, "FCT-050")?.action).toBe("skip");
+    expect(planFor(first, "FCT-060")?.action).toBe("skip");
     expect(first).toEqual(second);
   });
 
   test("issue body contains acceptance, validation, human gate, and safety information", () => {
     const result = materialize();
-    const body = planFor(result, "FCT-050")?.body ?? "";
+    const body = planFor(result, "FCT-060")?.body ?? "";
 
     expect(body).toContain("## Acceptance Criteria");
-    expect(body).toContain("Tests are never weakened or skipped");
+    expect(body).toContain("Only verified evidence can move a task to verified");
     expect(body).toContain("## Validation");
-    expect(body).toContain("failure fixture suite");
+    expect(body).toContain("state-machine tests");
     expect(body).toContain("## Human Gate");
     expect(body).toContain("Human gate: required");
     expect(body).toContain("## Rollback / Safety");
@@ -270,7 +277,7 @@ test.describe("roadmap issue materializer", () => {
 
   test("high-risk task includes owner approval label and note", () => {
     const result = materialize();
-    const plan = planFor(result, "FCT-050");
+    const plan = planFor(result, "FCT-060");
 
     expect(result.requiresOwnerApproval).toBe(true);
     expect(plan?.labels).toContain("owner-approval-required");
@@ -304,19 +311,19 @@ test.describe("roadmap issue materializer", () => {
 
   test("unknown and blocked task states are not materialized", () => {
     const roadmap = cloneRoadmap((draft) => {
-      findTask(draft, "FCT-050").status = "mystery";
+      findTask(draft, "FCT-060").status = "mystery";
     });
     const result = materialize(roadmap);
 
     expect(result.status).toBe("fail");
     expect(result.issuePlans).toEqual([]);
-    expect(result.reasons).toContain("unknown_task_status:FCT-050:mystery");
+    expect(result.reasons).toContain("unknown_task_status:FCT-060:mystery");
   });
 
-  test("FCT-060 or later blocked task is not materialized", () => {
+  test("FCT-070 or later factory tasks are not materialized", () => {
     const result = materialize();
     const laterFactoryPlans = result.issuePlans.filter((plan) =>
-      /^FCT-0[6-9]0$/.test(plan.taskId)
+      /^FCT-0[7-9]0$/.test(plan.taskId)
     );
 
     expect(laterFactoryPlans).toEqual([]);
@@ -337,10 +344,16 @@ test.describe("roadmap issue materializer", () => {
     );
   });
 
-  test("roadmap verification boundary keeps only FCT-050 ready", () => {
+  test("roadmap verification boundary promotes FCT-050 and unblocks FCT-060", () => {
     const roadmap = readRoadmap();
     const fct040 = findTask(roadmap, "FCT-040");
     const fct040Evidence = (fct040 as { evidence?: readonly string[] })
+      .evidence;
+    const fct050 = findTask(roadmap, "FCT-050");
+    const fct050Evidence = (fct050 as { evidence?: readonly string[] })
+      .evidence;
+    const fct060 = findTask(roadmap, "FCT-060");
+    const fct060Evidence = (fct060 as { evidence?: readonly string[] })
       .evidence;
 
     expect(fct040.status).toBe("verified");
@@ -351,8 +364,18 @@ test.describe("roadmap issue materializer", () => {
       ])
     );
     expect(fct040.depends_on).toContain("FCT-030");
-    expect(findTask(roadmap, "FCT-050").status).toBe("ready");
-    expect(findTask(roadmap, "FCT-050").depends_on).toContain("FCT-040");
-    expect(findTask(roadmap, "FCT-060").status).toBe("blocked_dependency");
+    expect(fct050.status).toBe("verified");
+    expect(fct050.depends_on).toContain("FCT-040");
+    expect(fct050Evidence).toEqual(
+      expect.arrayContaining([
+        "PR #132",
+        "merge commit 14393128a296ed09bebac700f7b4a86a2ceaf717"
+      ])
+    );
+    expect(fct060.status).toBe("ready");
+    expect(fct060.depends_on).toEqual(
+      expect.arrayContaining(["FCT-020", "FCT-040"])
+    );
+    expect(fct060Evidence).toBeUndefined();
   });
 });
