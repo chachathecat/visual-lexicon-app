@@ -53,10 +53,12 @@ function fct040ReadyRoadmap(overrides?: (roadmap: MutableRoadmap) => void) {
       evidence?: string[];
     };
     const fct050 = findTask(draft, "FCT-050");
+    const fct060 = findTask(draft, "FCT-060");
 
     fct040.status = "ready";
     delete fct040.evidence;
     fct050.status = "blocked_dependency";
+    fct060.status = "blocked_dependency";
     overrides?.(draft);
   });
 }

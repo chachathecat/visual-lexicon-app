@@ -25,6 +25,10 @@ type MutableRoadmap = CiRepairRoadmapLike & {
   tasks: CiRepairRoadmapTaskLike[];
 };
 
+type RoadmapTaskWithEvidence = CiRepairRoadmapTaskLike & {
+  evidence?: string[];
+};
+
 const NOW = "2026-06-28T00:00:00.000Z";
 const RECENT_COMPLETED_AT = "2026-06-27T23:00:00.000Z";
 
@@ -60,6 +64,19 @@ function findTask(roadmap: MutableRoadmap, taskId: string) {
   }
 
   return task;
+}
+
+function fct050ReadyRoadmap(overrides?: (roadmap: MutableRoadmap) => void) {
+  return cloneRoadmap((draft) => {
+    const fct050 = findTask(draft, "FCT-050") as RoadmapTaskWithEvidence;
+    const fct060 = findTask(draft, "FCT-060");
+
+    fct050.status = "ready";
+    delete fct050.evidence;
+    fct060.status = "blocked_dependency";
+
+    overrides?.(draft);
+  });
 }
 
 function safeCheckRuns(
@@ -119,7 +136,7 @@ function baseInput(
   overrides: Partial<CiRepairPlannerInput> = {}
 ): CiRepairPlannerInput {
   return {
-    roadmap: readRoadmap(),
+    roadmap: fct050ReadyRoadmap(),
     ciRun: safeCiRun(),
     failedJobs: safeFailedJobs(),
     affectedTaskIds: ["FCT-050"],
@@ -191,7 +208,7 @@ test.describe("factory CI repair loop", () => {
   });
 
   test("FCT-050 depends on verified FCT-040", () => {
-    const roadmap = readRoadmap();
+    const roadmap = fct050ReadyRoadmap();
     const fct050 = findTask(roadmap, "FCT-050");
     const dependencyStatuses = (fct050.depends_on ?? []).map(
       (dependencyId) => findTask(roadmap, dependencyId).status
@@ -206,12 +223,12 @@ test.describe("factory CI repair loop", () => {
 
   test("FCT-040 missing or unverified dependency fails closed", () => {
     const unverified = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct050ReadyRoadmap((draft) => {
         findTask(draft, "FCT-040").status = "done";
       })
     });
     const missing = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct050ReadyRoadmap((draft) => {
         draft.tasks = draft.tasks.filter((task) => task.id !== "FCT-040");
       })
     });
@@ -247,8 +264,8 @@ test.describe("factory CI repair loop", () => {
     expect(result.reasons).toContain("fct_060_would_be_affected:FCT-060");
   });
 
-  test("FCT-050 is not marked verified by the planner", () => {
-    const roadmap = readRoadmap();
+  test("FCT-050 ready fixture is not marked verified by the planner", () => {
+    const roadmap = fct050ReadyRoadmap();
     const before = findTask(roadmap, "FCT-050").status;
     const result = plan({ roadmap });
     const after = findTask(roadmap, "FCT-050").status;
@@ -258,8 +275,24 @@ test.describe("factory CI repair loop", () => {
     expect(result.reasons.join("\n")).not.toContain("verified:FCT-050");
   });
 
-  test("roadmap task statuses are not mutated", () => {
+  test("live roadmap has FCT-050 verified with PR #132 evidence", () => {
     const roadmap = readRoadmap();
+    const fct050 = findTask(roadmap, "FCT-050") as RoadmapTaskWithEvidence;
+    const fct060 = findTask(roadmap, "FCT-060") as RoadmapTaskWithEvidence;
+
+    expect(fct050.status).toBe("verified");
+    expect(fct050.evidence).toEqual(
+      expect.arrayContaining([
+        "PR #132",
+        "merge commit 14393128a296ed09bebac700f7b4a86a2ceaf717"
+      ])
+    );
+    expect(fct060.status).toBe("ready");
+    expect(fct060.evidence).toBeUndefined();
+  });
+
+  test("roadmap task statuses are not mutated", () => {
+    const roadmap = fct050ReadyRoadmap();
     const before = roadmap.tasks.map((task) => [task.id, task.status]);
 
     plan({ roadmap });
@@ -518,7 +551,7 @@ test.describe("factory CI repair loop", () => {
   test("output order is deterministic", () => {
     const first = plan();
     const second = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct050ReadyRoadmap((draft) => {
         draft.tasks = [...draft.tasks].reverse();
       }),
       ciRun: safeCiRun({
