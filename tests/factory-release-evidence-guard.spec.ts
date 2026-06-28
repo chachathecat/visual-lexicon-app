@@ -29,7 +29,7 @@ type RoadmapTaskWithEvidence = ReleaseGuardRoadmapTaskLike & {
 
 const NOW = "2026-06-28T00:00:00.000Z";
 const RECENT_COMPLETED_AT = "2026-06-27T23:00:00.000Z";
-const MERGE_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const MERGE_SHA = "0819bcbe170288cbede12aa640d478339506c083";
 const TARGETED_TEST_EVIDENCE =
   "npm.cmd run test -- tests/factory-release-evidence-guard.spec.ts --workers=1 passed";
 
@@ -65,6 +65,17 @@ function findTask(roadmap: MutableRoadmap, taskId: string) {
   }
 
   return task;
+}
+
+function fct060ReadyRoadmap(overrides?: (roadmap: MutableRoadmap) => void) {
+  return cloneRoadmap((draft) => {
+    const fct060 = findTask(draft, "FCT-060") as RoadmapTaskWithEvidence;
+
+    fct060.status = "ready";
+    delete fct060.evidence;
+
+    overrides?.(draft);
+  });
 }
 
 function passedEvidence(
@@ -104,7 +115,7 @@ function baseInput(
   overrides: Partial<ReleaseGuardPlannerInput> = {}
 ): ReleaseGuardPlannerInput {
   return {
-    roadmap: readRoadmap(),
+    roadmap: fct060ReadyRoadmap(),
     targetTaskId: "FCT-060",
     pullRequests: [
       {
@@ -226,17 +237,17 @@ test.describe("factory release evidence guard", () => {
 
   test("target task must be ready and dependencies must be verified", () => {
     const unready = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct060ReadyRoadmap((draft) => {
         findTask(draft, "FCT-060").status = "in_progress";
       })
     });
     const unverifiedDependency = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct060ReadyRoadmap((draft) => {
         findTask(draft, "FCT-020").status = "done";
       })
     });
     const missingDependency = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct060ReadyRoadmap((draft) => {
         draft.tasks = draft.tasks.filter((task) => task.id !== "FCT-040");
       })
     });
@@ -517,8 +528,8 @@ test.describe("factory release evidence guard", () => {
     expect(missingRollback.reasons).toContain("missing_rollback_evidence");
   });
 
-  test("roadmap input is not mutated and FCT-060 is not marked verified", () => {
-    const roadmap = readRoadmap();
+  test("roadmap input is not mutated and FCT-060 is not marked verified by the planner", () => {
+    const roadmap = fct060ReadyRoadmap();
     const before = JSON.stringify(roadmap);
     const fct060Before = findTask(roadmap, "FCT-060") as RoadmapTaskWithEvidence;
     const result = plan({ roadmap });
@@ -536,7 +547,7 @@ test.describe("factory release evidence guard", () => {
   test("output order is deterministic", () => {
     const first = plan();
     const second = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct060ReadyRoadmap((draft) => {
         draft.tasks = [...draft.tasks].reverse();
       }),
       ciChecks: [...validCiChecks()].reverse(),
@@ -561,8 +572,8 @@ test.describe("factory release evidence guard", () => {
     );
   });
 
-  test("proposal does not add FCT-060 evidence to the implementation roadmap", () => {
-    const roadmap = readRoadmap();
+  test("proposal does not add FCT-060 evidence to a ready roadmap fixture", () => {
+    const roadmap = fct060ReadyRoadmap();
     const fct060 = findTask(roadmap, "FCT-060") as RoadmapTaskWithEvidence;
     const result = plan({ roadmap });
 
@@ -579,7 +590,7 @@ test.describe("factory release evidence guard", () => {
   test("next task unlock is only proposed under dependency rules", () => {
     const current = plan();
     const unlockable = plan({
-      roadmap: cloneRoadmap((draft) => {
+      roadmap: fct060ReadyRoadmap((draft) => {
         findTask(draft, "FCT-070").status = "blocked_dependency";
       })
     });
@@ -598,14 +609,20 @@ test.describe("factory release evidence guard", () => {
     ]);
   });
 
-  test("live roadmap keeps FCT-060 ready without implementation evidence", () => {
+  test("live roadmap has FCT-060 verified with PR #134 evidence and keeps FCT-070 deferred", () => {
     const roadmap = readRoadmap();
     const fct060 = findTask(roadmap, "FCT-060") as RoadmapTaskWithEvidence;
     const fct070 = findTask(roadmap, "FCT-070") as RoadmapTaskWithEvidence;
 
-    expect(fct060.status).toBe("ready");
-    expect(fct060.evidence).toBeUndefined();
+    expect(fct060.status).toBe("verified");
+    expect(fct060.evidence).toEqual(
+      expect.arrayContaining([
+        "PR #134",
+        `merge commit ${MERGE_SHA}`
+      ])
+    );
     expect(fct070.status).toBe("deferred");
     expect(fct070.evidence).toBeUndefined();
+    expect(fct070.auto_merge_eligible).toBe(false);
   });
 });

@@ -69,11 +69,12 @@ function findTask(roadmap: MutableRoadmap, taskId: string) {
 function fct050ReadyRoadmap(overrides?: (roadmap: MutableRoadmap) => void) {
   return cloneRoadmap((draft) => {
     const fct050 = findTask(draft, "FCT-050") as RoadmapTaskWithEvidence;
-    const fct060 = findTask(draft, "FCT-060");
+    const fct060 = findTask(draft, "FCT-060") as RoadmapTaskWithEvidence;
 
     fct050.status = "ready";
     delete fct050.evidence;
     fct060.status = "blocked_dependency";
+    delete fct060.evidence;
 
     overrides?.(draft);
   });
@@ -275,10 +276,11 @@ test.describe("factory CI repair loop", () => {
     expect(result.reasons.join("\n")).not.toContain("verified:FCT-050");
   });
 
-  test("live roadmap has FCT-050 verified with PR #132 evidence", () => {
+  test("live roadmap has FCT-050 and FCT-060 verified with merge evidence", () => {
     const roadmap = readRoadmap();
     const fct050 = findTask(roadmap, "FCT-050") as RoadmapTaskWithEvidence;
     const fct060 = findTask(roadmap, "FCT-060") as RoadmapTaskWithEvidence;
+    const fct070 = findTask(roadmap, "FCT-070") as RoadmapTaskWithEvidence;
 
     expect(fct050.status).toBe("verified");
     expect(fct050.evidence).toEqual(
@@ -287,8 +289,15 @@ test.describe("factory CI repair loop", () => {
         "merge commit 14393128a296ed09bebac700f7b4a86a2ceaf717"
       ])
     );
-    expect(fct060.status).toBe("ready");
-    expect(fct060.evidence).toBeUndefined();
+    expect(fct060.status).toBe("verified");
+    expect(fct060.evidence).toEqual(
+      expect.arrayContaining([
+        "PR #134",
+        "merge commit 0819bcbe170288cbede12aa640d478339506c083"
+      ])
+    );
+    expect(fct070.status).toBe("deferred");
+    expect(fct070.evidence).toBeUndefined();
   });
 
   test("roadmap task statuses are not mutated", () => {
