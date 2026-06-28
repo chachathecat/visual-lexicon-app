@@ -773,24 +773,21 @@ test.describe("factory quality gate", () => {
     );
   });
 
-  test("FCT-030 verification sync unblocks FCT-040 without implementing later tasks", () => {
-    const fct030 = readRoadmapTask("FCT-030");
+  test("FCT-040 verification sync unblocks FCT-050 without implementing later tasks", () => {
     const fct040 = readRoadmapTask("FCT-040");
     const fct050 = readRoadmapTask("FCT-050");
     const fct060 = readRoadmapTask("FCT-060");
 
-    expect(fct030.status).toBe("verified");
-    expect(fct030.evidence).toEqual(
+    expect(fct040.status).toBe("verified");
+    expect(fct040.evidence).toEqual(
       expect.arrayContaining([
-        "PR #128",
-        "merge commit 71c678140416fff3d959424c52c1ac85f546c169"
+        "PR #130",
+        "merge commit b67dc2c008f99051a17089485429d7261b9637b0"
       ])
     );
-    expect(fct040.status).toBe("ready");
-    expect(fct040.status).not.toBe("verified");
     expect(fct040.depends_on).toEqual(expect.arrayContaining(["FCT-030"]));
-    expect(fct040.evidence ?? []).toEqual([]);
-    expect(fct050.status).toBe("blocked_dependency");
+    expect(fct050.status).toBe("ready");
+    expect(fct050.depends_on).toEqual(expect.arrayContaining(["FCT-040"]));
     expect(fct060.status).toBe("blocked_dependency");
   });
 });
