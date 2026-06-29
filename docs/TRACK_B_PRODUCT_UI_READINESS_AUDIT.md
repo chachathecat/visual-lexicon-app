@@ -1,327 +1,405 @@
 # Track B Product/UI Readiness Audit
 
-## Executive decision
+## Executive Summary
 
-- Private paid beta: **Conditional / Manual-only** — a Conditional Go for owner-managed, invite-only use.
+- Private paid beta: **Conditional / Manual-only**
 - Public paid beta: **No-Go**
-- Audit date: 2026-06-24
-- Audited commit SHA: `13141144a18e7192435b035478f2b0e7f469300f`
+- Audit refresh date: 2026-06-29
+- Audited branch: `trackb/product-ui-readiness-audit`
+- Audited base: `origin/main` at `6a4db80b9671dcc3e7ca74ea8a8156546c3dfcf1`
+  after PR #136, Owner Command Center planner.
 - Repository: `chachathecat/visual-lexicon-app`
-- Branch: `release/track-b-product-ui-readiness-audit`
+- Scope: Track B learning app product/UI readiness only.
+- Runtime scope: **No runtime UI changes**. This PR records audit docs and a
+  focused contract test only.
 
-Track B is usable for a tightly controlled private paid beta run where the owner
-accepts browser-local learning state, no real checkout, no account sync, and the
-known mobile overflow on the legacy word-detail route. It is not ready for public
-paid beta.
+The core local learning loop is real enough for owner-managed manual beta:
+save creates or preserves review state, review answers write events and update
+memory state, and Due, Weak, and Mastered are derived from local review state.
+The product should still be presented as browser-local, no-checkout, and
+manual-owner-operated.
 
-## Report status and precedence
+Public paid beta remains blocked. The app still lacks account-owned learning
+persistence, server-authoritative entitlements, real billing/payment flows,
+provider policy, production monitoring, privacy/support/refund operations, and
+public launch safety gates. Canonical monetization prices and capabilities also
+are not yet reconciled with the visible pricing UI.
 
-- Report type: rendered-application evidence audit
+## Report Status And Precedence
+
+- Report type: Track B product/UI readiness audit, docs/tests-only refresh.
 - Report version: 2
-- Audited commit: 13141144a18e7192435b035478f2b0e7f469300f
 - This report supersedes the static typed product/UI readiness baseline v1 in
   `src/lib/product-ui-readiness/product-ui-readiness-audit.ts` only for
-  product/UI Go/No-Go decisions on the audited commit.
+  product/UI Go/No-Go decisions on the audited branch.
 - The typed v1 contract remains historical and contains pre-rendered-audit
-  assumptions, including missing full-route QA and incomplete
-  accessibility/mobile evidence.
-- The typed v1 `getP0Blockers()` helper must not be used as the current automated release gate until a separate contract-reconciliation PR updates it.
+  assumptions. Its `getP0Blockers()` helper must not be used as the current automated release gate until a separate contract-reconciliation PR updates it.
 - This report does not supersede canonical non-UI blockers involving payment,
   billing, account sync, support, privacy, refunds, production operations, or
   deployment.
-- Screen-reader behavior remains unverified and is an accepted risk only for the
-  owner-managed, invite-only, manual private beta recommendation.
+- This PR does not implement FCT-070, ACC-010, roadmap status changes, or
+  auto-merge.
 
-## Audit method
+## Audit Method
 
-- Environment: Windows PowerShell, Next.js dev server at
-  `http://127.0.0.1:3006`, system Chrome via Playwright because the managed
-  Playwright Chromium binary for this package revision was missing locally.
-- Routes tested: `/dashboard`, `/review`, `/review/due`, `/review/weak`,
-  `/review/weak-sprint`, `/saved`, `/packs`, `/packs/academic-vocabulary`,
-  `/pricing`, `/word/dissonance`, `/settings`, plus the golden save flow
-  `/save?slug=dissonance&source=word_page`.
-- Real word slug used: `dissonance`, from `src/lib/mock-data.ts:44` and
-  `src/lib/packs/mock-data.ts:13`.
-- Real pack route used: `/packs/academic-vocabulary`, from
-  `src/lib/packs/preview.ts:62`.
-- Desktop viewport: 1440 x 900.
-- Mobile viewport: 390 x 844.
-- State fixtures used: browser localStorage seeded only with the approved SRS
-  keys from `src/lib/srs/types.ts:1`: `vlx_saved_words_v1`,
-  `vlx_review_state_v1`, `vlx_review_events_v1`, and `vlx_daily_stats_v1`;
-  pack and plan keys were cleared or seeded only where existing tests already do
-  so.
-- Browser evidence: route pass showed HTTP 200 and no Next.js error overlay on
-  all audited routes; Track B shell routes had 0px horizontal overflow on mobile;
-  `/word/dissonance` had 259px overflow at 390px viewport.
-- Validation commands:
-  - `npm.cmd run typecheck`
-    - Final run exited 0.
-  - `npm.cmd run lint`
-    - Final run exited 0: `next lint` reported no ESLint warnings or errors.
-  - `npm.cmd run build`
-    - Final run exited 0: production build compiled successfully and generated
-      27 static app pages.
-  - `npx.cmd playwright test tests/product-ui-readiness.spec.ts --workers=1 --repeat-each=3`
-    - Final run exited 0: 27 passed in 2.4 minutes.
-  - `npx.cmd playwright test tests/product-ui-readiness.spec.ts --workers=1`
-    - Final run exited 0: 9 passed in 54.8 seconds.
-  - `npm.cmd run test -- --workers=1`
-    - Final run exited 0: 932 passed in 7.7 minutes.
+Evidence was gathered from the current source tree, existing route contracts,
+storage contracts, product-quality docs, and existing Playwright coverage. This
+refresh did not run browser QA while drafting the audit; validation results for
+this PR are reported in the PR body and final response after commands run.
 
-## Current product mental model
+Primary source files reviewed:
 
-The current app now presents a coherent Track B loop:
+- Routes under `src/app`
+- SRS state and selectors in `src/lib/srs`
+- Review session UI in `src/components/views/review-session-view.tsx`
+- Dashboard, Saved, Save, Packs, Pricing, Settings, and Word views
+- Pack progress and preview contracts in `src/lib/packs`
+- Upgrade interest and local entitlement contracts
+- Analytics event contracts in `src/lib/analytics`
+- Operating docs: `docs/golden_user_flows.md`,
+  `docs/product_quality_rubric.md`, `docs/security_and_permissions.md`,
+  `docs/release_checklist.md`, monetization v1 docs, and `PLANS.md`
+
+## Current Product Status
+
+Implemented and suitable for manual owner-run validation:
+
+- `/` redirects to `/dashboard`, making dashboard the Track B app entry.
+- Save creates or preserves `vlx_saved_words_v1` and
+  `vlx_review_state_v1`.
+- Review answers atomically update `vlx_review_state_v1`,
+  `vlx_review_events_v1`, and `vlx_daily_stats_v1`.
+- Due, Weak, New, and Mastered selectors derive from review state.
+- Weekly Reviewed Words derives from review events.
+- Saved Library is already framed as a memory queue rather than static storage.
+- Due, Weak, Focused Word, Hub, and Weak Sprint review modes exist.
+- Academic Vocabulary pack preview and pack progress exist locally.
+- Pricing and paywall CTAs capture local upgrade interest only when no external
+  beta URL is configured.
+- Minimal Supabase Magic Link session boundary exists for private dogfood, but
+  learning data remains browser-local.
+
+Not implemented for public paid beta:
+
+- Account-owned saved words, review state, review events, daily stats, or pack
+  progress.
+- Server-authoritative entitlement enforcement for the learning app.
+- Real checkout, billing, subscription, invoice, billing portal, webhook, or
+  payment-provider integration.
+- Public support, refund/cancellation, privacy, monitoring, alerting, rollback,
+  and incident operations.
+- Production-grade IELTS/GRE pack content and paid pack entitlement enforcement.
+- AI mistake explanation and multilingual page generation.
+- Production analytics pipeline beyond local/dataLayer contracts.
+
+## Route Inventory
+
+| Route | Current behavior | Readiness |
+| --- | --- | --- |
+| `/` | Redirects to `/dashboard`. | OK. Not a separate product surface. |
+| `/dashboard` | Renders `DashboardV2View` with Today Memory Mission, Start Review, real due/weak/new/mastered state, and local reading panels. | Conditional private OK; public needs account-backed state and final hierarchy. |
+| `/saved` | Renders `SavedLibraryView`; groups Review now, Needs another pass, Held in memory, and New from local SRS state. | Conditional private OK; public needs account persistence and continued queue-first framing. |
+| `/save?slug=dissonance&source=word_page` | Resolves the word and writes saved word plus initial review state. | P0 contract satisfied locally; keep covered. |
+| `/save?slug=dissonance&source=alias_search` | Supported by the save source union and alias search source contract; must save canonical slug, not an invented alias card. | Conditional private OK for known aliases; unknown alias states must remain non-actionable. |
+| `/save?slug=dissonance&source=extension` | Supported by `buildExtensionSaveUrl()` and normalized source handling. | Conditional private OK; must not store browsing history, page content, or extension secrets. |
+| `/review` | Mixed/default review session from local due, weak, saved, or starter candidates. | Conditional private OK; public needs account persistence and production a11y evidence. |
+| `/review?mode=due` | Query-mode due review via `parseReviewRouteContract()`. | Conditional private OK; due comes from `nextDueAt`. |
+| `/review?mode=weak` | Query-mode weak review via `parseReviewRouteContract()`. | Conditional private OK; weak comes from mastery/weakScore/mistakes. |
+| `/review/due` | Direct due route passing `mode="due"`. | Conditional private OK. |
+| `/review/weak` | Direct weak route passing `mode="weak"`. | Conditional private OK. |
+| `/review/weak-sprint` | Five-card weak sprint passing `mode="weak-sprint"` and `limit={5}`. | Conditional private OK; keep repair-focused. |
+| `/packs` | Pack catalog/product surface from `getPackPreviewCatalog()`, including available Academic Vocabulary and planned IELTS/GRE placeholders. | Conditional private OK; public content and entitlement blockers remain. |
+| `/packs/academic-vocabulary` | Supported pack detail generated from `packPreviewIds` and current pack reader data. | Conditional private OK; pack progress must remain event-derived. |
+| `/packs/[packId]` | Static pack detail for known preview IDs; unknown IDs 404. | Conditional private OK for known IDs only. |
+| `/pricing` | Early access interest page. Lite/Pro use `UpgradePlaceholderButton` with `interestOnly`; no checkout live. | Conditional private OK; public P0 until canonical prices, billing, support, and entitlements exist. |
+| `/settings` | Account status, local plan diagnostics, paywall trigger diagnostics, and local preferences copy. | Conditional private OK with disclosure; diagnostics should be removed or gated before broader beta. |
+| `/word/dissonance` | Static/mock word page with local `WordMemoryStatePanel`; primary header Review link is generic while the panel offers focused review. | P1 private/public: legacy shell/mobile and CTA hierarchy risk. |
+
+Other existing routes such as `/login`, `/auth/confirm`, and
+`/api/me/entitlements` are outside this UI audit scope. This PR does not edit
+those routes.
+
+## Core Funnel Inventory
+
+| Funnel step | Current source of truth | Readiness judgment |
+| --- | --- | --- |
+| Visual metaphor | Static/mock word data and local visuals. | OK for manual beta; public content provenance and asset policy need final gates. |
+| Save | `SaveLandingView`, `writeSavedWords()`, `createReviewItemFromSavedWord()`. | P0 satisfied locally. |
+| Active recall | `ReviewSessionView` with answer, confidence, feedback, and summary. | P0 satisfied locally; P1 polish for focus and mobile proof remains. |
+| Mistake record | Review events include result, selected/answer, responseMs, confidence, box/weakScore before/after. | P0 satisfied locally. |
+| Spaced review | `applyReviewAnswer()` enforces 5-box SRS intervals and wrong-answer return. | P0 satisfied locally. |
+| Mastery status | `getMasteryLabel()` only returns Mastered at box 5; delayed recall blocks premature box 5 promotion. | P0 satisfied locally. |
+| Weekly Reviewed Words | `getWeeklyReviewedWords()` counts unique slugs from review events in the current UTC week. | P0 satisfied locally; public analytics pipeline missing. |
+| Paid habit | Pricing/paywall capture local interest only. | Safe for manual beta; public paid beta P0 blocked. |
+
+## LocalStorage And State Inventory
+
+| Key | Current owner | Current role | Audit classification |
+| --- | --- | --- | --- |
+| `vlx_saved_words_v1` | `src/lib/srs/types.ts`, `src/lib/srs/storage.ts` | Saved word records by slug. | Approved learning key; must create/preserve review state. |
+| `vlx_review_state_v1` | SRS storage and engine | Box, mastery, counts, weak score, due date, response metadata. | Approved learning key; source of Due/Weak/Mastered truth. |
+| `vlx_review_events_v1` | SRS storage and analytics/retention | Append-style review answer history. | Approved learning key; source for Weekly Reviewed Words. |
+| `vlx_daily_stats_v1` | SRS storage | Local daily reviewed/correct/wrong/mastered/weak/session counters. | Approved learning key; derived from answers only. |
+| `vlx_pack_progress_v1` | `src/lib/packs/progress.ts` | Local pack preview start/completion and reviewed/correct counts. | Beta key; OK only when progress is driven by preview/review activity. |
+| `vlx_plan_state_v1` | `src/lib/entitlements/local-entitlements.ts` | Client-side local plan preview/diagnostic state. | Never proof of paid access; public P0 if used as authorization. |
+| `vlx_upgrade_interest_v1` | `src/lib/upgrade/upgrade-interest.ts` | Local interest records for pricing/paywall intent. | Attribution-only; never purchase, grant, receipt, or entitlement. |
+| `vlx_pending_home_quiz` | Docs/tests and beta readiness helpers | Optional transition key; no active app writer found in current route surfaces. | Preserve as transition-only if reintroduced; do not compete with SRS keys. |
+
+## Screen-By-Screen Audit
+
+| Surface | Primary action clarity | Contribution to Weekly Reviewed Words | Key risks | Severity |
+| --- | --- | --- | --- | --- |
+| Dashboard | Good: Start Review is the first learning action. | Strong: due/weak/new/mastered read from state and lead to review. | Some supporting panels still add scan cost; public needs account-backed counts. | P1 public, P2 private. |
+| Saved Library | Good: memory queue sections support Due/Weak/New/Mastered. | Strong: saved words route back into review. | Must avoid drifting back into static bookmark framing; large-library mobile scan needs QA. | P1 public, P2 private. |
+| Save Landing | Clear: "Added to your review queue" and Review now. | Strong: save creates initial review state. | Unknown/missing slugs must not create fake state; storage error paths need manual evidence. | P1 public, P2 private. |
+| Review | Clear and focused enough for manual beta. | Direct: every committed answer writes event/state/stats. | Screen-reader behavior and mobile ergonomics require broader manual evidence. | P1 public, P2 private. |
+| Due Review | Clear: due route is state-derived. | Direct: due answers count toward weekly reviewed words. | Empty-state education can improve; public needs server source of truth. | P1 public. |
+| Weak Review / Weak Sprint | Clear repair path from real weakness. | Direct: weak repair creates review events. | Future AI explanation must wait until SRS loop remains stable. | P1 public, P2 future AI. |
+| Packs | Better than catalog: course/product framing exists. | Medium: pack previews lead to review and progress. | IELTS/GRE placeholders and mock/static pack fallback cannot support public paid claims. | P1 private if copy overpromises; P0 public if sold. |
+| Pricing / Paywall | Safe but not conversion-ready: interest-only/no checkout. | Indirect: supports paid habit after learning loop. | Canonical prices/capabilities are not reflected; no billing/support/refund/account flow. | P0 public, P1 private copy. |
+| Settings | Honest: account sync/billing not connected. | Low direct contribution. | Local plan/paywall trigger panels feel diagnostic; support/privacy/reset settings not productized. | P1 public, P2 private. |
+| Word Detail | Useful memory state panel. | Medium: focused review link exists in panel. | Legacy shell/mobile risk remains; header Review CTA is generic. | P1. |
+
+## Placeholder And Planned Feature Inventory
+
+Search terms audited: `placeholder`, `planned`, `TODO`, `FIXME`, `mock`,
+`fallback`, `Billing is not connected`, `Paid beta placeholder`,
+`coming soon`, `not implemented`, `beta interest`, and `upgrade interest`.
+
+| Finding | Evidence | Classification |
+| --- | --- | --- |
+| No active runtime `TODO` / `FIXME` matches found; docs contain these terms as audit prompts. | `rg "TODO|FIXME" src docs tests` returns only audit/planning docs. | OK for audit-only beta docs. |
+| Pricing and paywall say paid beta interest only; billing not connected. | `UpgradePlaceholderButton`, `PaywallPrompt`, `/pricing`. | OK/private safety; P0 blocker before public paid beta. |
+| Canonical Lite/Pro prices exist but `/pricing` shows "Beta - pricing TBD". | Monetization JSON and `plan-catalog.v1.ts` list Lite USD 7.99 / KRW 7900 and Pro USD 14.99 / KRW 14900. | P0 blocker before public paid beta; P1 copy reconciliation before external manual beta. |
+| `vlx_plan_state_v1` local plan preview. | `local-entitlements.ts`. | OK diagnostic only; P0 if used to authorize paid access. |
+| IELTS/GRE pack placeholders. | `src/lib/packs/preview.ts` planned pack definitions. | OK if clearly marked; P1 before private if copy implies availability; P0 before public sale. |
+| Mock/static pack and alias data. | `src/lib/packs/mock-data.ts`, `src/lib/packs/pack-reader.ts`, multilingual mock alias packs. | OK for local/manual beta with disclosure; P1 public content provenance. |
+| Static pack fallback candidates in review. | `review-session-view.tsx` labels fallback candidates. | OK because labeled; P1 if fallback dominates real confusable logic. |
+| AI mistake explanations planned later. | `paywall/triggers.ts`, local entitlement placeholder fields. | P2 future; do not implement before SRS loop/public gates. |
+| Account sync not implemented for learning state. | Settings copy and account persistence docs. | Conditional private with disclosure; P0 public. |
+| Support/refund/privacy placeholders in private beta invite packet docs. | `src/lib/private-beta-invite-packet`. | P1 before inviting external paid/manual participants unless owner fills final copy manually. |
+| Login input placeholder. | `/login` approved learner email placeholder. | OK for private dogfood; not in paid UI scope. |
+
+## P0 Issue List
+
+P0 for public paid beta:
+
+- `P0-PUBLIC-001`: No account-owned persistence for saved words, review state,
+  review events, daily stats, or pack progress.
+- `P0-PUBLIC-002`: No real checkout, subscription, billing portal, invoice,
+  webhook, payment provider, or paid-entitlement grant path.
+- `P0-PUBLIC-003`: Local `vlx_plan_state_v1` and upgrade interest are
+  client-controlled and cannot authorize paid access.
+- `P0-PUBLIC-004`: `/pricing` is interest-only and not reconciled with the
+  canonical monetization JSON prices/capabilities.
+- `P0-PUBLIC-005`: Support, refund/cancellation, privacy, monitoring,
+  alerting, rollback, and public incident operations are not launch-ready.
+- `P0-PUBLIC-006`: Public production analytics/reporting for Weekly Reviewed
+  Words is not trusted server-side yet.
+- `P0-PUBLIC-007`: IELTS/GRE and paid pack claims cannot be sold until content,
+  entitlement, and pack progress truthfulness are verified.
+
+P0 for private/manual beta:
+
+- None found in the core local Save -> Review -> SRS loop during this audit
+  refresh, assuming no real payment is offered and owner disclosures stay clear.
+
+## P1 Issue List
+
+- `P1-001`: Word detail still uses the legacy app shell and a generic header
+  Review CTA; make focused Save/Review the obvious primary action.
+- `P1-002`: Settings shows diagnostic local plan/paywall panels; gate or remove
+  before broader beta.
+- `P1-003`: Dashboard, Saved, and Packs should continue reducing scan cost so
+  Today Memory Mission remains dominant.
+- `P1-004`: Pricing copy must reconcile interest-only safety with canonical
+  outcome/value messaging and prices before external paid conversion.
+- `P1-005`: Packs need stronger 30-day plan/product framing and verified real
+  IELTS/GRE content before paid claims.
+- `P1-006`: Manual QA needs a current execution report for save, alias,
+  extension, review, due, weak, packs, pricing, settings, word detail, mobile,
+  keyboard, and storage probes.
+- `P1-007`: Analytics coverage needs a clear route-to-event map for save,
+  review start, answer, complete, weak repair, pack preview, pricing interest,
+  paywall interest, and upgrade click.
+- `P1-008`: Accessibility evidence must include mobile review ergonomics,
+  keyboard-only review, live-region feedback quality, contrast, and screen
+  reader checks before broader beta.
+
+## P2 Issue List
+
+- `P2-001`: Copy density and diagnostic wording should be trimmed after P0/P1
+  contracts remain stable.
+- `P2-002`: Continue polishing the premium/minimal visual system without adding
+  decorative complexity.
+- `P2-003`: Future AI mistake explanation remains deferred.
+- `P2-004`: Future Supabase/account sync UI, multilingual pages, FCT-070,
+  auto-merge, full factory activation, production payment integration, and
+  B2B/Teacher/School functionality remain out of scope.
+
+## Go / No-Go Recommendation
+
+Private/manual beta: **Conditional Go**.
+
+Conditions:
+
+- Owner-operated and invite-only.
+- No real payment, checkout, subscription, invoice, or billing portal.
+- Participants are told learning state is browser-local unless explicit account
+  sync work ships later.
+- Support, refund/cancellation, privacy, and local-storage disclosure copy is
+  filled before external participants are invited.
+- Current manual QA is run and recorded.
+- Any P0 found in save/review/state writes stops the beta.
+
+Public paid beta: **No-Go**.
+
+Public paid beta remains No-Go until account persistence, payment/provider
+policy, server-authoritative entitlements, monitoring, privacy, support/refund,
+accessibility, content, rollback, production analytics, and production safety
+gates are satisfied.
+
+## Private / Manual Beta Readiness
+
+Conditional Go is reasonable because the local memory engine is materially
+present:
+
+- Save creates or preserves review state.
+- Review answers create events and update memory state.
+- Due, Weak, and Mastered are real-state-backed.
+- Upgrade interest does not grant entitlement.
+- Settings and pricing disclose missing account sync/billing.
+
+Remaining private/manual conditions:
+
+- Run a fresh manual QA execution report after this audit.
+- Fill participant-facing support/refund/privacy/local-storage disclosures.
+- Treat `vlx_plan_state_v1` as diagnostic only.
+- Do not accept payment through the app.
+- Keep route and storage probes focused on `dissonance` and safe mock data.
+
+## Public Paid Beta Readiness
+
+Public paid beta is No-Go because:
+
+- Account sync is not the source of truth for memory state.
+- Paid access cannot be created, audited, refunded, canceled, or revoked.
+- Canonical monetization values are not reconciled with the visible UI.
+- Pricing/paywall behavior is interest capture, not purchase.
+- Public support, privacy, refund, monitoring, and rollback gates are missing.
+- Paid pack access and content quality are not production-ready.
+- Server-side reporting for Weekly Reviewed Words is not ready.
+
+## Accessibility And Mobile Risk
+
+Known strengths:
+
+- Track B shell includes skip link and accessible navigation labels.
+- Review includes `aria-live="polite"` and progressbar semantics.
+- Existing accessibility release gate tests cover keyboard-only review flow,
+  live-region behavior, and 320px/200 percent reflow on core routes.
+- Current performance tests guard local word visuals and remote render-blocking
+  font stylesheet usage.
+
+Risks:
+
+- Word detail still sits outside the Track B shell route-prefix list and should
+  be checked or migrated.
+- Screen-reader quality for feedback and summary has not been fully human
+  verified.
+- Mobile thumb ergonomics for rapid answer/confidence selection need manual QA.
+- Settings diagnostics can be cognitively noisy for non-owner participants.
+
+## Performance And Loading-State Risk
+
+- Core local visuals are constrained by existing performance budget tests.
+- Pack reader can fall back to safe mock/static data when no static pack base
+  URL exists.
+- Public beta still needs production CDN, image policy, monitoring, and slow
+  network checks.
+- Loading and empty states are mostly honest, but large saved libraries and
+  missing pack data need broader QA.
+
+## Analytics And Event Coverage
+
+Current local event taxonomy includes:
 
 ```txt
-Today -> Review -> Weak -> Packs -> Saved -> Progress
+vlx_save_word
+vlx_saved_library_view
+vlx_word_memory_state_view
+vlx_review_start
+vlx_review_answer
+vlx_review_complete
+vlx_pack_preview_start
+vlx_pack_preview_complete
+vlx_pricing_interest
+vlx_paywall_interest
+vlx_quiz_start
+vlx_quiz_answer
+vlx_quiz_complete
+vlx_review_state_update
+vlx_due_review_start
+vlx_weak_review_start
+vlx_alias_search
+vlx_save_word_click
+vlx_extension_open_app
+vlx_extension_save_click
+vlx_extension_review_start
+vlx_extension_quiz_later_click
+vlx_exam_pack_preview_view
+vlx_exam_pack_preview_start
+vlx_paywall_view
+vlx_upgrade_click
 ```
 
-In the rendered app this maps to:
+Coverage gaps:
 
-- Today: `/dashboard` opens with Today's Memory Mission and Start review.
-- Review: `/review`, `/review/due`, `/review/weak`, and `/review/weak-sprint`
-  use the shared review session and write SRS state.
-- Weak: Weak review and Weak Sprint are derived from real mistakes and
-  `weakScore`.
-- Packs: `/packs` shows learning plans and the Weekly Reviewed Words metric.
-- Saved: `/saved` is a memory queue with Review now, Needs another pass, and
-  Held in memory sections.
-- Progress: no separate approved route exists; progress is currently embedded
-  in dashboard, packs, daily stats, and local SRS state.
+- No production analytics sink or dashboard is configured by this audit.
+- Weekly Reviewed Words is computed locally from events, not server-side.
+- Public beta needs route-to-event acceptance criteria and privacy-safe
+  production reporting.
+- Upgrade interest must remain attribution-only and must not become entitlement.
 
-Evidence:
+## Recommended Next PR Sequence
 
-- Dashboard reads real local SRS data through `readDashboardV2Snapshot` and
-  `getDueToday` in `src/components/views/dashboard-v2-view.tsx:63` and
-  `src/components/views/dashboard-v2-view.tsx:68`.
-- Saved queue sections read real `getDueToday`, `getWeakWords`, `getNewSaved`,
-  and `getMastered` selectors in
-  `src/components/views/saved-library-view.tsx:66`.
-- Packs reads `reviewEvents`, `dailyStats`, and `getWeeklyReviewedWords` in
-  `src/components/views/packs-v2-view.tsx:103` through
-  `src/components/views/packs-v2-view.tsx:115`.
+The current rebuild sequence is documented in
+`docs/TRACK_B_UI_REBUILD_SEQUENCE.md`:
 
-## Route-by-route findings
+1. Dashboard v2 - Today's Memory Mission.
+2. Review Session v2 - focused memory loop.
+3. Saved Library v2 - Due/Weak/New/Mastered queue.
+4. Packs v2 - 30-day plan/product cards.
+5. Pricing/Paywall v2 - outcome-based conversion.
+6. Manual QA execution report.
+7. Private beta gate.
 
-| Route | Primary action | Evidence | Confirmed issues | Unverified risks | Severity | Recommendation |
-| --- | --- | --- | --- | --- | --- | --- |
-| `/dashboard` | Start today's review mission. | Rendered 200 on desktop/mobile; Start review link visible; mobile overflow 0px. Source: `src/components/views/dashboard-v2-view.tsx:316`. | None blocking. | External Google font loads failed in restricted local browser; not reproduced as production asset failure. | P2 risk only. | Keep dashboard as Today-first; preserve real SRS counts. |
-| `/review` | Answer a focused recall card. | Rendered 200; heading visible; answer flow writes event/state. Source: `src/components/views/review-session-view.tsx:1233`, `src/components/views/review-session-view.tsx:1421`. | None blocking. | Screen-reader announcement quality beyond live-region presence was not audited with assistive tech. | P2. | Keep confidence-before-feedback and event write path. |
-| `/review/due` | Review cards due now. | Rendered 200; direct route uses shared `ReviewSessionView`; due candidates are from `getDueToday` at `src/lib/srs/selectors.ts:96`. | None blocking. | Due explanation copy could be tested with more learner scenarios. | P2. | Keep due as default Start review target. |
-| `/review/weak` | Repair fragile recall. | Rendered 200; weak candidates use `getWeakWords` at `src/lib/srs/selectors.ts:107`. | None blocking. | Mistake explanation remains locked/paywalled and AI is not implemented, as intended. | P2. | Preserve state-derived weak queue before adding AI. |
-| `/review/weak-sprint` | Complete a short weak-word sprint. | Rendered 200; sprint route passes `mode="weak-sprint"` and `limit={5}` in `src/app/review/weak-sprint/page.tsx:10`. | None blocking. | More mobile tap-target evidence would be useful after copy polish. | P2. | Keep as a small repair mode, not a parallel quiz product. |
-| `/saved` | Turn saved words into review queue actions. | Rendered 200; sections Review now, Needs another pass, Held in memory visible after hydration. Source: `src/components/views/saved-library-view.tsx:182`, `src/components/views/saved-library-view.tsx:188`, `src/components/views/saved-library-view.tsx:200`. | None blocking. | Empty-state support for large libraries needs further manual QA. | P2. | Keep Saved as queue-first, not bookmark-first. |
-| `/packs` | Choose a learning plan and start/continue review. | Rendered 200; displays `Weekly Reviewed Words: 2 | Reviewed today: 0` when seeded with two unique review-event slugs. Source: `src/components/views/packs-v2-view.tsx:507`. | None blocking. | Planned IELTS/GRE packs are honest placeholders but content depth is not audited for public sale. | P1 public. | Keep placeholders honest until pack data exists. |
-| `/packs/[packId]` | Start or inspect a specific pack plan. | `/packs/academic-vocabulary` rendered 200; pack id is from `src/lib/packs/preview.ts:62`. | None blocking. | Paid/full-plan boundaries need public-beta content audit. | P1 public. | Preserve free preview and honest unavailable states. |
-| `/pricing` | Express paid beta interest without checkout. | Rendered 200; Lite and Pro use `UpgradePlaceholderButton` with `interestOnly` at `src/app/pricing/page.tsx:94`; no checkout copy at `src/app/pricing/page.tsx:133`. | Public paid beta blocked because checkout/billing/prices are not live. | Pricing TBD copy is acceptable for private/manual beta but not public sale. | P0 public. | Keep interest-only until billing and support gates are approved. |
-| `/word/[slug]` | Save or review a specific word with memory state context. | `/word/dissonance` rendered 200; source uses legacy page layout at `src/app/word/[slug]/page.tsx:38` and memory panel at `src/app/word/[slug]/page.tsx:61`. | `VLX-AUDIT-P1-001`: mobile 390px viewport measured 259px horizontal overflow from legacy `.sidebar`, `.nav-list`, and `.app-main`. | Header primary Review links to `/review` instead of focused word review; memory panel does expose focused review. | P1. | Move word detail to Track B shell or fix legacy shell responsive width; make primary action focused review/save. |
-| `/settings` | Understand local account, plan, and local-only boundaries. | Rendered 200; Account Sync and Billing state shown as Not connected/Not configured at `src/app/settings/page.tsx:124`. | Public paid beta blocked because account sync and billing are not connected. | Local plan/paywall trigger diagnostic panels are not polished learner settings. | P0 public, P2 private. | Keep honest local-only disclosures; remove diagnostics before public beta. |
+Relationship to the historical typed v1 sequence:
 
-## Save -> Review truthfulness
+- #73 Track B design tokens / app shell v2
+- #74 Dashboard v2: Today's Memory Mission
+- #75 Review Session v2
+- #76 Saved Library v2
+- #77 Packs v2
+- #78 Pricing / Paywall v2
+- #79 Manual QA execution report
 
-Confirmed flow:
+Do not implement FCT-070, ACC-010, auto-merge, real payment, real account sync,
+new runtime API routes, middleware changes, or roadmap status changes in this
+audit PR.
 
-1. Open `/save?slug=dissonance&source=word_page`.
-2. The rendered page shows "Added to your review queue".
-3. `vlx_saved_words_v1.dissonance` is written with source `word_page`.
-4. `vlx_review_state_v1.dissonance` is created with `box: 0`,
-   `mastery: "New"`, `correct: 0`, `wrong: 0`, `weakScore: 0`, and
-   `nextDueAt` equal to the save timestamp.
-5. `/saved` shows Dissonance in the queue after hydration.
-6. `/review?mode=word&slug=dissonance` lets the learner answer the real card.
-7. Choosing "Dissonance" and "I knew it" writes one review event and updates
-   the state to `box: 1`, `mastery: "Learning"`, `correct: 1`,
-   `streakCorrect: 1`, `lastReviewedAt`, `nextDueAt`, and
-   `lastQuestionType: "definition_to_word"`.
-8. `vlx_daily_stats_v1["2026-06-24"].reviewed` becomes 1.
+## Safety Confirmation
 
-Implementation evidence:
+This audit PR does not implement runtime product changes.
 
-- Save reads and writes approved local stores in
-  `src/components/views/save-landing-view.tsx:400` through
-  `src/components/views/save-landing-view.tsx:417`.
-- Save success copy and Review now CTA are at
-  `src/components/views/save-landing-view.tsx:567` and
-  `src/components/views/save-landing-view.tsx:619`.
-- Storage creates saved review items in `src/lib/srs/storage.ts:426` and writes
-  review answers atomically in `src/lib/srs/storage.ts:446` through
-  `src/lib/srs/storage.ts:494`.
-- The SRS engine creates the review event at `src/lib/srs/engine.ts:366` and
-  daily stats at `src/lib/srs/engine.ts:385`.
+This audit PR does not include payment, billing, account sync, production
+deployment, Webflow, Cloudflare Worker, R2 production object, DNS, secrets,
+provider settings, middleware, or production data changes.
 
-## Weekly Reviewed Words
+This audit PR does not implement FCT-070 or ACC-010.
 
-Weekly Reviewed Words is derived from real review-event activity, not saved-word
-count.
+This audit PR does not enable auto-merge.
 
-Evidence:
-
-- Selector implementation: `getWeeklyReviewedWords` reads
-  `VlxReviewEventsStore`, filters events within the current UTC seven-day
-  window, maps to slugs, and returns the `Set` size at
-  `src/lib/srs/selectors.ts:143`.
-- Packs view reads `reviewEvents` from localStorage and computes
-  `weeklyReviewedWords` at `src/components/views/packs-v2-view.tsx:103` through
-  `src/components/views/packs-v2-view.tsx:115`.
-- Rendered browser check:
-  - With `vlx_review_events_v1 = []`, `/packs` showed
-    `Weekly Reviewed Words: 0 | Reviewed today: 0`.
-  - With three events covering two unique slugs, `/packs` showed
-    `Weekly Reviewed Words: 2 | Reviewed today: 0`.
-
-## Accessibility and mobile findings
-
-Confirmed:
-
-- Track B shell routes expose a skip link as the first focus target in review,
-  saved, packs, pricing, and settings. Source:
-  `src/components/track-b/app-shell.tsx:170`.
-- Review cards include an `aria-live="polite"` region and a progressbar at
-  `src/components/views/review-session-view.tsx:1635` and
-  `src/components/views/review-session-view.tsx:1701`.
-- The new Playwright test tabs to the dashboard Start review link, the review
-  answer button, and the pricing interest button.
-- Mobile overflow was 0px for `/dashboard`, `/review`, `/review/due`,
-  `/review/weak`, `/review/weak-sprint`, `/saved`, `/packs`,
-  `/packs/academic-vocabulary`, `/pricing`, and `/settings`.
-
-Confirmed issue:
-
-- `VLX-AUDIT-P1-001`: `/word/dissonance` overflows horizontally on 390 x 844.
-  Browser evidence: `documentElement.scrollWidth = 649`,
-  `clientWidth = 390`, overflow `259`. Overflowing nodes included `.sidebar`,
-  `.brand`, `.nav-list`, `.app-main`, `.page`, and `.detail-grid`.
-  Source evidence: the root layout wraps non-Track-B-shell routes in
-  `AppShell` at `src/app/layout.tsx:19`; `/word/[slug]` is excluded from the
-  Track B shell route prefix list in `src/components/app-shell.tsx:9` through
-  `src/components/app-shell.tsx:18`; mobile legacy nav uses
-  `repeat(5, minmax(120px, 1fr))` at `src/app/globals.css:1918`.
-
-Unverified:
-
-- Screen-reader announcement quality was inferred from semantics and not tested
-  with a screen reader.
-
-## Paywall and monetization findings
-
-Confirmed:
-
-- Pricing is interest-only. Lite and Pro actions use
-  `UpgradePlaceholderButton` with `interestOnly` at
-  `src/app/pricing/page.tsx:94` through `src/app/pricing/page.tsx:97`.
-- Pricing explicitly says no checkout is live, pricing is not final, and
-  submitting does not create an account or charge a card at
-  `src/app/pricing/page.tsx:133`.
-- Settings says Account Sync is Not connected and Billing is Not configured at
-  `src/app/settings/page.tsx:124` through `src/app/settings/page.tsx:129`.
-- Dashboard and low-count save flow rendered with no `[data-paywall-trigger]`.
-- Upgrade interest records are local-only; `upgrade-interest.ts` notes paid beta
-  interest should never block the learning flow at
-  `src/lib/upgrade/upgrade-interest.ts:154`.
-
-Public paid beta remains No-Go because the canonical paid-beta gates still
-require account sync, monitoring, privacy, accessibility, support, refund, and
-rollback readiness before public sale.
-
-## Confirmed findings
-
-| Issue ID | Route | Severity | Status | Evidence | Reproduction | User impact | Beta impact | Recommended correction | Confidence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| VLX-AUDIT-P0-001 | `/pricing`, `/settings`, cross-route | P0 | Confirmed for public beta; not private manual beta | `src/app/pricing/page.tsx:94`, `src/app/pricing/page.tsx:133`, `src/app/settings/page.tsx:124` | Open `/pricing`; observe interest-only CTAs and no checkout. Open `/settings`; observe Account Sync Not connected and Billing Not configured. | Public paid users cannot buy, recover, sync, or manage paid access. | Public paid beta No-Go; private manual beta can continue with explicit owner-managed expectations. | Keep interest-only; implement approved billing/account/support gates in separate authorized work. | High |
-| VLX-AUDIT-P1-001 | `/word/[slug]` | P1 | Confirmed | Browser metric at 390 x 844: overflow 259px. Source: `src/components/app-shell.tsx:9`, `src/app/globals.css:1918`, `src/app/word/[slug]/page.tsx:38`. | Open `/word/dissonance` at 390 x 844 and evaluate `document.documentElement.scrollWidth - document.documentElement.clientWidth`. | Mobile learners can accidentally pan horizontally on a word detail page. | Conditional private beta risk; not a core review-state blocker. | Move word detail into Track B shell or fix legacy AppShell responsive layout. | High |
-| VLX-AUDIT-P1-002 | `/word/[slug]` | P1 | Confirmed | Header Review link points to `/review` at `src/app/word/[slug]/page.tsx:45`; focused review link exists only inside `WordMemoryStatePanel` at `src/app/word/[slug]/page.tsx:61`. | Open `/word/dissonance`; inspect the primary header action and memory panel. | The obvious Review action may start generic review rather than this word. | Private beta can continue; public clarity should improve. | Make word detail primary action `Review this word` or `Save to review` with focused route. | Medium |
-| VLX-AUDIT-P2-001 | `/dashboard`, `/packs` | P2 | Confirmed local-environment console noise | Browser console reported `ERR_NETWORK_ACCESS_DENIED` for `fonts.gstatic.com` and local `favicon.ico` 404. | Run local rendered audit in restricted network environment. | Cosmetic/dev QA noise; app content still rendered. | No private beta blocker. | Self-host fonts or tolerate the local restriction; add favicon if desired. | Medium |
-| VLX-AUDIT-P2-002 | `/settings` | P2 | Confirmed | Local plan and paywall trigger diagnostics are rendered by `src/app/settings/page.tsx:159` and `src/app/settings/page.tsx:161`. | Open `/settings`. | Learners see implementation/diagnostic surfaces instead of quiet settings. | Acceptable for owner-run private beta, not polished public beta. | Hide diagnostics behind an owner/debug mode before broader beta. | High |
-
-## Suspected risks
-
-| Issue ID | Route | Severity | Status | Evidence | Reproduction | User impact | Beta impact | Recommended correction | Confidence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| VLX-AUDIT-RISK-001 | `/review/*` | P2 | Suspected | Review has live region and progressbar source evidence, but no screen-reader run was performed. | Use NVDA/VoiceOver through answer, confidence, feedback, summary. | Feedback may be verbose or unclear to screen-reader users. | Private beta should include manual a11y pass. | Run assistive-tech QA before expanding invite pool. | Medium |
-| VLX-AUDIT-RISK-002 | `/packs` | P1 public | Suspected | IELTS/GRE plans are placeholders in `src/lib/packs/preview.ts:74` and `src/lib/packs/preview.ts:89`. | Inspect `/packs`; planned pack cards show unavailable/placeholder states. | Public paid users may expect real exam content. | Public paid beta No-Go until content is ready or scoped out. | Keep placeholders honest; do not sell unavailable plans. | Medium |
-
-## Unverified items
-
-- Production CDN behavior for fonts and external images was not verified because
-  local browser network access was restricted.
-- Real auth/account sync behavior was not verified beyond current Settings
-  status copy; no runtime auth changes were made.
-- Payment, billing, refund, cancellation, and support operations were not
-  exercised because they are intentionally not implemented.
-- Assistive technology behavior was not verified with a screen reader.
-
-## P0 blockers
-
-- `VLX-AUDIT-P0-001`: Public paid beta is blocked by missing real payment,
-  billing, account sync, support, refund, and operational readiness. This does
-  not block a private, manually operated beta if users are told learning state is
-  browser-local and checkout is not live.
-
-## P1 improvements
-
-- `VLX-AUDIT-P1-001`: Fix `/word/[slug]` mobile overflow.
-- `VLX-AUDIT-P1-002`: Make `/word/[slug]` primary action focused on that word.
-- `VLX-AUDIT-RISK-002`: Keep unavailable exam packs out of paid claims.
-
-## P2 polish
-
-- `VLX-AUDIT-P2-001`: Reduce font/favicon console noise.
-- `VLX-AUDIT-P2-002`: Move Settings diagnostics out of the learner-facing UI.
-- Run a screen-reader pass for the review answer and feedback loop.
-
-## Proposed implementation sequence
-
-Use small, reviewable PR phases:
-
-1. **#73 Track B design tokens / app shell v2**  
-   Keep current Track B shell and token work stable; no rollback needed.
-2. **#74 Dashboard v2: Today's Memory Mission**  
-   Maintain the current Today-first dashboard and protect real SRS counts.
-3. **#75 Review Session v2**  
-   Preserve confidence-before-feedback and atomic event/state writes; add
-   assistive-tech QA evidence.
-4. **#76 Saved Library v2**  
-   Keep queue sections tied to Due, Weak, New, and Mastered selectors.
-5. **#77 Packs v2**  
-   Keep planned pack placeholders honest; avoid paid claims for missing content.
-6. **#78 Pricing / Paywall v2**  
-   Continue interest-only paid beta capture until explicit billing approval.
-7. **#79 Manual QA execution report**  
-   Record the private beta manual run, including `/word/[slug]` overflow status.
-8. Add a narrow follow-up PR to move `/word/[slug]` into the Track B shell or fix
-   legacy AppShell responsive width.
-
-## Explicit Go / No-Go recommendation
-
-- Owner-managed, invite-only use must acknowledge browser-local state, no live
-  checkout, no account sync, and the `/word/[slug]` mobile overflow. The core
-  save -> review -> event -> state loop is confirmed.
-- Public paid beta: **No-Go**. Do not open public paid access until billing,
-  account sync, support, refund/cancellation, privacy, accessibility, monitoring,
-  rollback, and content gates pass.
-
-## Untouched systems
-
-This audit PR changed only:
-
-- `docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md`
-- `tests/product-ui-readiness.spec.ts`
-
-Confirmed untouched:
-
-- Payment
-- Billing
-- Auth
-- DNS
-- Production data
-- Webflow
-- Cloudflare Workers
-- R2 production
-- Secrets
-- Environment variables
-- Deployment configuration
-- Runtime UI
+This audit PR does not change roadmap statuses.
 
 No runtime UI changes.
