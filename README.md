@@ -105,6 +105,7 @@ Audit and manual QA docs:
 ```txt
 docs/BETA_READINESS_AUDIT.md
 docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md
+docs/TRACK_B_UI_REBUILD_SEQUENCE.md
 docs/TRACK_B_SALMON_BRAND_TOKENS.md
 docs/TRACK_B_CORE_SURFACE_VISUAL_POLISH.md
 docs/TRACK_B_APP_SHELL_V2.md
@@ -138,6 +139,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 ```
 
 - [Track B Product/UI Readiness Audit](docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md)
+- [Track B UI Rebuild Sequence](docs/TRACK_B_UI_REBUILD_SEQUENCE.md)
 - [Track B Salmon Brand Tokens](docs/TRACK_B_SALMON_BRAND_TOKENS.md)
 - [Track B Core Surface Visual Polish](docs/TRACK_B_CORE_SURFACE_VISUAL_POLISH.md)
 - [Track B Simplicity Reset](docs/TRACK_B_SIMPLICITY_RESET.md)
