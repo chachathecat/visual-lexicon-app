@@ -1,0 +1,874 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "track_b_product_backlog_seed",
+  "repository": "chachathecat/visual-lexicon-app",
+  "branch_seeded_from": "origin/main after PR #138",
+  "updated_at": "2026-06-30",
+  "north_star": "weekly_reviewed_words",
+  "source_documents": [
+    "docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md",
+    "docs/TRACK_B_UI_REBUILD_SEQUENCE.md",
+    "docs/factory/next-task-run-packet.md",
+    "docs/factory/owner-command-center.md"
+  ],
+  "router_contract": {
+    "candidate_source": "track_b_product_backlog_seed_v1",
+    "sort_keys": [
+      "next_recommended_task_order",
+      "id"
+    ],
+    "same_input_produces_identical_order": true,
+    "dry_run_only": true,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false,
+    "field_mapping": {
+      "id": "id",
+      "title": "title",
+      "status": "status",
+      "lane": "phase",
+      "risk": "risk",
+      "task_surface": "taskSurface",
+      "expected_files": "expectedChangedFiles",
+      "validation_commands": "validation",
+      "owner_decision_required": "requiresOwnerApproval",
+      "next_recommended_task_order": "priority"
+    }
+  },
+  "this_pr": {
+    "type": "factory_backlog_seed",
+    "runtime_ui_changes": false,
+    "account_sync_implementation": false,
+    "payment_or_billing_changes": false,
+    "roadmap_status_changes": false,
+    "workflow_changes": false,
+    "codeowners_changes": false,
+    "auto_merge_enabled": false,
+    "live_github_mutations_from_implementation_code": false,
+    "expected_files": [
+      "docs/factory/track-b-product-backlog.v1.json",
+      "docs/factory/track-b-product-backlog.md",
+      "tests/factory-track-b-backlog.spec.ts"
+    ]
+  },
+  "global_stop_reasons": [
+    "runtime_ui_requested_in_backlog_seed_pr",
+    "account_sync_implementation_requested_in_backlog_seed_pr",
+    "payment_or_billing_requested_without_explicit_owner_approval",
+    "public_paid_beta_enablement_requested_before_required_gates",
+    "auto_merge_requested",
+    "live_github_mutation_requested_from_implementation_code",
+    "roadmap_status_change_requested",
+    "workflow_or_codeowners_change_requested",
+    "production_surface_or_secret_requested"
+  ],
+  "common_blocked_surfaces": [
+    "payment",
+    "billing",
+    "checkout",
+    "subscription",
+    "invoice",
+    "dns",
+    "deployment_settings",
+    "secrets",
+    "webflow_production",
+    "cloudflare_production_workers",
+    "r2_production_objects",
+    "account_schema",
+    "rls",
+    "migrations",
+    "production_account_data",
+    "production_user_data",
+    "production_pack_data",
+    "production_data",
+    "live_github_mutations",
+    "auto_merge",
+    "roadmap_status_changes"
+  ],
+  "stale_open_risks": [
+    {
+      "id": "PR-121",
+      "number": 121,
+      "state": "open",
+      "stale": true,
+      "mergeable_state": "not_mergeable_without_fresh_owner_evidence",
+      "auto_selectable": false,
+      "auto_mergeable": false,
+      "owner_decision_required": true,
+      "risk": "stale_open_not_mergeable",
+      "stop_reason": "pr_121_stale_open_not_mergeable"
+    }
+  ],
+  "release_gates": {
+    "public_paid_beta": {
+      "status": "blocked",
+      "owner_decision_required": true,
+      "required_before_unblock": [
+        "account_owned_learning_persistence",
+        "server_authoritative_entitlements",
+        "payment_provider_policy_and_billing_lifecycle",
+        "privacy_support_refund_and_cancellation_operations",
+        "production_monitoring_alerting_and_rollback",
+        "accessibility_and_mobile_manual_qa",
+        "trusted_public_analytics",
+        "production_pack_content_and_entitlement_evidence",
+        "owner_public_launch_signoff"
+      ],
+      "stop_reasons": [
+        "public_paid_beta_no_go_until_required_gates_pass",
+        "do_not_fake_beta_readiness"
+      ]
+    },
+    "private_manual_beta": {
+      "status": "blocked_dependency",
+      "owner_decision_required": true,
+      "depends_on": [
+        "TB-080",
+        "TB-090",
+        "TB-100"
+      ],
+      "required_before_unblock": [
+        "current_manual_qa_execution_report",
+        "owner_approval",
+        "no_real_payment",
+        "browser_local_learning_state_disclosure",
+        "support_privacy_refund_and_local_storage_disclosures"
+      ],
+      "stop_reasons": [
+        "manual_qa_missing_or_stale",
+        "owner_approval_missing",
+        "payment_or_billing_surface_detected",
+        "public_paid_beta_claim_detected"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "TB-010",
+      "title": "Track B Product/UI Readiness Audit",
+      "status": "verified",
+      "lane": "factory_product_readiness",
+      "phase": "factory_product_readiness",
+      "task_surface": "docs_only",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 10,
+      "risk": "low",
+      "depends_on": [],
+      "owner_decision_required": false,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md",
+        "docs/TRACK_B_UI_REBUILD_SEQUENCE.md",
+        "tests/product-ui-readiness-audit.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/product-ui-readiness-audit.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "PR #137 Track B Product/UI Readiness Audit is merged.",
+        "Audit records private/manual beta as conditional/manual-only.",
+        "Audit records public paid beta as No-Go.",
+        "Audit PR made no runtime UI changes.",
+        "Audit PR did not implement FCT-070, ACC-010, account sync, payments, billing, auto-merge, or roadmap status changes."
+      ],
+      "stop_reasons": [
+        "attempt_to_treat_audit_as_runtime_implementation",
+        "attempt_to_mark_public_paid_beta_ready",
+        "attempt_to_auto_select_pr_121",
+        "attempt_to_enable_auto_merge"
+      ],
+      "next_recommended_task_order": 10
+    },
+    {
+      "id": "TB-020",
+      "title": "Track B Design Tokens / App Shell v2",
+      "status": "ready",
+      "lane": "product_ui",
+      "phase": "product_ui",
+      "task_surface": "product_ui",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 20,
+      "risk": "medium",
+      "depends_on": [
+        "TB-010"
+      ],
+      "owner_decision_required": false,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/components/track-b/tokens.ts",
+        "src/components/track-b/app-shell.tsx",
+        "src/components/track-b/layout-primitives.tsx",
+        "src/components/track-b/learning-primitives.tsx",
+        "src/app/globals.css",
+        "tests/track-b-app-shell-v2.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/track-b-app-shell-v2.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "This is the first product implementation task after the backlog seed.",
+        "Track B shell and tokens support a calm, premium, minimal, warm, learning-focused UI.",
+        "Approved Track B routes remain unchanged.",
+        "No Dashboard v2, Review v2, Saved Library v2, Packs v2, or Pricing/Paywall v2 behavior is implemented in the same task.",
+        "No payment, billing, account sync, production deployment, Webflow, Cloudflare Worker, R2, DNS, secrets, or roadmap status surfaces are touched."
+      ],
+      "stop_reasons": [
+        "dashboard_v2_scope_added",
+        "review_v2_scope_added",
+        "saved_library_v2_scope_added",
+        "packs_v2_scope_added",
+        "pricing_or_paywall_v2_scope_added",
+        "blocked_surface_touched",
+        "auto_merge_requested"
+      ],
+      "next_recommended_task_order": 20
+    },
+    {
+      "id": "TB-030",
+      "title": "Dashboard v2",
+      "status": "blocked_dependency",
+      "lane": "product_ui",
+      "phase": "product_ui",
+      "task_surface": "product_ui",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 30,
+      "risk": "medium",
+      "depends_on": [
+        "TB-020"
+      ],
+      "owner_decision_required": false,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/app/dashboard/page.tsx",
+        "src/components/views/dashboard-v2-view.tsx",
+        "tests/dashboard-v2.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/dashboard-v2.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Today Memory Mission is the first dashboard priority.",
+        "Start Review, Practice Weak Words, and Continue Deck are visually dominant over Saved Library.",
+        "Due, Weak, New, Strong, and Mastered counts come from real review state.",
+        "No fake streaks, fake mastery, fake pack progress, or fake dashboard metrics are introduced.",
+        "Saved Library supports the review loop instead of becoming the main success metric."
+      ],
+      "stop_reasons": [
+        "review_state_not_source_of_truth",
+        "fake_metric_or_streak_introduced",
+        "saved_count_made_primary_success_metric",
+        "payment_or_account_sync_scope_added",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 30
+    },
+    {
+      "id": "TB-040",
+      "title": "Review Session v2",
+      "status": "blocked_dependency",
+      "lane": "product_ui",
+      "phase": "product_ui",
+      "task_surface": "product_ui",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 40,
+      "risk": "medium",
+      "depends_on": [
+        "TB-030"
+      ],
+      "owner_decision_required": false,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/app/review/page.tsx",
+        "src/app/review/due/page.tsx",
+        "src/app/review/weak/page.tsx",
+        "src/components/views/review-session-view.tsx",
+        "src/lib/review/route-contract.ts",
+        "tests/review-state-regression.spec.ts",
+        "tests/review-mode-routes.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/review-state-regression.spec.ts tests/review-mode-routes.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Review stays short, focused, and built around active recall.",
+        "Every committed answer writes a review event and updates review state and daily stats.",
+        "Wrong answers return sooner and increase weakScore according to SRS rules.",
+        "Mastered is not shown unless delayed recall has passed.",
+        "Random easy distractors are not the main quiz method.",
+        "AI tutor or AI mistake explanation is not introduced."
+      ],
+      "stop_reasons": [
+        "answer_does_not_write_event",
+        "review_state_not_updated",
+        "fake_mastery_introduced",
+        "random_easy_distractors_become_main_method",
+        "ai_tutor_scope_added",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 40
+    },
+    {
+      "id": "TB-050",
+      "title": "Saved Library v2",
+      "status": "blocked_dependency",
+      "lane": "product_ui",
+      "phase": "product_ui",
+      "task_surface": "product_ui",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 50,
+      "risk": "medium",
+      "depends_on": [
+        "TB-040"
+      ],
+      "owner_decision_required": false,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/app/saved/page.tsx",
+        "src/components/views/saved-library-view.tsx",
+        "tests/saved-library.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/saved-library.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Saved Library is framed as a review queue, not a bookmark list.",
+        "Due, Weak, New, Learning, Strong, Mastered, and All views derive from review state selectors.",
+        "Save creates or preserves review state for each word.",
+        "No static sample words appear as saved user state.",
+        "Saved words route naturally into review."
+      ],
+      "stop_reasons": [
+        "bookmark_first_hierarchy_returns",
+        "saved_word_without_review_state",
+        "fake_mastery_or_static_saved_state",
+        "payment_or_account_sync_scope_added",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 50
+    },
+    {
+      "id": "TB-060",
+      "title": "Packs v2",
+      "status": "blocked_dependency",
+      "lane": "product_ui",
+      "phase": "product_ui",
+      "task_surface": "product_ui",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 60,
+      "risk": "medium",
+      "depends_on": [
+        "TB-050"
+      ],
+      "owner_decision_required": false,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/app/packs/page.tsx",
+        "src/app/packs/[packId]/page.tsx",
+        "src/components/views/packs-v2-view.tsx",
+        "src/components/pack-card.tsx",
+        "src/components/pack-progress-summary.tsx",
+        "src/lib/packs/preview.ts",
+        "src/lib/packs/progress.ts",
+        "tests/exam-pack-preview.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/exam-pack-preview.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Packs are framed as learning plans, not inventory.",
+        "Academic Vocabulary keeps a real preview-to-review path.",
+        "IELTS and GRE stay honest until content exists.",
+        "Pack progress comes from preview/review activity and never from planned copy alone.",
+        "Paid pack claims are not made until content and entitlement evidence exist."
+      ],
+      "stop_reasons": [
+        "fake_pack_progress_introduced",
+        "paid_claim_for_missing_pack",
+        "mock_static_data_presented_as_production_content",
+        "billing_or_entitlement_scope_added",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 60
+    },
+    {
+      "id": "TB-070",
+      "title": "Pricing / Paywall v2",
+      "status": "blocked_dependency",
+      "lane": "product_ui",
+      "phase": "product_ui",
+      "task_surface": "product_ui",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 70,
+      "risk": "medium",
+      "depends_on": [
+        "TB-060"
+      ],
+      "owner_decision_required": true,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/app/pricing/page.tsx",
+        "src/components/paywall-prompt.tsx",
+        "src/components/upgrade-placeholder-button.tsx",
+        "src/lib/paywall/triggers.ts",
+        "tests/paywall-surfaces.spec.ts",
+        "tests/paywall-triggers.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/paywall-surfaces.spec.ts tests/paywall-triggers.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Pricing and paywall copy sells learning outcomes while remaining no-payment safe.",
+        "Canonical monetization values are reconciled before any public paid claim.",
+        "Upgrade interest remains local attribution only and never grants entitlement.",
+        "No checkout, payment SDK, billing portal, invoice, subscription, webhook, or entitlement grant is added.",
+        "Public paid beta remains No-Go."
+      ],
+      "stop_reasons": [
+        "checkout_or_payment_implied",
+        "billing_sdk_or_webhook_added",
+        "client_plan_state_grants_paid_access",
+        "canonical_pricing_mismatch_unresolved",
+        "public_paid_beta_marked_ready",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 70
+    },
+    {
+      "id": "TB-080",
+      "title": "Manual QA Execution Report",
+      "status": "blocked_dependency",
+      "lane": "manual_qa",
+      "phase": "manual_qa",
+      "task_surface": "docs_only",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 80,
+      "risk": "medium",
+      "depends_on": [
+        "TB-070"
+      ],
+      "owner_decision_required": false,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "docs/PAID_BETA_MANUAL_QA.md",
+        "docs/factory/track-b-manual-qa-execution-report.md",
+        "tests/paid-beta-manual-qa-execution.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/paid-beta-manual-qa-execution.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Manual QA records save, alias, extension, due, weak, packs, pricing, settings, word detail, mobile, keyboard, storage, and no-payment safety flows.",
+        "QA evidence is current and dated.",
+        "Any P0 in save, review, event writes, state updates, or payment safety blocks beta.",
+        "No fake beta readiness is claimed."
+      ],
+      "stop_reasons": [
+        "manual_qa_not_run",
+        "manual_qa_evidence_stale_or_missing",
+        "p0_learning_loop_issue_found",
+        "payment_safety_issue_found",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 80
+    },
+    {
+      "id": "TB-090",
+      "title": "Disabled Account Sync Route Skeleton",
+      "status": "blocked_dependency",
+      "lane": "account_sync_safety",
+      "phase": "account_sync_safety",
+      "task_surface": "app_server_logic",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 90,
+      "risk": "high",
+      "depends_on": [
+        "TB-080"
+      ],
+      "owner_decision_required": true,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/app/api/account-sync/route.ts",
+        "src/lib/account-runtime/disabled-account-sync.ts",
+        "tests/account-sync-route-skeleton-decision.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/account-sync-route-skeleton-decision.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Route skeleton is disabled by default and cannot sync learning data.",
+        "No account schema, RLS, migration, production account data, or production user data change is included.",
+        "No local learning state is silently uploaded or mutated.",
+        "Owner approval is recorded before implementation.",
+        "Public paid beta remains blocked."
+      ],
+      "stop_reasons": [
+        "owner_approval_missing",
+        "schema_rls_or_migration_scope_added",
+        "production_account_data_scope_added",
+        "learning_data_sync_enabled",
+        "public_paid_beta_marked_ready",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 90
+    },
+    {
+      "id": "TB-100",
+      "title": "Account Sync Preview / Digest Mock",
+      "status": "blocked_dependency",
+      "lane": "account_sync_safety",
+      "phase": "account_sync_safety",
+      "task_surface": "app_server_logic",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 100,
+      "risk": "high",
+      "depends_on": [
+        "TB-090"
+      ],
+      "owner_decision_required": true,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "src/lib/account-sync-preview-digest/account-sync-preview-digest.ts",
+        "src/lib/account-sync-preview-digest/fixtures.ts",
+        "src/lib/account-sync-preview-digest/README.md",
+        "tests/account-sync-preview-digest.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/account-sync-preview-digest.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Preview/digest is mock-only and deterministic.",
+        "No account sync is enabled.",
+        "No schema, RLS, migration, production account data, or production user data change is included.",
+        "Digest output is safe for owner review and does not imply launch readiness.",
+        "Owner approval is recorded before implementation."
+      ],
+      "stop_reasons": [
+        "owner_approval_missing",
+        "live_account_sync_enabled",
+        "schema_rls_or_migration_scope_added",
+        "production_account_data_scope_added",
+        "digest_claims_public_beta_ready",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 100
+    },
+    {
+      "id": "TB-110",
+      "title": "Private Beta Gate",
+      "status": "blocked_dependency",
+      "lane": "private_beta_gate",
+      "phase": "private_beta_gate",
+      "task_surface": "docs_only",
+      "source": "track_b_product_backlog_seed_v1",
+      "priority": 110,
+      "risk": "high",
+      "depends_on": [
+        "TB-080",
+        "TB-090",
+        "TB-100"
+      ],
+      "owner_decision_required": true,
+      "blocked_surfaces": [
+        "payment",
+        "billing",
+        "checkout",
+        "subscription",
+        "invoice",
+        "dns",
+        "deployment_settings",
+        "secrets",
+        "webflow_production",
+        "cloudflare_production_workers",
+        "r2_production_objects",
+        "account_schema",
+        "rls",
+        "migrations",
+        "production_account_data",
+        "production_user_data",
+        "production_pack_data",
+        "production_data",
+        "live_github_mutations",
+        "auto_merge",
+        "roadmap_status_changes"
+      ],
+      "expected_files": [
+        "docs/factory/track-b-private-beta-gate.md",
+        "src/lib/private-beta-gate/README.md",
+        "tests/private-beta-gate.spec.ts"
+      ],
+      "validation_commands": [
+        "npm.cmd run typecheck",
+        "npm.cmd run lint",
+        "npm.cmd run build",
+        "npm.cmd run test -- tests/private-beta-gate.spec.ts --workers=1"
+      ],
+      "acceptance_criteria": [
+        "Private/manual beta requires current manual QA evidence.",
+        "Owner approval is explicit and recorded.",
+        "Participants are told learning state is browser-local unless a later approved account sync task ships.",
+        "No real payment, checkout, subscription, invoice, billing portal, or payment SDK is exposed.",
+        "Support, privacy, refund/cancellation, and local-storage disclosures are filled.",
+        "Public paid beta remains No-Go."
+      ],
+      "stop_reasons": [
+        "manual_qa_missing_or_stale",
+        "owner_approval_missing",
+        "payment_or_billing_surface_detected",
+        "browser_local_state_disclosure_missing",
+        "support_privacy_refund_disclosure_missing",
+        "public_paid_beta_marked_ready",
+        "blocked_surface_touched"
+      ],
+      "next_recommended_task_order": 110
+    }
+  ]
+}
