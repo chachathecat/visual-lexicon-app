@@ -125,7 +125,16 @@ type StatusOverlay = {
     resulting_status: string;
     router_candidate_status: string;
     router_selectable: boolean;
+    owner_decision_required?: boolean;
+    owner_action_required?: boolean;
+    not_selectable_for_automatic_implementation?: boolean;
     needs_verification_reason?: string;
+    partial_verification_reason?: string;
+    blocked_reason?: string;
+    satisfied_by?: {
+      merged_pr_number: number;
+      evidence_source: string;
+    }[];
   }[];
   stale_open_pull_requests: {
     id: string;
@@ -268,7 +277,7 @@ function buildVerificationSummary(artifact: VerificationArtifact) {
 }
 
 test.describe("TB-090 account sync skeleton verification", () => {
-  test("artifact records TB-090 as partial verification and keeps overlay closed", () => {
+  test("artifact records TB-090 as partial verification and overlay applies owner action", () => {
     const artifact = readVerification();
     const overlay = readStatusOverlay();
     const tb090 = taskStatusById(overlay, "TB-090");
@@ -302,12 +311,27 @@ test.describe("TB-090 account sync skeleton verification", () => {
       runtime_account_sync_status: "not_implemented"
     });
     expect(tb090).toMatchObject({
-      resulting_status: "needs_verification",
-      router_candidate_status: "blocked_dependency",
-      router_selectable: false
+      resulting_status: "partial_verified",
+      router_candidate_status: "blocked_human",
+      router_selectable: false,
+      owner_decision_required: true,
+      owner_action_required: true,
+      not_selectable_for_automatic_implementation: true
     });
-    expect(tb090.needs_verification_reason).toContain(
-      "not the TB-090 disabled account-sync route skeleton scope"
+    expect(tb090.satisfied_by).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          merged_pr_number: 142,
+          evidence_source:
+            "docs/factory/tb-090-account-sync-skeleton-verification.v1.json"
+        })
+      ])
+    );
+    expect(tb090.partial_verification_reason).toContain(
+      "does not verify actual disabled route files"
+    );
+    expect(tb090.blocked_reason).toContain(
+      "Owner decision is required before any disabled account sync route skeleton files"
     );
   });
 

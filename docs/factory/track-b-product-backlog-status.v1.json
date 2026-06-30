@@ -22,6 +22,8 @@
     "docs/PRIVATE_BETA_GATE_PREP.md",
     "docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md",
     "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md",
+    "docs/factory/tb-090-account-sync-skeleton-verification.md",
+    "docs/factory/tb-090-account-sync-skeleton-verification.v1.json",
     "docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md"
   ],
   "router_contract": {
@@ -37,7 +39,7 @@
     "live_github_mutations_from_implementation_code": false,
     "auto_merge_enabled": false,
     "needs_verification_router_candidate_status": "blocked_dependency",
-    "selection_rule": "Only tasks with router_candidate_status ready or proposed can be selected; verified, blocked_dependency, blocked_human, and stale_not_selectable entries are not selectable."
+    "selection_rule": "Only tasks with router_candidate_status ready or proposed can be selected; verified, partial_verified, blocked_dependency, blocked_human, and stale_not_selectable entries are not selectable."
   },
   "this_pr": {
     "type": "factory_docs_tests_reconciliation",
@@ -56,11 +58,13 @@
       "docs/factory/track-b-product-backlog-status.v1.json",
       "docs/factory/track-b-product-backlog-status.md",
       "docs/factory/track-b-product-backlog.md",
-      "tests/factory-track-b-backlog-status.spec.ts"
+      "tests/factory-track-b-backlog-status.spec.ts",
+      "tests/factory-tb-090-account-sync-skeleton-verification.spec.ts"
     ]
   },
   "status_values": [
     "verified",
+    "partial_verified",
     "needs_verification",
     "blocked_dependency",
     "blocked_human",
@@ -231,21 +235,25 @@
       "task_id": "TB-090",
       "task_order": 90,
       "backlog_title": "Disabled Account Sync Route Skeleton",
-      "resulting_status": "needs_verification",
-      "router_candidate_status": "blocked_dependency",
+      "resulting_status": "partial_verified",
+      "router_candidate_status": "blocked_human",
       "router_selectable": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "not_selectable_for_automatic_implementation": true,
       "satisfied_by": [
         {
-          "merged_pr_number": 82,
-          "merged_title": "Account sync preview/digest mock",
-          "merge_commit_sha": "49c85451e68d9c67047667b6b92573c6c70be1c9",
-          "evidence_source": "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md",
-          "evidence_summary": "PR #82 satisfies preview/digest mock evidence for TB-100, but it explicitly does not implement real account sync, API routes, route handlers, middleware, auth, database/provider SDKs, or production writes.",
-          "validation_summary": "tests/account-sync-preview-digest.spec.ts covers preview/digest contracts, not a disabled route skeleton contract.",
-          "safety_summary": "Evidence is intentionally insufficient for TB-090 because implementing or verifying an account-sync route skeleton would touch a distinct high-risk boundary. Fail closed to needs_verification."
+          "merged_pr_number": 142,
+          "merged_title": "Verify TB-090 account sync skeleton evidence",
+          "merge_commit_sha": "88387968d9f7be95c8f74e5a99e5f3621e22501f",
+          "evidence_source": "docs/factory/tb-090-account-sync-skeleton-verification.v1.json",
+          "evidence_summary": "PR #142 verifies TB-090 as partial_verified: PR #69 provides decision-only evidence, PR #82 is TB-100 preview/digest evidence only, no actual disabled route skeleton exists, and no real account sync implementation exists.",
+          "validation_summary": "tests/factory-tb-090-account-sync-skeleton-verification.spec.ts covers the deterministic verification artifact and tests/factory-track-b-backlog-status.spec.ts covers the applied overlay behavior.",
+          "safety_summary": "TB-090 remains non-selectable for automatic implementation; route skeleton files, API handlers, auth, middleware, database/schema/RLS/migrations, payment, billing, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, and roadmap statuses remain untouched."
         }
       ],
-      "needs_verification_reason": "The available merged evidence satisfies TB-100 preview/digest mock, not the TB-090 disabled account-sync route skeleton scope."
+      "partial_verification_reason": "PR #142 verifies the decision-only evidence boundary and the absence of route skeleton/runtime account sync implementation; it does not verify actual disabled route files.",
+      "blocked_reason": "Owner decision is required before any disabled account sync route skeleton files are created. Do not auto-select TB-090 for runtime implementation."
     },
     {
       "task_id": "TB-100",
@@ -360,10 +368,12 @@
   "next_safe_gap": {
     "task_id": "TB-090",
     "title": "Disabled Account Sync Route Skeleton",
-    "resulting_status": "needs_verification",
-    "router_candidate_status": "blocked_dependency",
+    "resulting_status": "partial_verified",
+    "router_candidate_status": "blocked_human",
     "router_selectable": false,
-    "source": "actual_remaining_gap_not_stale_planned_order",
-    "recommendation": "Run an owner-approved verification/reconciliation task to decide whether TB-090 is already satisfied elsewhere or should remain blocked before any account sync implementation work is selected."
+    "owner_decision_required": true,
+    "owner_action_required": true,
+    "source": "owner_action_required_after_pr_142_verification",
+    "recommendation": "Produce an owner-decision packet before any account sync route skeleton files are added. Do not select stale TB-090 verification or runtime implementation."
   }
 }

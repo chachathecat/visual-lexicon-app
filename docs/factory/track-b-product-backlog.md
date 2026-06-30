@@ -13,6 +13,12 @@ overlay before selection so merged tasks such as `TB-020` App Shell v2,
 `TB-030` Dashboard v2, and the rest of the already shipped Track B sequence are
 not selected again from this seed.
 
+After PR #142, that overlay maps `TB-090` to `partial_verified` and
+`blocked_human`: the verification artifact records decision-only evidence, no
+actual disabled account sync route skeleton, and an owner decision requirement
+before route files. Factory routers must surface that as owner action required,
+not as implementation-ready work.
+
 1. `TB-010` Track B Product/UI Readiness Audit - verified.
 2. `TB-020` Track B Design Tokens / App Shell v2 - first product
    implementation task after this seed.

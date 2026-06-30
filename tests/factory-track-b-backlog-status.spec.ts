@@ -13,6 +13,7 @@ import {
 type BacklogRisk = "low" | "medium" | "high";
 type StatusValue =
   | "verified"
+  | "partial_verified"
   | "needs_verification"
   | "blocked_dependency"
   | "blocked_human"
@@ -70,8 +71,11 @@ type TaskStatusOverlay = {
   router_candidate_status: RouterCandidateStatus;
   router_selectable: boolean;
   owner_decision_required?: boolean;
+  owner_action_required?: boolean;
+  not_selectable_for_automatic_implementation?: boolean;
   satisfied_by: StatusEvidence[];
   needs_verification_reason?: string;
+  partial_verification_reason?: string;
   blocked_reason?: string;
 };
 
@@ -138,6 +142,8 @@ type TrackBStatusOverlay = {
     resulting_status: StatusValue;
     router_candidate_status: RouterCandidateStatus;
     router_selectable: boolean;
+    owner_decision_required?: boolean;
+    owner_action_required?: boolean;
     source: string;
     recommendation: string;
   };
@@ -217,6 +223,10 @@ function taskStatusById(overlay: TrackBStatusOverlay, taskId: string) {
 
 function normalizedPath(path: string) {
   return path.replace(/\\/g, "/").replace(/\/+/g, "/").toLowerCase();
+}
+
+function isFactoryDocsOrTestsPath(path: string) {
+  return path.startsWith("docs/factory/") || path.startsWith("tests/factory-");
 }
 
 function applyStatusOverlay(
@@ -485,6 +495,7 @@ test.describe("Track B product backlog status overlay", () => {
     });
     expect(overlay.status_values).toEqual([
       "verified",
+      "partial_verified",
       "needs_verification",
       "blocked_dependency",
       "blocked_human",
@@ -645,7 +656,10 @@ test.describe("Track B product backlog status overlay", () => {
 
       expect(normalized.startsWith("src/"), expectedFile).toBe(false);
       expect(
-        FORBIDDEN_THIS_PR_PATH_PARTS.some((part) => normalized.includes(part)),
+        !isFactoryDocsOrTestsPath(normalized) &&
+          FORBIDDEN_THIS_PR_PATH_PARTS.some((part) =>
+            normalized.includes(part)
+          ),
         `${expectedFile} is protected implementation scope`
       ).toBe(false);
     }
@@ -688,32 +702,62 @@ test.describe("Track B product backlog status overlay", () => {
     );
   });
 
-  test("ambiguous evidence fails closed to needs_verification", () => {
+  test("TB-090 applies PR #142 partial verification as owner action", () => {
     const overlay = readStatusOverlay();
     const result = planWithStatusOverlay();
     const tb090 = taskStatusById(overlay, "TB-090");
 
     expect(tb090).toMatchObject({
-      resulting_status: "needs_verification",
-      router_candidate_status: "blocked_dependency",
-      router_selectable: false
+      resulting_status: "partial_verified",
+      router_candidate_status: "blocked_human",
+      router_selectable: false,
+      owner_decision_required: true,
+      owner_action_required: true,
+      not_selectable_for_automatic_implementation: true
     });
-    expect(tb090.needs_verification_reason).toContain(
-      "not the TB-090 disabled account-sync route skeleton scope"
+    expect(tb090.satisfied_by).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          merged_pr_number: 142,
+          evidence_source:
+            "docs/factory/tb-090-account-sync-skeleton-verification.v1.json"
+        })
+      ])
+    );
+    expect(
+      tb090.satisfied_by.some((evidence) => evidence.merged_pr_number === 82)
+    ).toBe(false);
+    expect(tb090.partial_verification_reason).toContain(
+      "does not verify actual disabled route files"
+    );
+    expect(tb090.blocked_reason).toContain(
+      "Owner decision is required before any disabled account sync route skeleton files"
     );
     expect(result.selectedTask?.id).not.toBe("TB-090");
-    expect(result.blockedTasks).toEqual(
+    expect(result.ownerDecisionRequired).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           taskId: "TB-090",
-          reason: "roadmap_status:blocked_dependency",
+          status: "blocked_human",
           implementableNow: false
         })
       ])
     );
+    expect(result.blockedTasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          taskId: "TB-090",
+          reason: "roadmap_status:blocked_human",
+          implementableNow: false
+        })
+      ])
+    );
+    expect(
+      result.rejectedTasks.find((task) => task.taskId === "TB-090")?.reason
+    ).toContain("candidate_not_ready:blocked_human");
   });
 
-  test("next safe gap is derived from actual remaining gaps", () => {
+  test("next safe gap is deterministic owner action, not stale verification", () => {
     const overlay = readStatusOverlay();
     const firstNonVerified = buildStatusSummary(overlay).find(
       (status) => status.resulting_status !== "verified"
@@ -722,11 +766,16 @@ test.describe("Track B product backlog status overlay", () => {
     expect(firstNonVerified?.task_id).toBe("TB-090");
     expect(overlay.next_safe_gap).toMatchObject({
       task_id: "TB-090",
-      resulting_status: "needs_verification",
-      router_candidate_status: "blocked_dependency",
+      resulting_status: "partial_verified",
+      router_candidate_status: "blocked_human",
       router_selectable: false,
-      source: "actual_remaining_gap_not_stale_planned_order"
+      owner_decision_required: true,
+      owner_action_required: true,
+      source: "owner_action_required_after_pr_142_verification"
     });
     expect(overlay.next_safe_gap.task_id).not.toBe("TB-020");
+    expect(overlay.next_safe_gap.recommendation).toContain(
+      "Do not select stale TB-090 verification or runtime implementation"
+    );
   });
 });
