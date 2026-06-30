@@ -66,10 +66,18 @@ type StatusEvidence = {
 type OwnerDecisionPacketStatus = {
   exists: boolean;
   status: string;
+  artifact_present_in_this_pr: boolean;
+  artifact_source: string;
+  artifact_markdown: string;
   outcome?: string;
+  satisfies_previous_factory_output: boolean;
+  selected_decision_option_id: string;
   router_reselectable?: boolean;
   claims_actual_account_sync_exists: boolean;
   claims_disabled_route_skeleton_files_exist: boolean;
+  claims_api_route_handlers_exist: boolean;
+  approves_account_sync_implementation: boolean;
+  creates_disabled_route_skeleton_files: boolean;
   approves_future_runtime_route_skeleton_implementation: boolean;
   evidence_summary: string;
 };
@@ -112,6 +120,7 @@ type TrackBStatusOverlay = {
   schema_version: string;
   kind: string;
   repository: string;
+  source_documents: string[];
   router_contract: {
     apply_overlay_before_selection: boolean;
     same_input_produces_identical_order: boolean;
@@ -153,12 +162,21 @@ type TrackBStatusOverlay = {
     id: string;
     task_id: string;
     status: string;
+    artifact_present_in_this_pr: boolean;
+    artifact_source: string;
+    artifact_markdown: string;
     merged: boolean;
+    merge_status: string;
+    satisfies_previous_factory_output: boolean;
+    selected_decision_option_id: string;
     router_selectable: boolean;
     auto_selectable: boolean;
     reselect_for_factory_output: boolean;
     claims_actual_account_sync_exists: boolean;
     claims_disabled_route_skeleton_files_exist: boolean;
+    claims_api_route_handlers_exist: boolean;
+    approves_account_sync_implementation: boolean;
+    creates_disabled_route_skeleton_files: boolean;
     approves_future_runtime_route_skeleton_implementation: boolean;
     public_paid_beta_effect: string;
     private_manual_beta_effect: string;
@@ -537,6 +555,12 @@ test.describe("Track B product backlog status overlay", () => {
       "blocked_human",
       "stale_not_selectable"
     ]);
+    expect(overlay.source_documents).toEqual(
+      expect.arrayContaining([
+        "docs/factory/tb-090-owner-decision-packet.md",
+        "docs/factory/tb-090-owner-decision-packet.v1.json"
+      ])
+    );
 
     for (const status of overlay.task_statuses) {
       expect(status.task_id).toMatch(/^TB-\d{3}$/);
@@ -753,11 +777,20 @@ test.describe("Track B product backlog status overlay", () => {
       not_selectable_for_automatic_implementation: true,
       owner_decision_packet: {
         exists: true,
-        status: "merged",
-        outcome: "packet_exists_without_runtime_approval",
+        status: "artifact_exists",
+        artifact_present_in_this_pr: true,
+        artifact_source: "docs/factory/tb-090-owner-decision-packet.v1.json",
+        artifact_markdown: "docs/factory/tb-090-owner-decision-packet.md",
+        outcome: "packet_satisfies_previous_factory_output_only",
+        satisfies_previous_factory_output: true,
+        selected_decision_option_id:
+          "keep_tb_090_blocked_no_runtime_route_skeleton",
         router_reselectable: false,
         claims_actual_account_sync_exists: false,
         claims_disabled_route_skeleton_files_exist: false,
+        claims_api_route_handlers_exist: false,
+        approves_account_sync_implementation: false,
+        creates_disabled_route_skeleton_files: false,
         approves_future_runtime_route_skeleton_implementation: false
       }
     });
@@ -780,7 +813,10 @@ test.describe("Track B product backlog status overlay", () => {
       "Owner decision is required before any disabled account sync route skeleton files"
     );
     expect(tb090.blocked_reason).toContain(
-      "does not approve actual account sync, disabled route skeleton files, or future runtime route skeleton implementation"
+      "does not approve actual account sync, disabled route skeleton files, API route handlers, or future runtime route skeleton implementation"
+    );
+    expect(tb090.owner_decision_packet?.evidence_summary).toContain(
+      "docs/factory/tb-090-owner-decision-packet.v1.json"
     );
     expect(result.selectedTask?.id).not.toBe("TB-090");
     expect(result.ownerDecisionRequired).toEqual(
@@ -818,13 +854,23 @@ test.describe("Track B product backlog status overlay", () => {
 
     expect(tb090Packet).toMatchObject({
       task_id: "TB-090",
-      status: "exists",
-      merged: true,
+      status: "artifact_exists",
+      artifact_present_in_this_pr: true,
+      artifact_source: "docs/factory/tb-090-owner-decision-packet.v1.json",
+      artifact_markdown: "docs/factory/tb-090-owner-decision-packet.md",
+      merged: false,
+      merge_status: "pending_pr_144_merge",
+      satisfies_previous_factory_output: true,
+      selected_decision_option_id:
+        "keep_tb_090_blocked_no_runtime_route_skeleton",
       router_selectable: false,
       auto_selectable: false,
       reselect_for_factory_output: false,
       claims_actual_account_sync_exists: false,
       claims_disabled_route_skeleton_files_exist: false,
+      claims_api_route_handlers_exist: false,
+      approves_account_sync_implementation: false,
+      creates_disabled_route_skeleton_files: false,
       approves_future_runtime_route_skeleton_implementation: false,
       public_paid_beta_effect: "no_unblock",
       private_manual_beta_effect: "no_launch"
