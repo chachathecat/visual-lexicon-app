@@ -77,8 +77,8 @@ function runtimeValidationEvidence() {
 function taskMappings(): PrReadinessTaskMappingLike[] {
   return [
     {
-      id: "TB-020",
-      title: "Track B Design Tokens / App Shell v2",
+      id: "FCT-PR-READINESS",
+      title: "PR readiness owner queue summarizer",
       taskSurface: "docs_only",
       risk: "low",
       expectedChangedFiles: [
@@ -105,11 +105,11 @@ function baseInput(
   return {
     pr: {
       number: 140,
-      title: "[TB-020] Add PR readiness owner queue docs/tests",
+      title: "[Factory] Add PR readiness owner queue summarizer",
       body: "Goal, scope, validation results, and safety section are present.",
       state: "open",
       isDraft: false,
-      labels: ["factory", "task:TB-020"],
+      labels: ["factory", "task:FCT-PR-READINESS"],
       mergeableState: "clean"
     },
     changedFiles: [
@@ -177,7 +177,7 @@ test.describe("factory PR readiness owner queue summarizer", () => {
         version: 1,
         status: "pass",
         readiness: "ready_for_owner_review",
-        taskId: "TB-020"
+        taskId: "FCT-PR-READINESS"
       }
     });
   });
@@ -293,7 +293,7 @@ test.describe("factory PR readiness owner queue summarizer", () => {
       changedFiles: [".github/workflows/ci.yml"],
       pr: {
         ...baseInput().pr,
-        title: "[TB-020] Update workflow readiness"
+        title: "[Factory] Update workflow readiness"
       },
       ownerApprovalPolicy: {
         ownerApprovalRequired: true,
@@ -459,7 +459,7 @@ test.describe("factory PR readiness owner queue summarizer", () => {
     expect(completeRuntimeEvidence.readiness).toBe("ready_for_owner_review");
   });
 
-  test("Track B backlog task mapping is deterministic", () => {
+  test("factory backlog task mapping is deterministic", () => {
     const first = summarize({
       taskBacklogMapping: taskMappings()
     });
@@ -471,8 +471,8 @@ test.describe("factory PR readiness owner queue summarizer", () => {
       ]
     });
 
-    expect(first.taskId).toBe("TB-020");
-    expect(second.taskId).toBe("TB-020");
+    expect(first.taskId).toBe("FCT-PR-READINESS");
+    expect(second.taskId).toBe("FCT-PR-READINESS");
     expect(second.changedFilesSummary.files).toEqual(
       first.changedFilesSummary.files
     );
