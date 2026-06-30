@@ -452,7 +452,7 @@ test.describe("Track B product backlog seed", () => {
     );
   });
 
-  test("TB-020 is the first selectable product implementation task for the router", () => {
+  test("raw seed alone identifies TB-020 before status overlay reconciliation", () => {
     const seed = readBacklogSeed();
     const result = planNextTaskRunPacket({
       roadmap: backlogRoadmap(seed),

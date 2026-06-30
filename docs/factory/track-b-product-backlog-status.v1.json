@@ -1,0 +1,369 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "track_b_product_backlog_status_overlay",
+  "repository": "chachathecat/visual-lexicon-app",
+  "applies_to": {
+    "kind": "track_b_product_backlog_seed",
+    "path": "docs/factory/track-b-product-backlog.v1.json",
+    "branch_seeded_from": "origin/main after PR #140",
+    "merge_baseline": "954529a7dbbcbec81c9688a10bc7f14ed063cb11"
+  },
+  "updated_at": "2026-06-30",
+  "purpose": "Reconcile Track B factory backlog selection status with merged product and beta-readiness PR evidence so completed tasks are not selected again.",
+  "source_documents": [
+    "docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md",
+    "docs/TRACK_B_APP_SHELL_V2.md",
+    "docs/TRACK_B_DASHBOARD_V2.md",
+    "docs/TRACK_B_REVIEW_SESSION_V2.md",
+    "docs/TRACK_B_SAVED_LIBRARY_V2.md",
+    "docs/TRACK_B_PACKS_V2.md",
+    "docs/TRACK_B_PRICING_PAYWALL_V2.md",
+    "docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md",
+    "docs/PRIVATE_BETA_GATE_PREP.md",
+    "docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md",
+    "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md",
+    "docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md"
+  ],
+  "router_contract": {
+    "candidate_source": "track_b_product_backlog_seed_v1_plus_status_overlay_v1",
+    "apply_overlay_before_selection": true,
+    "sort_keys": [
+      "task_order",
+      "task_id"
+    ],
+    "same_input_produces_identical_order": true,
+    "same_input_produces_identical_status_summary": true,
+    "dry_run_only": true,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false,
+    "needs_verification_router_candidate_status": "blocked_dependency",
+    "selection_rule": "Only tasks with router_candidate_status ready or proposed can be selected; verified, blocked_dependency, blocked_human, and stale_not_selectable entries are not selectable."
+  },
+  "this_pr": {
+    "type": "factory_docs_tests_reconciliation",
+    "runtime_ui_changes": false,
+    "account_sync_implementation": false,
+    "payment_or_billing_changes": false,
+    "roadmap_status_changes": false,
+    "workflow_changes": false,
+    "codeowners_changes": false,
+    "agents_policy_changes": false,
+    "dns_or_deployment_changes": false,
+    "production_data_changes": false,
+    "auto_merge_enabled": false,
+    "live_github_mutations_from_implementation_code": false,
+    "expected_files": [
+      "docs/factory/track-b-product-backlog-status.v1.json",
+      "docs/factory/track-b-product-backlog-status.md",
+      "docs/factory/track-b-product-backlog.md",
+      "tests/factory-track-b-backlog-status.spec.ts"
+    ]
+  },
+  "status_values": [
+    "verified",
+    "needs_verification",
+    "blocked_dependency",
+    "blocked_human",
+    "stale_not_selectable"
+  ],
+  "default_policy": {
+    "ambiguous_evidence_status": "needs_verification",
+    "ambiguous_evidence_router_candidate_status": "blocked_dependency",
+    "do_not_infer_completion_without_matching_scope": true,
+    "do_not_auto_select_stale_prs": true,
+    "do_not_unblock_public_paid_beta": true,
+    "do_not_unblock_private_manual_beta_without_owner_approval": true
+  },
+  "task_statuses": [
+    {
+      "task_id": "TB-010",
+      "task_order": 10,
+      "backlog_title": "Track B Product/UI Readiness Audit",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 137,
+          "merged_title": "Track B Product/UI Readiness Audit",
+          "merge_commit_sha": "d22d50e7e715e619901fef651095914c8852024d",
+          "evidence_source": "docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md",
+          "evidence_summary": "Audit records the #73 through #79 product/UI sequence and keeps private/manual beta conditional and public paid beta No-Go.",
+          "validation_summary": "Covered by tests/product-ui-readiness-audit.spec.ts and the existing backlog seed tests.",
+          "safety_summary": "Docs/tests audit only; no runtime UI, payment, billing, account sync, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-020",
+      "task_order": 20,
+      "backlog_title": "Track B Design Tokens / App Shell v2",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 73,
+          "merged_title": "Track B design tokens / app shell v2",
+          "merge_commit_sha": "998426fa99856d0122d5ba6bd25fff09e05cee8a",
+          "evidence_source": "docs/TRACK_B_APP_SHELL_V2.md",
+          "evidence_summary": "App shell v2 foundation, Track B tokens, shell primitives, accessibility contract, and route foundation are documented as complete.",
+          "validation_summary": "Required validation listed as typecheck, lint, build, and full test run; app shell v2 has tests/track-b-app-shell-v2.spec.ts evidence.",
+          "safety_summary": "No Dashboard v2, Review v2, Saved Library v2, Packs v2, Pricing/Paywall v2, payment, billing, account sync, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-030",
+      "task_order": 30,
+      "backlog_title": "Dashboard v2",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 74,
+          "merged_title": "Dashboard v2: Today's Memory Mission",
+          "merge_commit_sha": "086b78af43eb273ffeaf1c3494558e0e5f3a1ea7",
+          "evidence_source": "docs/TRACK_B_DASHBOARD_V2.md",
+          "evidence_summary": "Dashboard v2 is documented as the canonical Track B app entry around Today's Memory Mission and real review-state counts.",
+          "validation_summary": "Dashboard v2 has tests/dashboard-v2.spec.ts evidence and the doc states review, saved, packs, pricing, SRS, route handlers, middleware, auth, billing, and provider integrations were not changed.",
+          "safety_summary": "No fake due, weak, mastered, streak, paid access, payment, billing, account sync, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-040",
+      "task_order": 40,
+      "backlog_title": "Review Session v2",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 75,
+          "merged_title": "Review Session v2",
+          "merge_commit_sha": "c0b538e1f49ba8598f031776db094fbd4cbf857d",
+          "evidence_source": "docs/TRACK_B_REVIEW_SESSION_V2.md",
+          "evidence_summary": "Review Session v2 is documented as one active recall card at a time with answer events, confidence, feedback, state updates, and honest empty states.",
+          "validation_summary": "Review route and state regression coverage exists in tests/review-mode-routes.spec.ts and tests/review-state-regression.spec.ts.",
+          "safety_summary": "No AI tutor, random-main distractor system, fake mastery, payment, billing, account sync, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-050",
+      "task_order": 50,
+      "backlog_title": "Saved Library v2",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 76,
+          "merged_title": "Saved Library v2",
+          "merge_commit_sha": "3a49691b5be3e10b14aa592bb93e4a573bd7a220",
+          "evidence_source": "docs/TRACK_B_SAVED_LIBRARY_V2.md",
+          "evidence_summary": "Saved Library v2 is documented as a Memory queue with Due, Weak, New, Learning, Mastered, and All views derived from local review state.",
+          "validation_summary": "Saved Library v2 has tests/saved-library.spec.ts evidence and docs record read-only review-state/event behavior.",
+          "safety_summary": "No static saved state, fake mastery, fake paid access, payment, billing, account sync, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-060",
+      "task_order": 60,
+      "backlog_title": "Packs v2",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 77,
+          "merged_title": "Packs v2",
+          "merge_commit_sha": "98ac47e6fb662917bd6148c3c41e56299f4eeef4",
+          "evidence_source": "docs/TRACK_B_PACKS_V2.md",
+          "evidence_summary": "Packs v2 is documented as guided vocabulary plans with honest Academic Vocabulary preview and pending IELTS/GRE states where content is absent.",
+          "validation_summary": "Pack preview coverage exists in tests/exam-pack-preview.spec.ts and docs state pack progress is computed from known pack word slugs and local evidence.",
+          "safety_summary": "No fake pack progress, paid pack claim without content, payment SDK, billing, entitlement grant, account sync, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-070",
+      "task_order": 70,
+      "backlog_title": "Pricing / Paywall v2",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 78,
+          "merged_title": "Pricing / Paywall v2",
+          "merge_commit_sha": "c05379ddfa492523d136a747a9084547a6c525fb",
+          "evidence_source": "docs/TRACK_B_PRICING_PAYWALL_V2.md",
+          "evidence_summary": "Pricing / Paywall v2 is documented as outcome-based Free, Lite, and Pro copy with local/visual paywall prompts only.",
+          "validation_summary": "Paywall surface and trigger coverage exists in tests/paywall-surfaces.spec.ts, tests/paywall-triggers.spec.ts, and tests/entitlements.spec.ts.",
+          "safety_summary": "No checkout, payment SDK, billing portal, invoice, subscription, webhook, entitlement grant, account sync, paid access enforcement, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes; public paid beta remains No-Go."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-080",
+      "task_order": 80,
+      "backlog_title": "Manual QA Execution Report",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 79,
+          "merged_title": "Manual QA execution report",
+          "merge_commit_sha": "e08a4513ae9b8901f1fa2b8686a610e2786bd380",
+          "evidence_source": "docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md",
+          "evidence_summary": "Manual QA report records route smoke, storage probes, mobile/keyboard checklist, paywall checklist, and private paid beta as Conditional / Manual-only.",
+          "validation_summary": "Report validation requires typecheck, lint, build, full tests, and git diff check; tests/paid-beta-manual-qa-execution.spec.ts covers the report contract.",
+          "safety_summary": "Docs/contracts/tests only; no runtime UI, account sync, payment, billing, auth, database, provider SDK, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes; public paid beta remains No-Go."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-090",
+      "task_order": 90,
+      "backlog_title": "Disabled Account Sync Route Skeleton",
+      "resulting_status": "needs_verification",
+      "router_candidate_status": "blocked_dependency",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 82,
+          "merged_title": "Account sync preview/digest mock",
+          "merge_commit_sha": "49c85451e68d9c67047667b6b92573c6c70be1c9",
+          "evidence_source": "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md",
+          "evidence_summary": "PR #82 satisfies preview/digest mock evidence for TB-100, but it explicitly does not implement real account sync, API routes, route handlers, middleware, auth, database/provider SDKs, or production writes.",
+          "validation_summary": "tests/account-sync-preview-digest.spec.ts covers preview/digest contracts, not a disabled route skeleton contract.",
+          "safety_summary": "Evidence is intentionally insufficient for TB-090 because implementing or verifying an account-sync route skeleton would touch a distinct high-risk boundary. Fail closed to needs_verification."
+        }
+      ],
+      "needs_verification_reason": "The available merged evidence satisfies TB-100 preview/digest mock, not the TB-090 disabled account-sync route skeleton scope."
+    },
+    {
+      "task_id": "TB-100",
+      "task_order": 100,
+      "backlog_title": "Account Sync Preview / Digest Mock",
+      "resulting_status": "verified",
+      "router_candidate_status": "verified",
+      "router_selectable": false,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 82,
+          "merged_title": "Account sync preview/digest mock",
+          "merge_commit_sha": "49c85451e68d9c67047667b6b92573c6c70be1c9",
+          "evidence_source": "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md",
+          "evidence_summary": "Preview/digest mock is documented as deterministic, redacted, preview-only, and non-mutating.",
+          "validation_summary": "tests/account-sync-preview-digest.spec.ts covers allowed keys, redaction, blocked sensitive fields, payload limits, malformed payload handling, and no apply/write behavior.",
+          "safety_summary": "No real account sync, apply/write operation, auth, API route, route handler, middleware, database/provider SDK, payment, entitlement mutation, browser storage mutation, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ]
+    },
+    {
+      "task_id": "TB-110",
+      "task_order": 110,
+      "backlog_title": "Private Beta Gate",
+      "resulting_status": "blocked_human",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "owner_decision_required": true,
+      "satisfied_by": [
+        {
+          "merged_pr_number": 80,
+          "merged_title": "Private beta gate prep",
+          "merge_commit_sha": "6b9155775f2970fc7e216181d119f1021531e0d5",
+          "evidence_source": "docs/PRIVATE_BETA_GATE_PREP.md",
+          "evidence_summary": "Private beta gate prep defines owner-controlled cohort caps, allowed and blocked launch conditions, owner checklist, monitoring checklist, support/privacy/refund requirements, and rollback criteria.",
+          "validation_summary": "tests/private-beta-gate.spec.ts covers the private beta gate prep contract.",
+          "safety_summary": "Docs/contracts/tests only; no runtime UI, account sync implementation, payment, billing, public signup, public paid beta, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        },
+        {
+          "merged_pr_number": 81,
+          "merged_title": "Manual payment / entitlement policy",
+          "merge_commit_sha": "7ea84a95bb744d7c15318671fb844f83134ab62f",
+          "evidence_source": "docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md",
+          "evidence_summary": "Manual payment / entitlement policy keeps private beta payment manual-only and automatic entitlement blocked.",
+          "validation_summary": "tests/manual-payment-entitlement.spec.ts covers the policy contract.",
+          "safety_summary": "No checkout, payment SDK, billing webhook, automatic entitlement grant, auth, DB write, account sync, production data, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        },
+        {
+          "merged_pr_number": 83,
+          "merged_title": "Monitoring, support, privacy beta gate",
+          "merge_commit_sha": "2d3d59edefb9a7faea5abce2a440a9534a0a919b",
+          "evidence_source": "docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md",
+          "evidence_summary": "Monitoring, support, privacy beta gate defines manual monitoring, route smoke, console/hydration capture, incident log, support/refund/privacy copy, consent checklist, and pause criteria.",
+          "validation_summary": "tests/beta-ops-gate.spec.ts covers monitoring/support/privacy gate contracts.",
+          "safety_summary": "No monitoring SDK, analytics SDK, API route, route handler, middleware, auth, database/provider SDK, payment, billing, real account sync, AI, env var, deployment, Webflow, Cloudflare Workers, R2, DNS, secrets, production data, workflows, CODEOWNERS, AGENTS.md, or roadmap status changes."
+        }
+      ],
+      "blocked_reason": "Private/manual beta remains owner-approved and gated; public paid beta remains blocked."
+    }
+  ],
+  "stale_open_pull_requests": [
+    {
+      "id": "PR-121",
+      "number": 121,
+      "state": "open",
+      "stale": true,
+      "resulting_status": "stale_not_selectable",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "auto_mergeable": false,
+      "owner_decision_required": true,
+      "mergeable_state": "not_mergeable_without_fresh_owner_evidence",
+      "evidence_summary": "PR #121 remains stale/open and must not be auto-selected or auto-merged.",
+      "safety_summary": "Requires fresh owner evidence before any action; no implementation code performs live GitHub mutations."
+    }
+  ],
+  "release_gates": {
+    "public_paid_beta": {
+      "status": "blocked",
+      "resulting_status": "blocked_human",
+      "owner_decision_required": true,
+      "router_selectable": false,
+      "required_before_unblock": [
+        "account_owned_learning_persistence",
+        "server_authoritative_entitlements",
+        "payment_provider_policy_and_billing_lifecycle",
+        "privacy_support_refund_and_cancellation_operations",
+        "production_monitoring_alerting_and_rollback",
+        "accessibility_and_mobile_manual_qa",
+        "trusted_public_analytics",
+        "production_pack_content_and_entitlement_evidence",
+        "owner_public_launch_signoff"
+      ],
+      "safety_summary": "Public paid beta remains No-Go and must not be unblocked by backlog status reconciliation."
+    },
+    "private_manual_beta": {
+      "status": "blocked_human",
+      "owner_decision_required": true,
+      "manual_only": true,
+      "router_selectable": false,
+      "required_before_unblock": [
+        "current_manual_qa_execution_report",
+        "owner_approval",
+        "participant_local_state_disclosure",
+        "manual_payment_and_entitlement_policy_acceptance",
+        "support_privacy_refund_and_local_storage_disclosures",
+        "manual_monitoring_issue_log_and_pause_criteria"
+      ],
+      "safety_summary": "Private/manual beta remains owner-approved and gated; this overlay does not launch, invite, charge, or grant entitlement."
+    }
+  },
+  "next_safe_gap": {
+    "task_id": "TB-090",
+    "title": "Disabled Account Sync Route Skeleton",
+    "resulting_status": "needs_verification",
+    "router_candidate_status": "blocked_dependency",
+    "router_selectable": false,
+    "source": "actual_remaining_gap_not_stale_planned_order",
+    "recommendation": "Run an owner-approved verification/reconciliation task to decide whether TB-090 is already satisfied elsewhere or should remain blocked before any account sync implementation work is selected."
+  }
+}

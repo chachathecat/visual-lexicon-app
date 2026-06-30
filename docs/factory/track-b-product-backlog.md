@@ -6,6 +6,13 @@ product backlog seed for the factory next-task router.
 This is a factory/backlog contract, not runtime UI implementation. It records
 the next safe Track B task order after PR #137 and PR #138:
 
+Status reconciliation for already merged Track B work lives in
+`docs/factory/track-b-product-backlog-status.v1.json` and
+`docs/factory/track-b-product-backlog-status.md`. Routers should apply that
+overlay before selection so merged tasks such as `TB-020` App Shell v2,
+`TB-030` Dashboard v2, and the rest of the already shipped Track B sequence are
+not selected again from this seed.
+
 1. `TB-010` Track B Product/UI Readiness Audit - verified.
 2. `TB-020` Track B Design Tokens / App Shell v2 - first product
    implementation task after this seed.
