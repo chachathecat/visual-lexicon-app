@@ -18,7 +18,8 @@ Factory routers should apply the overlay before selection:
 4. Sort by `task_order`, then `task_id`.
 5. Select only candidates whose router status is `ready` or `proposed`.
 
-`verified`, `blocked_dependency`, `blocked_human`, `needs_verification`, and
+`verified`, `partial_verified`, `blocked_dependency`, `blocked_human`,
+`needs_verification`, and
 `stale_not_selectable` are not selectable. `needs_verification` maps to
 `blocked_dependency` for the current router because the router status enum does
 not include `needs_verification`.
@@ -36,7 +37,7 @@ The same input must produce the same ordering and the same status summary.
 | `TB-060` Packs v2 | `verified` | PR #77, merge `98ac47e6fb662917bd6148c3c41e56299f4eeef4` |
 | `TB-070` Pricing / Paywall v2 | `verified` | PR #78, merge `c05379ddfa492523d136a747a9084547a6c525fb` |
 | `TB-080` Manual QA Execution Report | `verified` | PR #79, merge `e08a4513ae9b8901f1fa2b8686a610e2786bd380` |
-| `TB-090` Disabled Account Sync Route Skeleton | `needs_verification` | PR #82 proves preview/digest mock scope, not disabled route skeleton scope |
+| `TB-090` Disabled Account Sync Route Skeleton | `partial_verified` | PR #142 verification artifact records PR #69 decision-only evidence, PR #82 as `TB-100` only, no actual route skeleton, and owner decision required before route files |
 | `TB-100` Account Sync Preview / Digest Mock | `verified` | PR #82, commit `49c85451e68d9c67047667b6b92573c6c70be1c9` |
 | `TB-110` Private Beta Gate | `blocked_human` | PRs #80, #81, and #83 provide gate evidence, but private beta remains owner-approved and gated |
 
@@ -45,13 +46,14 @@ PR #121 remains `stale_not_selectable`.
 ## Resulting Next Gap
 
 After applying the overlay, duplicate completed tasks from `TB-020` through
-`TB-080` and `TB-100` are not selectable. The next actual gap is `TB-090`
-because available PR #82 evidence is for Account Sync Preview / Digest Mock, not
-for a Disabled Account Sync Route Skeleton.
+`TB-080` and `TB-100` are not selectable. `TB-090` is no longer a stale
+verification task: PR #142 applies the deterministic verification outcome as
+`partial_verified`, routes it as `blocked_human`, and keeps it non-selectable
+for automatic implementation.
 
-`TB-090` remains `needs_verification`, so the router must not turn it into
-runtime account sync implementation. The safe next action is an owner-approved
-verification/reconciliation task.
+The next safe output is owner action required for `TB-090`: produce an owner
+decision packet before any disabled account sync route skeleton files are added.
+The router must not turn `TB-090` into runtime account sync implementation.
 
 ## Safety Boundaries
 
