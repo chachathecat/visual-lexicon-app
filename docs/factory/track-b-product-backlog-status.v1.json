@@ -24,6 +24,8 @@
     "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md",
     "docs/factory/tb-090-account-sync-skeleton-verification.md",
     "docs/factory/tb-090-account-sync-skeleton-verification.v1.json",
+    "docs/factory/tb-090-owner-decision-packet.md",
+    "docs/factory/tb-090-owner-decision-packet.v1.json",
     "docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md"
   ],
   "router_contract": {
@@ -55,11 +57,13 @@
     "auto_merge_enabled": false,
     "live_github_mutations_from_implementation_code": false,
     "expected_files": [
+      "docs/factory/tb-090-owner-decision-packet.v1.json",
+      "docs/factory/tb-090-owner-decision-packet.md",
       "docs/factory/track-b-product-backlog-status.v1.json",
       "docs/factory/track-b-product-backlog-status.md",
       "docs/factory/track-b-product-backlog.md",
-      "tests/factory-track-b-backlog-status.spec.ts",
-      "tests/factory-tb-090-account-sync-skeleton-verification.spec.ts"
+      "tests/factory-tb-090-owner-decision-packet.spec.ts",
+      "tests/factory-track-b-backlog-status.spec.ts"
     ]
   },
   "status_values": [
@@ -241,6 +245,24 @@
       "owner_decision_required": true,
       "owner_action_required": true,
       "not_selectable_for_automatic_implementation": true,
+      "owner_decision_packet": {
+        "exists": true,
+        "status": "artifact_exists",
+        "artifact_present_in_this_pr": true,
+        "artifact_source": "docs/factory/tb-090-owner-decision-packet.v1.json",
+        "artifact_markdown": "docs/factory/tb-090-owner-decision-packet.md",
+        "outcome": "packet_satisfies_previous_factory_output_only",
+        "satisfies_previous_factory_output": true,
+        "selected_decision_option_id": "keep_tb_090_blocked_no_runtime_route_skeleton",
+        "router_reselectable": false,
+        "claims_actual_account_sync_exists": false,
+        "claims_disabled_route_skeleton_files_exist": false,
+        "claims_api_route_handlers_exist": false,
+        "approves_account_sync_implementation": false,
+        "creates_disabled_route_skeleton_files": false,
+        "approves_future_runtime_route_skeleton_implementation": false,
+        "evidence_summary": "docs/factory/tb-090-owner-decision-packet.v1.json records the TB-090 owner decision packet artifact. It satisfies the previous packet-production output only; it does not approve account sync implementation, disabled route skeleton files, API route handlers, or future runtime route skeleton implementation."
+      },
       "satisfied_by": [
         {
           "merged_pr_number": 142,
@@ -253,7 +275,7 @@
         }
       ],
       "partial_verification_reason": "PR #142 verifies the decision-only evidence boundary and the absence of route skeleton/runtime account sync implementation; it does not verify actual disabled route files.",
-      "blocked_reason": "Owner decision is required before any disabled account sync route skeleton files are created. Do not auto-select TB-090 for runtime implementation."
+      "blocked_reason": "Owner decision is required before any disabled account sync route skeleton files are created; the TB-090 owner decision packet artifact exists in this PR but does not approve actual account sync, disabled route skeleton files, API route handlers, or future runtime route skeleton implementation. Do not auto-select TB-090 or reselect TB-090 owner decision packet work."
     },
     {
       "task_id": "TB-100",
@@ -282,6 +304,7 @@
       "router_candidate_status": "blocked_human",
       "router_selectable": false,
       "owner_decision_required": true,
+      "owner_action_required": true,
       "satisfied_by": [
         {
           "merged_pr_number": 80,
@@ -312,6 +335,33 @@
         }
       ],
       "blocked_reason": "Private/manual beta remains owner-approved and gated; public paid beta remains blocked."
+    }
+  ],
+  "owner_decision_packets": [
+    {
+      "id": "TB-090-OWNER-DECISION-PACKET",
+      "task_id": "TB-090",
+      "status": "artifact_exists",
+      "artifact_present_in_this_pr": true,
+      "artifact_source": "docs/factory/tb-090-owner-decision-packet.v1.json",
+      "artifact_markdown": "docs/factory/tb-090-owner-decision-packet.md",
+      "merged": false,
+      "merge_status": "pending_pr_144_merge",
+      "satisfies_previous_factory_output": true,
+      "selected_decision_option_id": "keep_tb_090_blocked_no_runtime_route_skeleton",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "reselect_for_factory_output": false,
+      "claims_actual_account_sync_exists": false,
+      "claims_disabled_route_skeleton_files_exist": false,
+      "claims_api_route_handlers_exist": false,
+      "approves_account_sync_implementation": false,
+      "creates_disabled_route_skeleton_files": false,
+      "approves_future_runtime_route_skeleton_implementation": false,
+      "public_paid_beta_effect": "no_unblock",
+      "private_manual_beta_effect": "no_launch",
+      "evidence_summary": "docs/factory/tb-090-owner-decision-packet.v1.json is the packet artifact and should not be produced again by the factory router.",
+      "safety_summary": "The packet does not create account sync, disabled route skeleton files, API route handlers, auth/session behavior, middleware, database/schema/RLS/migrations, entitlement mutation, payment, billing, deployment, production data, or runtime UI changes."
     }
   ],
   "stale_open_pull_requests": [
@@ -366,14 +416,63 @@
     }
   },
   "next_safe_gap": {
-    "task_id": "TB-090",
-    "title": "Disabled Account Sync Route Skeleton",
-    "resulting_status": "partial_verified",
+    "rank": 1,
+    "id": "OWNER-MINIMAL-INTERVENTION-QUEUE-PACKET",
+    "title": "Owner minimal-intervention queue packet",
+    "resulting_status": "blocked_human",
     "router_candidate_status": "blocked_human",
     "router_selectable": false,
     "owner_decision_required": true,
     "owner_action_required": true,
-    "source": "owner_action_required_after_pr_142_verification",
-    "recommendation": "Produce an owner-decision packet before any account sync route skeleton files are added. Do not select stale TB-090 verification or runtime implementation."
-  }
+    "auto_selectable": false,
+    "source": "after_tb_090_owner_decision_packet_exists",
+    "recommendation": "Produce an owner minimal-intervention queue packet that orders the remaining owner-only decisions without reopening TB-090 packet-production work.",
+    "safety_summary": "Do not implement account sync, route skeletons, API handlers, auth/session behavior, middleware, database/schema/RLS/migrations, entitlements, payment, billing, deployment, production data, or runtime UI changes."
+  },
+  "next_safe_factory_outputs": [
+    {
+      "rank": 1,
+      "id": "OWNER-MINIMAL-INTERVENTION-QUEUE-PACKET",
+      "title": "Owner minimal-intervention queue packet",
+      "resulting_status": "blocked_human",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "source": "after_tb_090_owner_decision_packet_exists",
+      "recommendation": "Produce an owner minimal-intervention queue packet that orders the remaining owner-only decisions without reopening TB-090 packet-production work.",
+      "safety_summary": "Do not implement account sync, route skeletons, API handlers, auth/session behavior, middleware, database/schema/RLS/migrations, entitlements, payment, billing, deployment, production data, or runtime UI changes."
+    },
+    {
+      "rank": 2,
+      "id": "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
+      "related_pr_number": 121,
+      "title": "PR #121 close as stale/superseded owner decision",
+      "resulting_status": "stale_not_selectable",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "source": "pr_121_stale_open_not_auto_selectable",
+      "recommendation": "Prepare an owner decision to close PR #121 as stale/superseded; do not auto-close, auto-merge, or select it for implementation.",
+      "safety_summary": "Keep PR #121 stale/open/not auto-selectable unless an owner explicitly records the close decision."
+    },
+    {
+      "rank": 3,
+      "id": "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
+      "task_id": "TB-110",
+      "title": "TB-110 private beta owner action packet",
+      "resulting_status": "blocked_human",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "source": "private_manual_beta_remains_owner_gated",
+      "recommendation": "Produce the TB-110 private beta owner action packet while keeping private/manual beta gated and public paid beta blocked.",
+      "safety_summary": "Do not launch, invite, charge, grant entitlement, alter auth/session behavior, or unblock public paid beta."
+    }
+  ]
 }

@@ -63,6 +63,25 @@ type StatusEvidence = {
   safety_summary: string;
 };
 
+type OwnerDecisionPacketStatus = {
+  exists: boolean;
+  status: string;
+  artifact_present_in_this_pr: boolean;
+  artifact_source: string;
+  artifact_markdown: string;
+  outcome?: string;
+  satisfies_previous_factory_output: boolean;
+  selected_decision_option_id: string;
+  router_reselectable?: boolean;
+  claims_actual_account_sync_exists: boolean;
+  claims_disabled_route_skeleton_files_exist: boolean;
+  claims_api_route_handlers_exist: boolean;
+  approves_account_sync_implementation: boolean;
+  creates_disabled_route_skeleton_files: boolean;
+  approves_future_runtime_route_skeleton_implementation: boolean;
+  evidence_summary: string;
+};
+
 type TaskStatusOverlay = {
   task_id: string;
   task_order: number;
@@ -73,16 +92,35 @@ type TaskStatusOverlay = {
   owner_decision_required?: boolean;
   owner_action_required?: boolean;
   not_selectable_for_automatic_implementation?: boolean;
+  owner_decision_packet?: OwnerDecisionPacketStatus;
   satisfied_by: StatusEvidence[];
   needs_verification_reason?: string;
   partial_verification_reason?: string;
   blocked_reason?: string;
 };
 
+type NextSafeFactoryOutput = {
+  rank: number;
+  id: string;
+  task_id?: string;
+  related_pr_number?: number;
+  title: string;
+  resulting_status: StatusValue;
+  router_candidate_status: RouterCandidateStatus;
+  router_selectable: boolean;
+  owner_decision_required?: boolean;
+  owner_action_required?: boolean;
+  auto_selectable: boolean;
+  source: string;
+  recommendation: string;
+  safety_summary: string;
+};
+
 type TrackBStatusOverlay = {
   schema_version: string;
   kind: string;
   repository: string;
+  source_documents: string[];
   router_contract: {
     apply_overlay_before_selection: boolean;
     same_input_produces_identical_order: boolean;
@@ -120,6 +158,31 @@ type TrackBStatusOverlay = {
     auto_mergeable: boolean;
     owner_decision_required: boolean;
   }[];
+  owner_decision_packets: {
+    id: string;
+    task_id: string;
+    status: string;
+    artifact_present_in_this_pr: boolean;
+    artifact_source: string;
+    artifact_markdown: string;
+    merged: boolean;
+    merge_status: string;
+    satisfies_previous_factory_output: boolean;
+    selected_decision_option_id: string;
+    router_selectable: boolean;
+    auto_selectable: boolean;
+    reselect_for_factory_output: boolean;
+    claims_actual_account_sync_exists: boolean;
+    claims_disabled_route_skeleton_files_exist: boolean;
+    claims_api_route_handlers_exist: boolean;
+    approves_account_sync_implementation: boolean;
+    creates_disabled_route_skeleton_files: boolean;
+    approves_future_runtime_route_skeleton_implementation: boolean;
+    public_paid_beta_effect: string;
+    private_manual_beta_effect: string;
+    evidence_summary: string;
+    safety_summary: string;
+  }[];
   release_gates: {
     public_paid_beta: {
       status: string;
@@ -136,17 +199,8 @@ type TrackBStatusOverlay = {
       required_before_unblock: string[];
     };
   };
-  next_safe_gap: {
-    task_id: string;
-    title: string;
-    resulting_status: StatusValue;
-    router_candidate_status: RouterCandidateStatus;
-    router_selectable: boolean;
-    owner_decision_required?: boolean;
-    owner_action_required?: boolean;
-    source: string;
-    recommendation: string;
-  };
+  next_safe_gap: NextSafeFactoryOutput;
+  next_safe_factory_outputs: NextSafeFactoryOutput[];
 };
 
 const G0_TASK_IDS = [
@@ -501,6 +555,12 @@ test.describe("Track B product backlog status overlay", () => {
       "blocked_human",
       "stale_not_selectable"
     ]);
+    expect(overlay.source_documents).toEqual(
+      expect.arrayContaining([
+        "docs/factory/tb-090-owner-decision-packet.md",
+        "docs/factory/tb-090-owner-decision-packet.v1.json"
+      ])
+    );
 
     for (const status of overlay.task_statuses) {
       expect(status.task_id).toMatch(/^TB-\d{3}$/);
@@ -616,7 +676,8 @@ test.describe("Track B product backlog status overlay", () => {
       resulting_status: "blocked_human",
       router_candidate_status: "blocked_human",
       router_selectable: false,
-      owner_decision_required: true
+      owner_decision_required: true,
+      owner_action_required: true
     });
   });
 
@@ -713,7 +774,25 @@ test.describe("Track B product backlog status overlay", () => {
       router_selectable: false,
       owner_decision_required: true,
       owner_action_required: true,
-      not_selectable_for_automatic_implementation: true
+      not_selectable_for_automatic_implementation: true,
+      owner_decision_packet: {
+        exists: true,
+        status: "artifact_exists",
+        artifact_present_in_this_pr: true,
+        artifact_source: "docs/factory/tb-090-owner-decision-packet.v1.json",
+        artifact_markdown: "docs/factory/tb-090-owner-decision-packet.md",
+        outcome: "packet_satisfies_previous_factory_output_only",
+        satisfies_previous_factory_output: true,
+        selected_decision_option_id:
+          "keep_tb_090_blocked_no_runtime_route_skeleton",
+        router_reselectable: false,
+        claims_actual_account_sync_exists: false,
+        claims_disabled_route_skeleton_files_exist: false,
+        claims_api_route_handlers_exist: false,
+        approves_account_sync_implementation: false,
+        creates_disabled_route_skeleton_files: false,
+        approves_future_runtime_route_skeleton_implementation: false
+      }
     });
     expect(tb090.satisfied_by).toEqual(
       expect.arrayContaining([
@@ -732,6 +811,12 @@ test.describe("Track B product backlog status overlay", () => {
     );
     expect(tb090.blocked_reason).toContain(
       "Owner decision is required before any disabled account sync route skeleton files"
+    );
+    expect(tb090.blocked_reason).toContain(
+      "does not approve actual account sync, disabled route skeleton files, API route handlers, or future runtime route skeleton implementation"
+    );
+    expect(tb090.owner_decision_packet?.evidence_summary).toContain(
+      "docs/factory/tb-090-owner-decision-packet.v1.json"
     );
     expect(result.selectedTask?.id).not.toBe("TB-090");
     expect(result.ownerDecisionRequired).toEqual(
@@ -757,7 +842,46 @@ test.describe("Track B product backlog status overlay", () => {
     ).toContain("candidate_not_ready:blocked_human");
   });
 
-  test("next safe gap is deterministic owner action, not stale verification", () => {
+  test("TB-090 owner decision packet is recorded but not reselected", () => {
+    const overlay = readStatusOverlay();
+    const result = planWithStatusOverlay();
+    const tb090Packet = overlay.owner_decision_packets.find(
+      (packet) => packet.id === "TB-090-OWNER-DECISION-PACKET"
+    );
+    const nextOutputText = overlay.next_safe_factory_outputs
+      .map((output) => `${output.id} ${output.title} ${output.recommendation}`)
+      .join("\n");
+
+    expect(tb090Packet).toMatchObject({
+      task_id: "TB-090",
+      status: "artifact_exists",
+      artifact_present_in_this_pr: true,
+      artifact_source: "docs/factory/tb-090-owner-decision-packet.v1.json",
+      artifact_markdown: "docs/factory/tb-090-owner-decision-packet.md",
+      merged: false,
+      merge_status: "pending_pr_144_merge",
+      satisfies_previous_factory_output: true,
+      selected_decision_option_id:
+        "keep_tb_090_blocked_no_runtime_route_skeleton",
+      router_selectable: false,
+      auto_selectable: false,
+      reselect_for_factory_output: false,
+      claims_actual_account_sync_exists: false,
+      claims_disabled_route_skeleton_files_exist: false,
+      claims_api_route_handlers_exist: false,
+      approves_account_sync_implementation: false,
+      creates_disabled_route_skeleton_files: false,
+      approves_future_runtime_route_skeleton_implementation: false,
+      public_paid_beta_effect: "no_unblock",
+      private_manual_beta_effect: "no_launch"
+    });
+    expect(result.selectedTask?.id).not.toBe("TB-090");
+    expect(nextOutputText).not.toMatch(/produce an owner[- ]decision packet/i);
+    expect(nextOutputText).not.toMatch(/TB-090 owner[- ]decision packet/i);
+    expect(nextOutputText).not.toContain("route skeleton implementation");
+  });
+
+  test("next safe outputs are deterministic owner actions, not TB-090 packet work", () => {
     const overlay = readStatusOverlay();
     const firstNonVerified = buildStatusSummary(overlay).find(
       (status) => status.resulting_status !== "verified"
@@ -765,17 +889,48 @@ test.describe("Track B product backlog status overlay", () => {
 
     expect(firstNonVerified?.task_id).toBe("TB-090");
     expect(overlay.next_safe_gap).toMatchObject({
-      task_id: "TB-090",
-      resulting_status: "partial_verified",
+      rank: 1,
+      id: "OWNER-MINIMAL-INTERVENTION-QUEUE-PACKET",
+      title: "Owner minimal-intervention queue packet",
+      resulting_status: "blocked_human",
       router_candidate_status: "blocked_human",
       router_selectable: false,
       owner_decision_required: true,
       owner_action_required: true,
-      source: "owner_action_required_after_pr_142_verification"
+      auto_selectable: false,
+      source: "after_tb_090_owner_decision_packet_exists"
     });
-    expect(overlay.next_safe_gap.task_id).not.toBe("TB-020");
-    expect(overlay.next_safe_gap.recommendation).toContain(
-      "Do not select stale TB-090 verification or runtime implementation"
+    expect(overlay.next_safe_factory_outputs.map((output) => output.id)).toEqual(
+      [
+        "OWNER-MINIMAL-INTERVENTION-QUEUE-PACKET",
+        "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
+        "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET"
+      ]
+    );
+    expect(
+      overlay.next_safe_factory_outputs.map((output) => output.title)
+    ).toEqual([
+      "Owner minimal-intervention queue packet",
+      "PR #121 close as stale/superseded owner decision",
+      "TB-110 private beta owner action packet"
+    ]);
+    expect(overlay.next_safe_factory_outputs[1]).toMatchObject({
+      related_pr_number: 121,
+      resulting_status: "stale_not_selectable",
+      router_selectable: false,
+      owner_action_required: true,
+      auto_selectable: false
+    });
+    expect(overlay.next_safe_factory_outputs[2]).toMatchObject({
+      task_id: "TB-110",
+      resulting_status: "blocked_human",
+      router_selectable: false,
+      owner_action_required: true,
+      auto_selectable: false
+    });
+    expect(overlay.next_safe_gap.id).not.toBe("TB-090");
+    expect(overlay.next_safe_gap.recommendation).not.toMatch(
+      /produce an owner[- ]decision packet/i
     );
   });
 });

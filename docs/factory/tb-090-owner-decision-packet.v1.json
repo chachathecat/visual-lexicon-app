@@ -1,0 +1,176 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "tb_090_owner_decision_packet",
+  "repository": "chachathecat/visual-lexicon-app",
+  "created_at": "2026-06-30",
+  "task": {
+    "task_id": "TB-090",
+    "title": "Disabled Account Sync Route Skeleton",
+    "current_resulting_status": "partial_verified",
+    "current_router_candidate_status": "blocked_human",
+    "router_selectable": false,
+    "owner_action_required": true,
+    "not_selectable_for_automatic_implementation": true
+  },
+  "purpose": "Record the owner decision packet artifact required after TB-090 was verified as partial_verified, without approving runtime account sync or route skeleton implementation.",
+  "packet_scope": {
+    "satisfies_previous_factory_output": true,
+    "previous_factory_output": "produce_tb_090_owner_decision_packet",
+    "satisfies_only_previous_factory_output": true,
+    "implementation_authorization": "none",
+    "selected_decision_option_id": "keep_tb_090_blocked_no_runtime_route_skeleton",
+    "router_reselectable": false,
+    "auto_selectable": false
+  },
+  "decision_options": [
+    {
+      "id": "keep_tb_090_blocked_no_runtime_route_skeleton",
+      "rank": 1,
+      "label": "Keep TB-090 blocked with no runtime route skeleton.",
+      "selected_by_this_packet": true,
+      "effect": "TB-090 remains partial_verified, blocked_human, owner-action-required, and not auto-selectable.",
+      "account_sync_implementation_approved": false,
+      "disabled_route_skeleton_approved": false,
+      "future_runtime_route_skeleton_implementation_approved": false
+    },
+    {
+      "id": "approve_future_disabled_route_skeleton_pr",
+      "rank": 2,
+      "label": "Approve a future disabled route skeleton PR, still with no real account sync, no DB, no auth/session mutation, and no payment/billing.",
+      "selected_by_this_packet": false,
+      "effect": "Not approved by this packet; would require a separate explicit owner decision and future docs/tests-only or runtime-scoped PR review before any route file exists.",
+      "account_sync_implementation_approved": false,
+      "disabled_route_skeleton_approved": false,
+      "future_runtime_route_skeleton_implementation_approved": false
+    },
+    {
+      "id": "reject_route_skeleton_work_keep_account_sync_deferred",
+      "rank": 3,
+      "label": "Reject route skeleton work and keep account sync deferred.",
+      "selected_by_this_packet": false,
+      "effect": "Not selected by this packet; remains available as a future owner decision.",
+      "account_sync_implementation_approved": false,
+      "disabled_route_skeleton_approved": false,
+      "future_runtime_route_skeleton_implementation_approved": false
+    }
+  ],
+  "claims": {
+    "actual_account_sync_exists": false,
+    "disabled_route_skeleton_files_exist": false,
+    "api_route_handlers_exist": false,
+    "future_runtime_route_skeleton_implementation_approved": false,
+    "account_sync_implementation_approved": false,
+    "public_paid_beta_unblocked": false,
+    "private_manual_beta_launched": false
+  },
+  "actual_route_skeleton_files": [
+    {
+      "path": "src/app/api/account-sync/route.ts",
+      "exists": false,
+      "created_by_this_packet": false,
+      "approved_by_this_packet": false
+    },
+    {
+      "path": "src/app/api/account/sync/preview/route.ts",
+      "exists": false,
+      "created_by_this_packet": false,
+      "approved_by_this_packet": false
+    },
+    {
+      "path": "src/app/api/account/sync/apply/route.ts",
+      "exists": false,
+      "created_by_this_packet": false,
+      "approved_by_this_packet": false
+    },
+    {
+      "path": "src/app/api/account/sync/digest/route.ts",
+      "exists": false,
+      "created_by_this_packet": false,
+      "approved_by_this_packet": false
+    },
+    {
+      "path": "src/app/api/account/sync/audit/route.ts",
+      "exists": false,
+      "created_by_this_packet": false,
+      "approved_by_this_packet": false
+    }
+  ],
+  "status_effects": {
+    "tb_090_resulting_status": "partial_verified",
+    "tb_090_router_candidate_status": "blocked_human",
+    "tb_090_owner_action_required": true,
+    "tb_090_auto_selectable": false,
+    "tb_100_status": "verified",
+    "tb_100_evidence": "PR #82",
+    "tb_110_resulting_status": "blocked_human",
+    "tb_110_owner_action_required": true,
+    "pr_121_status": "stale_open_not_auto_selectable",
+    "public_paid_beta_status": "blocked",
+    "private_manual_beta_status": "gated"
+  },
+  "next_safe_factory_outputs": [
+    "owner_minimal_intervention_queue_packet",
+    "pr_121_close_as_stale_superseded_owner_decision",
+    "tb_110_private_beta_owner_action_packet"
+  ],
+  "protected_surfaces": {
+    "runtime_ui_changes": false,
+    "account_sync_implementation": false,
+    "disabled_route_skeleton_files_created": false,
+    "api_route_handlers_added": false,
+    "auth_or_session_behavior_changes": false,
+    "middleware_changes": false,
+    "database_schema_rls_migration_or_account_data_changes": false,
+    "entitlement_mutation_changes": false,
+    "payment_or_billing_changes": false,
+    "workflow_changes": false,
+    "dns_or_deployment_changes": false,
+    "secrets_or_env_changes": false,
+    "webflow_changes": false,
+    "cloudflare_worker_changes": false,
+    "r2_production_object_changes": false,
+    "production_data_changes": false,
+    "roadmap_status_changes": false
+  },
+  "release_gates": {
+    "public_paid_beta": {
+      "status": "blocked",
+      "unblocked_by_this_packet": false,
+      "owner_decision_required": true
+    },
+    "private_manual_beta": {
+      "status": "gated",
+      "launched_by_this_packet": false,
+      "owner_approval_required": true,
+      "manual_only": true
+    }
+  },
+  "evidence": {
+    "markdown_summary": "docs/factory/tb-090-owner-decision-packet.md",
+    "json_artifact": "docs/factory/tb-090-owner-decision-packet.v1.json",
+    "verification_artifact": "docs/factory/tb-090-account-sync-skeleton-verification.v1.json",
+    "status_overlay": "docs/factory/track-b-product-backlog-status.v1.json"
+  },
+  "safety_confirmation": {
+    "account_sync_not_implemented": true,
+    "disabled_route_skeleton_not_created": true,
+    "api_route_handlers_not_added": true,
+    "future_runtime_route_skeleton_not_approved": true,
+    "no_runtime_ui_changes": true,
+    "no_auth_or_session_mutation": true,
+    "no_middleware_changes": true,
+    "no_database_schema_rls_migrations_or_account_data": true,
+    "no_entitlement_mutation": true,
+    "no_payment_or_billing": true,
+    "no_workflow_changes": true,
+    "no_dns_or_deployment_changes": true,
+    "no_secret_or_env_changes": true,
+    "no_webflow_changes": true,
+    "no_cloudflare_worker_changes": true,
+    "no_r2_production_object_changes": true,
+    "no_production_data_changes": true,
+    "no_roadmap_status_changes": true,
+    "public_paid_beta_remains_blocked": true,
+    "private_manual_beta_remains_gated": true
+  }
+}
