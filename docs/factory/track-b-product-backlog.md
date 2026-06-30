@@ -13,11 +13,13 @@ overlay before selection so merged tasks such as `TB-020` App Shell v2,
 `TB-030` Dashboard v2, and the rest of the already shipped Track B sequence are
 not selected again from this seed.
 
-After PR #142, that overlay maps `TB-090` to `partial_verified` and
-`blocked_human`: the verification artifact records decision-only evidence, no
-actual disabled account sync route skeleton, and an owner decision requirement
-before route files. Factory routers must surface that as owner action required,
-not as implementation-ready work.
+After PR #142 and the merged TB-090 owner decision packet, that overlay maps
+`TB-090` to `partial_verified` and `blocked_human`: the verification artifact
+records decision-only evidence, no actual disabled account sync route skeleton,
+and no real account sync. The owner decision packet now exists, so factory
+routers must not select TB-090 owner-decision-packet production again. The
+packet does not approve account sync implementation, disabled route skeleton
+files, or future runtime route skeleton implementation.
 
 1. `TB-010` Track B Product/UI Readiness Audit - verified.
 2. `TB-020` Track B Design Tokens / App Shell v2 - first product
