@@ -1,0 +1,362 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "tb_090_account_sync_skeleton_verification",
+  "repository": "chachathecat/visual-lexicon-app",
+  "verified_at": "2026-06-30",
+  "source_baseline": {
+    "branch": "factory/tb-090-account-sync-skeleton-verify",
+    "base": "origin/main after PR #141",
+    "base_merge_commit_sha": "879de59",
+    "base_merge_summary": "Merge pull request #141 from chachathecat/factory/track-b-backlog-status-reconcile"
+  },
+  "this_pr": {
+    "type": "factory_docs_tests_verification",
+    "runtime_ui_changes": false,
+    "account_sync_implementation": false,
+    "actual_disabled_route_skeleton_created": false,
+    "database_schema_rls_or_migration_changes": false,
+    "auth_or_session_mutation_changes": false,
+    "entitlement_mutation_changes": false,
+    "payment_or_billing_changes": false,
+    "middleware_changes": false,
+    "srs_algorithm_changes": false,
+    "local_storage_contract_changes": false,
+    "roadmap_status_changes": false,
+    "workflow_changes": false,
+    "codeowners_changes": false,
+    "agents_policy_changes": false,
+    "dns_or_deployment_changes": false,
+    "secrets_or_env_changes": false,
+    "production_data_changes": false,
+    "live_github_mutations_from_implementation_code": false,
+    "expected_changed_files": [
+      "docs/factory/tb-090-account-sync-skeleton-verification.md",
+      "docs/factory/tb-090-account-sync-skeleton-verification.v1.json",
+      "tests/factory-tb-090-account-sync-skeleton-verification.spec.ts"
+    ]
+  },
+  "task": {
+    "task_id": "TB-090",
+    "title": "Disabled Account Sync Route Skeleton",
+    "backlog_seed_status": "blocked_dependency",
+    "current_overlay_status": "needs_verification",
+    "current_router_candidate_status": "blocked_dependency",
+    "router_selectable": false,
+    "owner_decision_required_in_seed": true,
+    "risk": "high",
+    "task_surface": "app_server_logic"
+  },
+  "determination": {
+    "result": "partial_verified",
+    "allowed_results": [
+      "verified_by_existing_decision_only",
+      "partial_verified",
+      "needs_owner_decision",
+      "blocked_dependency",
+      "blocked_human",
+      "still_needs_disabled_route_skeleton"
+    ],
+    "decision_evidence_status": "verified_by_existing_decision_only",
+    "preview_digest_evidence_status": "verified_for_tb_100_only",
+    "actual_disabled_route_skeleton_status": "still_needs_disabled_route_skeleton",
+    "runtime_account_sync_status": "not_implemented",
+    "missing_route_skeleton_evidence_fails_closed": true,
+    "owner_decision_needed_for_this_verification_artifact": false,
+    "owner_decision_required_before_route_files": true,
+    "recommended_next_action": "Produce an owner-decision packet before any account sync route skeleton runtime files are added. Keep TB-090 non-selectable until owner approval exists or the backlog explicitly accepts decision-only verification.",
+    "public_paid_beta_effect": "no_unblock",
+    "private_manual_beta_effect": "no_launch"
+  },
+  "evidence_mapping": [
+    {
+      "category": "actual_disabled_route_skeleton_files",
+      "source_pr": null,
+      "task_scope": "TB-090 runtime route skeleton",
+      "evidence_summary": "No actual disabled account sync route skeleton files exist in src/app/api for the planned account sync paths or the backlog seed's legacy account-sync route path.",
+      "files_inspected": [
+        "src/app/api/me/entitlements/route.ts",
+        "src/app/auth/confirm/route.ts",
+        "src/middleware.ts",
+        "src/lib/auth/middleware.ts",
+        "src/app/api",
+        "src/app"
+      ],
+      "verified": [
+        "Existing App Router API files are unrelated to account sync.",
+        "No src/app/api/account-sync route file exists.",
+        "No src/app/api/account/sync route file exists.",
+        "Existing middleware files were inspected only and no account-sync middleware was added or changed."
+      ],
+      "not_verified": [
+        "A disabled-by-default account sync route skeleton is not present.",
+        "No route handler response contract is implemented for TB-090.",
+        "No owner-approved runtime route skeleton file scope is present."
+      ]
+    },
+    {
+      "category": "design_docs_contracts_tests",
+      "source_pr": 69,
+      "task_scope": "TB-090 decision-only evidence",
+      "evidence_summary": "PR #69 provides a design-only account sync route skeleton decision. It explicitly says no skeleton files, route handlers, middleware, runtime integration, provider SDKs, DB persistence, or production account sync behavior were created.",
+      "files_inspected": [
+        "docs/ACCOUNT_SYNC_ROUTE_SKELETON_DECISION.md",
+        "src/lib/account-persistence/route-skeleton-decision/route-skeleton-decision.ts",
+        "src/lib/account-persistence/route-skeleton-decision/fixtures.ts",
+        "src/lib/account-persistence/route-skeleton-decision/README.md",
+        "tests/account-sync-route-skeleton-decision.spec.ts"
+      ],
+      "verified": [
+        "Decision-only account sync route skeleton policy exists.",
+        "Future route skeleton paths are static design data only.",
+        "Future route files require a separate PR and explicit owner approval.",
+        "Future route skeletons must be disabled by default and mock-gated.",
+        "Apply must remain hard-disabled until all required gates pass."
+      ],
+      "not_verified": [
+        "Actual runtime route skeleton files do not exist.",
+        "Actual disabled route handler behavior is not implemented.",
+        "Production account sync remains blocked."
+      ]
+    },
+    {
+      "category": "preview_digest_mock_evidence",
+      "source_pr": 82,
+      "task_scope": "TB-100 preview and digest mock",
+      "evidence_summary": "PR #82 verifies Account Sync Preview / Digest Mock scope for TB-100. It is intentionally insufficient for TB-090 because it does not create API routes, route handlers, middleware, auth, database writes, apply/write behavior, or real account sync.",
+      "files_inspected": [
+        "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md",
+        "src/lib/account-sync-preview-digest/README.md",
+        "src/lib/account-sync-preview-digest/account-sync-preview-digest.ts",
+        "src/lib/account-sync-preview-digest/fixtures.ts",
+        "tests/account-sync-preview-digest.spec.ts"
+      ],
+      "verified": [
+        "Preview/digest mock evidence exists.",
+        "Preview/digest mock is deterministic, redacted, and non-mutating.",
+        "Preview/digest mock keeps real account sync blocked."
+      ],
+      "not_verified": [
+        "Preview/digest mock evidence is not disabled route skeleton evidence.",
+        "Preview/digest mock evidence is not real account sync implementation.",
+        "Preview/digest mock evidence does not unblock public paid beta."
+      ]
+    },
+    {
+      "category": "real_account_sync_implementation",
+      "source_pr": null,
+      "task_scope": "real account sync",
+      "evidence_summary": "Real account sync is not implemented and is not part of this verification PR.",
+      "files_inspected": [
+        "docs/factory/track-b-product-backlog-status.v1.json",
+        "docs/factory/track-b-product-backlog-status.md",
+        "docs/ACCOUNT_SYNC_ROUTE_SKELETON_DECISION.md",
+        "docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md"
+      ],
+      "verified": [
+        "Public paid beta remains blocked.",
+        "Private/manual beta remains gated.",
+        "PR #121 remains stale/open/not auto-selectable.",
+        "No account sync route implementation is claimed."
+      ],
+      "not_verified": [
+        "No server-backed learning state exists.",
+        "No account-owned persistence exists.",
+        "No account sync production enablement exists."
+      ]
+    }
+  ],
+  "actual_route_skeleton_files": [
+    {
+      "path": "src/app/api/account-sync/route.ts",
+      "source": "track_b_backlog_seed_expected_file",
+      "exists": false,
+      "runtime_route_file": true,
+      "owner_approval_required_before_creation": true
+    },
+    {
+      "path": "src/app/api/account/sync/preview/route.ts",
+      "source": "pr_69_future_file_plan",
+      "exists": false,
+      "runtime_route_file": true,
+      "owner_approval_required_before_creation": true
+    },
+    {
+      "path": "src/app/api/account/sync/apply/route.ts",
+      "source": "pr_69_future_file_plan",
+      "exists": false,
+      "runtime_route_file": true,
+      "owner_approval_required_before_creation": true
+    },
+    {
+      "path": "src/app/api/account/sync/digest/route.ts",
+      "source": "pr_69_future_file_plan",
+      "exists": false,
+      "runtime_route_file": true,
+      "owner_approval_required_before_creation": true
+    },
+    {
+      "path": "src/app/api/account/sync/audit/route.ts",
+      "source": "pr_69_future_file_plan",
+      "exists": false,
+      "runtime_route_file": true,
+      "owner_approval_required_before_creation": true
+    }
+  ],
+  "acceptance_mapping": [
+    {
+      "id": "tb_090_does_not_become_real_account_sync",
+      "status": "pass",
+      "evidence": "The verification artifact records runtime_account_sync_status as not_implemented and no route skeleton files are created."
+    },
+    {
+      "id": "tb_090_does_not_unblock_public_paid_beta",
+      "status": "pass",
+      "evidence": "Public paid beta remains blocked and public_paid_beta_effect is no_unblock."
+    },
+    {
+      "id": "decision_only_not_runtime_route",
+      "status": "pass",
+      "evidence": "PR #69 is mapped as decision-only evidence and actual_disabled_route_skeleton_status remains still_needs_disabled_route_skeleton."
+    },
+    {
+      "id": "preview_digest_not_route_skeleton",
+      "status": "pass",
+      "evidence": "PR #82 is mapped to TB-100 preview/digest evidence only."
+    },
+    {
+      "id": "missing_route_skeleton_fails_closed",
+      "status": "pass",
+      "evidence": "All actual_route_skeleton_files entries exist=false and TB-090 stays non-selectable."
+    },
+    {
+      "id": "owner_approval_required_before_route_files",
+      "status": "pass",
+      "evidence": "owner_decision_required_before_route_files is true for every planned runtime route file."
+    },
+    {
+      "id": "protected_files_not_expected",
+      "status": "pass",
+      "evidence": "Expected changed files are limited to docs/factory verification artifacts and the factory verification test."
+    },
+    {
+      "id": "pr_121_stale_not_auto_selectable",
+      "status": "pass",
+      "evidence": "PR #121 remains stale_not_selectable, auto_selectable=false, and auto_mergeable=false."
+    },
+    {
+      "id": "deterministic_output",
+      "status": "pass",
+      "evidence": "The artifact uses fixed source order and deterministic summary keys."
+    }
+  ],
+  "owner_decision_packet": {
+    "required_for_this_verification_pr": false,
+    "required_before_any_route_file_creation": true,
+    "minimum_future_packet_fields": [
+      "explicit_owner_approval_text",
+      "approved_route_file_scope",
+      "disabled_by_default_policy",
+      "mock_gate_policy",
+      "apply_hard_disabled_policy",
+      "preview_read_only_policy",
+      "digest_audit_owner_only_bounded_redacted_policy",
+      "validation_plan",
+      "rollback_and_kill_switch_plan",
+      "manual_qa_plan",
+      "statement_public_paid_beta_remains_blocked"
+    ]
+  },
+  "release_gates": {
+    "public_paid_beta": {
+      "status": "blocked",
+      "owner_decision_required": true,
+      "unblocked_by_tb_090_verification": false,
+      "summary": "Public paid beta remains blocked by account sync, payment, entitlement, monitoring, privacy, accessibility, support, refund, rollback, content, and owner signoff gates."
+    },
+    "private_manual_beta": {
+      "status": "gated",
+      "owner_approval_required": true,
+      "manual_only": true,
+      "launched_by_tb_090_verification": false,
+      "summary": "Private/manual beta remains owner-approved, manual-only, and gated."
+    }
+  },
+  "stale_open_pull_requests": [
+    {
+      "id": "PR-121",
+      "number": 121,
+      "state": "open",
+      "stale": true,
+      "resulting_status": "stale_not_selectable",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "auto_mergeable": false,
+      "owner_decision_required": true
+    }
+  ],
+  "stop_reasons": [
+    "actual_route_skeleton_creation_requires_explicit_owner_approval",
+    "missing_actual_route_skeleton_evidence_fails_closed",
+    "preview_digest_mock_is_not_tb_090_runtime_skeleton_evidence",
+    "decision_only_evidence_is_not_runtime_implementation",
+    "public_paid_beta_must_remain_blocked",
+    "private_manual_beta_must_remain_gated",
+    "pr_121_must_remain_stale_not_auto_selectable",
+    "protected_runtime_or_production_surface_would_stop_this_pr"
+  ],
+  "protected_files_must_remain_unchanged": [
+    "src/app/api/account-sync/route.ts",
+    "src/app/api/account/sync/preview/route.ts",
+    "src/app/api/account/sync/apply/route.ts",
+    "src/app/api/account/sync/digest/route.ts",
+    "src/app/api/account/sync/audit/route.ts",
+    "middleware.ts",
+    "src/middleware.ts",
+    ".github/workflows/*",
+    ".github/CODEOWNERS",
+    "CODEOWNERS",
+    "AGENTS.md",
+    "supabase/*",
+    "migrations/*",
+    ".env*",
+    "vercel.json",
+    "wrangler.toml"
+  ],
+  "determinism": {
+    "sort_keys": [
+      "task_order",
+      "task_id",
+      "category",
+      "path"
+    ],
+    "same_input_produces_identical_verification_summary": true,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false
+  },
+  "safety_confirmation": {
+    "account_sync_not_implemented": true,
+    "disabled_route_skeleton_not_created": true,
+    "no_database_tables": true,
+    "no_schema_rls_or_migrations": true,
+    "no_auth_or_session_mutation": true,
+    "no_entitlement_mutation": true,
+    "no_payment_or_billing": true,
+    "no_checkout_subscription_invoice_or_billing_portal": true,
+    "no_middleware_changes": true,
+    "no_runtime_ui_changes": true,
+    "no_srs_algorithm_changes": true,
+    "no_local_storage_contract_changes": true,
+    "no_webflow_changes": true,
+    "no_cloudflare_worker_changes": true,
+    "no_r2_production_object_changes": true,
+    "no_dns_changes": true,
+    "no_deployment_setting_changes": true,
+    "no_secret_or_env_changes": true,
+    "no_workflow_changes": true,
+    "no_codeowners_changes": true,
+    "no_agents_policy_changes": true,
+    "no_production_data_changes": true,
+    "no_production_account_data_changes": true,
+    "npm_audit_fix_not_run": true
+  }
+}
