@@ -1,0 +1,322 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "tb_110_private_beta_owner_action_packet",
+  "repository": "chachathecat/visual-lexicon-app",
+  "created_at": "2026-07-01",
+  "task": {
+    "task_id": "TB-110",
+    "title": "Private Beta Gate",
+    "status": "blocked_human",
+    "router_candidate_status": "blocked_human",
+    "router_selectable": false,
+    "auto_selectable": false,
+    "owner_action_required": true,
+    "owner_approval_required": true,
+    "implementation_allowed": false,
+    "runtime_launch_allowed": false
+  },
+  "purpose": "Define the TB-110 private beta owner action packet and required gates without launching private/manual beta or public paid beta.",
+  "source_documents": [
+    "docs/factory/owner-minimal-intervention-queue.v1.json",
+    "docs/factory/owner-minimal-intervention-queue.md",
+    "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
+    "docs/factory/pr-121-stale-superseded-owner-decision.md",
+    "docs/factory/track-b-product-backlog-status.v1.json",
+    "docs/factory/track-b-product-backlog.v1.json",
+    "docs/PRIVATE_BETA_GATE_PREP.md",
+    "docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md",
+    "docs/MANUAL_PAYMENT_ENTITLEMENT_POLICY.md",
+    "docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md"
+  ],
+  "source_prs": [
+    {
+      "number": 80,
+      "status": "merged",
+      "summary": "Private beta gate prep defines owner-controlled launch conditions and rollback criteria."
+    },
+    {
+      "number": 81,
+      "status": "merged",
+      "summary": "Manual payment / entitlement policy keeps automatic entitlement and billing disabled."
+    },
+    {
+      "number": 82,
+      "status": "merged",
+      "summary": "TB-100 account sync preview / digest mock evidence."
+    },
+    {
+      "number": 83,
+      "status": "merged",
+      "summary": "Monitoring, support, privacy beta gate evidence."
+    },
+    {
+      "number": 121,
+      "status": "closed_stale_superseded",
+      "summary": "PR #121 has been manually closed as stale/superseded and must not be reselected."
+    },
+    {
+      "number": 145,
+      "status": "merged",
+      "summary": "Owner minimal-intervention queue packet."
+    },
+    {
+      "number": 146,
+      "status": "merged",
+      "summary": "PR #121 stale/superseded owner decision packet."
+    }
+  ],
+  "packet_scope": {
+    "docs_tests_only": true,
+    "owner_action_packet": true,
+    "defines_owner_options": true,
+    "defines_required_gates": true,
+    "launches_private_manual_beta": false,
+    "launches_public_paid_beta": false,
+    "runtime_ui_changes": false,
+    "production_or_live_mutation_changes": false
+  },
+  "owner_action_options": [
+    {
+      "id": "keep_tb_110_blocked_no_private_beta_action",
+      "label": "Keep TB-110 blocked with no private beta action.",
+      "resulting_tb_110_status": "blocked_human",
+      "private_manual_beta_launched": false,
+      "public_paid_beta_unblocked": false,
+      "owner_approval_required": true
+    },
+    {
+      "id": "approve_limited_private_manual_beta_readiness_packet",
+      "label": "Approve preparation of a limited private/manual beta readiness packet, still with no invite, no charging, no entitlement grant, and no public launch.",
+      "resulting_tb_110_status": "blocked_human",
+      "private_manual_beta_launched": false,
+      "beta_participants_invited": false,
+      "users_charged": false,
+      "entitlements_granted": false,
+      "public_paid_beta_unblocked": false,
+      "owner_approval_required": true
+    },
+    {
+      "id": "approve_future_limited_private_manual_beta_after_prerequisites",
+      "label": "Approve a future limited private/manual beta only after all required prerequisites are explicitly satisfied by owner approval.",
+      "resulting_tb_110_status": "blocked_human",
+      "private_manual_beta_launched_by_this_packet": false,
+      "all_prerequisites_required_before_future_action": true,
+      "explicit_owner_approval_required": true,
+      "public_paid_beta_unblocked": false
+    }
+  ],
+  "required_prerequisites_before_future_private_manual_beta_action": [
+    "current_manual_qa_execution_report",
+    "owner_approved_participant_list",
+    "participant_disclosure_localStorage_manual_beta_limits",
+    "support_privacy_refund_cancellation_note",
+    "monitoring_issue_log",
+    "pause_criteria",
+    "rollback_criteria",
+    "manual_entitlement_policy_if_any",
+    "explicit_owner_approval",
+    "public_paid_beta_remains_blocked"
+  ],
+  "non_actions": {
+    "private_manual_beta_launch_performed": false,
+    "manual_beta_invites_sent": false,
+    "beta_participants_invited": false,
+    "users_charged": false,
+    "entitlements_granted": false,
+    "payment_or_billing_enabled": false,
+    "public_paid_beta_unblocked": false,
+    "account_data_modified": false,
+    "auth_or_session_behavior_modified": false,
+    "database_schema_rls_migrations_modified": false,
+    "runtime_ui_touched": false,
+    "production_data_touched": false,
+    "webflow_touched": false,
+    "cloudflare_workers_touched": false,
+    "r2_production_objects_touched": false,
+    "dns_touched": false,
+    "deployment_touched": false,
+    "secrets_touched": false,
+    "workflows_touched": false,
+    "codeowners_touched": false,
+    "agents_md_touched": false,
+    "live_github_mutations_performed": false,
+    "auto_merge_enabled": false
+  },
+  "pull_request_121": {
+    "number": 121,
+    "state": "closed",
+    "stale": true,
+    "superseded": true,
+    "resulting_status": "stale_not_selectable",
+    "router_selectable": false,
+    "auto_selectable": false,
+    "auto_mergeable": false,
+    "implementation_ready": false,
+    "reselected_by_this_packet": false,
+    "live_mutation_performed_by_this_packet": false,
+    "safety_summary": "PR #121 remains closed as stale/superseded and must not be reselected."
+  },
+  "release_gates": {
+    "private_manual_beta": {
+      "status": "gated",
+      "resulting_status": "blocked_human",
+      "owner_action_required": true,
+      "owner_approval_required": true,
+      "manual_only": true,
+      "launched_by_this_packet": false,
+      "participants_invited_by_this_packet": false,
+      "charges_enabled_by_this_packet": false,
+      "entitlements_granted_by_this_packet": false,
+      "required_before_future_action": [
+        "current_manual_qa_execution_report",
+        "owner_approved_participant_list",
+        "participant_disclosure_localStorage_manual_beta_limits",
+        "support_privacy_refund_cancellation_note",
+        "monitoring_issue_log",
+        "pause_criteria",
+        "rollback_criteria",
+        "manual_entitlement_policy_if_any",
+        "explicit_owner_approval",
+        "public_paid_beta_remains_blocked"
+      ]
+    },
+    "public_paid_beta": {
+      "status": "blocked",
+      "resulting_status": "blocked_human",
+      "owner_action_required": true,
+      "owner_approval_required": true,
+      "unblocked_by_this_packet": false,
+      "launch_allowed": false,
+      "required_before_unblock": [
+        "account_owned_learning_persistence",
+        "server_authoritative_entitlements",
+        "payment_provider_policy_and_billing_lifecycle",
+        "privacy_support_refund_and_cancellation_operations",
+        "production_monitoring_alerting_and_rollback",
+        "accessibility_and_mobile_manual_qa",
+        "trusted_public_analytics",
+        "production_pack_content_and_entitlement_evidence",
+        "owner_public_launch_signoff"
+      ]
+    }
+  },
+  "invariants": {
+    "tb_090": {
+      "status": "partial_verified",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "owner_action_required": true,
+      "owner_decision_packet_existing_evidence_only": true,
+      "actual_account_sync_exists": false,
+      "disabled_route_skeleton_runtime_files_approved": false,
+      "route_skeleton_implementation_approved": false
+    },
+    "tb_100": {
+      "status": "verified",
+      "evidence": "PR #82",
+      "router_selectable": false,
+      "auto_selectable": false
+    },
+    "tb_110": {
+      "status": "blocked_human",
+      "router_candidate_status": "blocked_human",
+      "owner_action_required": true,
+      "owner_approval_required": true,
+      "router_selectable": false,
+      "auto_selectable": false,
+      "private_manual_beta_launched": false,
+      "public_paid_beta_unblocked": false
+    }
+  },
+  "protected_surfaces": {
+    "runtime_ui_changes": false,
+    "account_sync_implementation": false,
+    "api_routes_added": false,
+    "auth_or_session_behavior_changes": false,
+    "middleware_changes": false,
+    "database_schema_rls_migration_or_account_data_changes": false,
+    "entitlement_mutation_changes": false,
+    "payment_or_billing_changes": false,
+    "workflow_changes": false,
+    "codeowners_changes": false,
+    "agents_policy_changes": false,
+    "dns_or_deployment_changes": false,
+    "secrets_or_env_changes": false,
+    "webflow_changes": false,
+    "cloudflare_worker_changes": false,
+    "r2_production_object_changes": false,
+    "production_data_changes": false,
+    "roadmap_status_changes": false,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false
+  },
+  "deterministic_queue_order": {
+    "input_state": "post_pr_146_pr_121_closed_stale_superseded",
+    "sort_keys": [
+      "rank",
+      "id"
+    ],
+    "next_safe_outputs": [
+      {
+        "rank": 1,
+        "id": "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
+        "task_id": "TB-110",
+        "title": "TB-110 private beta owner action packet",
+        "router_candidate_status": "blocked_human",
+        "auto_selectable": false,
+        "implementation_allowed": false,
+        "live_mutation_allowed": false
+      },
+      {
+        "rank": 2,
+        "id": "POST-MERGE-HANDOFF-GENERATOR",
+        "title": "Post-merge handoff generator",
+        "router_candidate_status": "blocked_human",
+        "auto_selectable": false,
+        "implementation_allowed": false,
+        "live_mutation_allowed": false
+      }
+    ],
+    "excluded_outputs": [
+      {
+        "id": "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
+        "reason": "PR #121 is already manually closed as stale/superseded and must not be reselected."
+      },
+      {
+        "id": "TB-090-OWNER-DECISION-PACKET",
+        "reason": "TB-090 owner decision packet remains existing evidence only and must not be reselected."
+      }
+    ]
+  },
+  "required_validation": {
+    "targeted": [
+      "npm.cmd run test -- tests/factory-tb-110-private-beta-owner-action-packet.spec.ts --workers=1",
+      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1"
+    ],
+    "before_finish": [
+      "npm.cmd run typecheck",
+      "npm.cmd run lint",
+      "npm.cmd run build",
+      "npm.cmd run test -- --workers=1"
+    ]
+  },
+  "safety_confirmation": {
+    "docs_tests_only": true,
+    "tb_110_remains_blocked_human": true,
+    "tb_110_owner_action_required": true,
+    "tb_110_owner_approval_required": true,
+    "private_manual_beta_not_launched": true,
+    "public_paid_beta_not_unblocked": true,
+    "no_invites": true,
+    "no_charges": true,
+    "no_entitlement_grants": true,
+    "no_payment_or_billing_enablement": true,
+    "protected_surfaces_untouched": true,
+    "pr_121_closed_stale_superseded_not_reselected": true,
+    "tb_090_partial_verified_blocked_human_not_auto_selectable": true,
+    "tb_100_verified_via_pr_82": true,
+    "private_manual_beta_remains_gated": true,
+    "public_paid_beta_remains_blocked": true
+  }
+}
