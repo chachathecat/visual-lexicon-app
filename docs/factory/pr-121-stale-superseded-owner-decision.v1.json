@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "pr_121_stale_superseded_owner_decision_packet",
+  "repository": "chachathecat/visual-lexicon-app",
+  "created_at": "2026-07-01",
+  "purpose": "Record the owner-manual decision path for PR #121 after the owner minimal-intervention queue from PR #145.",
+  "source_documents": [
+    "docs/factory/owner-minimal-intervention-queue.v1.json",
+    "docs/factory/owner-minimal-intervention-queue.md",
+    "docs/factory/track-b-product-backlog-status.v1.json",
+    "docs/factory/tb-090-owner-decision-packet.v1.json"
+  ],
+  "source_prs": [
+    { "number": 137, "status": "merged", "summary": "Track B product/UI readiness audit." },
+    { "number": 138, "status": "merged", "summary": "Next-task run packet generator." },
+    { "number": 139, "status": "merged", "summary": "Track B product backlog seed." },
+    { "number": 140, "status": "merged", "summary": "PR readiness owner queue summarizer." },
+    { "number": 141, "status": "merged", "summary": "Track B backlog status reconciliation." },
+    { "number": 142, "status": "merged", "summary": "TB-090 account sync skeleton verification artifact." },
+    { "number": 143, "status": "merged", "summary": "TB-090 verification outcome applied to status overlay." },
+    { "number": 144, "status": "merged", "summary": "TB-090 owner decision packet outcome and evidence." },
+    { "number": 145, "status": "merged", "summary": "Owner minimal-intervention queue packet." }
+  ],
+  "target_pull_request": {
+    "number": 121,
+    "title": "Reconcile Track B product/UI readiness contract v2",
+    "state": "open",
+    "stale": true,
+    "superseded": true,
+    "resulting_status": "stale_not_selectable",
+    "router_selectable": false,
+    "auto_selectable": false,
+    "auto_mergeable": false,
+    "implementation_ready": false,
+    "owner_decision_required": true,
+    "owner_action_required": true,
+    "recommended_owner_action": "manual_close_as_stale_superseded",
+    "manual_action_only": true,
+    "live_mutation_performed_by_this_packet": false
+  },
+  "decision": {
+    "id": "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
+    "decision_type": "owner_manual_pr_lifecycle_decision",
+    "recommendation": "Owner may manually close PR #121 as stale/superseded after reviewing this packet.",
+    "rationale": "PR #121 is based on older Track B product/UI readiness evidence and has been superseded by the later merged factory/status/readiness sequence through PR #145.",
+    "does_not_auto_close": true,
+    "does_not_auto_merge": true,
+    "does_not_comment_or_label": true,
+    "does_not_perform_live_github_mutation": true,
+    "does_not_treat_pr_121_as_implementation_ready": true
+  },
+  "invariants": {
+    "public_paid_beta_status": "blocked",
+    "private_manual_beta_status": "gated",
+    "tb_090": {
+      "status": "partial_verified",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "owner_action_required": true,
+      "owner_decision_packet_exists": true,
+      "actual_account_sync_exists": false,
+      "disabled_route_skeleton_runtime_files_approved": false,
+      "future_runtime_route_skeleton_approval": false
+    },
+    "tb_100": {
+      "status": "verified",
+      "evidence": "PR #82",
+      "router_selectable": false
+    },
+    "tb_110": {
+      "status": "blocked_human",
+      "owner_action_required": true,
+      "router_selectable": false,
+      "auto_selectable": false
+    }
+  },
+  "protected_surfaces": {
+    "docs_tests_only": true,
+    "runtime_ui_changes": false,
+    "account_sync_implementation": false,
+    "api_routes_added": false,
+    "auth_or_session_behavior_changes": false,
+    "middleware_changes": false,
+    "database_schema_rls_migration_or_account_data_changes": false,
+    "entitlement_mutation_changes": false,
+    "payment_or_billing_changes": false,
+    "workflow_changes": false,
+    "codeowners_changes": false,
+    "agents_policy_changes": false,
+    "dns_or_deployment_changes": false,
+    "secrets_or_env_changes": false,
+    "webflow_changes": false,
+    "cloudflare_worker_changes": false,
+    "r2_production_object_changes": false,
+    "production_data_changes": false,
+    "roadmap_status_changes": false,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false
+  },
+  "required_validation": {
+    "targeted": [
+      "npm.cmd run test -- tests/factory-pr-121-stale-superseded-owner-decision.spec.ts --workers=1"
+    ],
+    "before_finish": [
+      "npm.cmd run typecheck",
+      "npm.cmd run lint",
+      "npm.cmd run build",
+      "npm.cmd run test -- --workers=1"
+    ]
+  },
+  "post_merge_next_action_summary": {
+    "after_this_packet_merges": [
+      "Owner may manually close PR #121 as stale/superseded.",
+      "Then prepare the TB-110 private beta owner action packet.",
+      "Then prepare the post-merge handoff generator."
+    ],
+    "do_not_do": [
+      "Do not auto-close PR #121.",
+      "Do not auto-merge PR #121.",
+      "Do not enable public paid beta.",
+      "Do not launch private/manual beta.",
+      "Do not implement account sync.",
+      "Do not add API routes.",
+      "Do not enable auto-merge.",
+      "Do not perform live GitHub mutations from implementation code."
+    ]
+  }
+}
