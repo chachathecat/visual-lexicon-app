@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.use({
+  colorScheme: "light",
+  deviceScaleFactor: 1,
+  locale: "en-US",
+  timezoneId: "Asia/Seoul"
+});
+
 const baseUrl =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
@@ -183,6 +190,7 @@ async function prepareVisualPage(
   page: Page,
   viewport: (typeof viewports)[number]
 ) {
+  await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
   await page.addInitScript({
     content: `
       (() => {
@@ -213,15 +221,24 @@ async function prepareVisualPage(
   await seedStorage(page);
 }
 
-async function waitForBackgroundImages(page: Page) {
+async function waitForVisualAssets(page: Page) {
+  await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {
+    // Some interactions do not trigger navigation; the DOM/image waits below
+    // are the source of truth for screenshot readiness.
+  });
+
   await page.evaluate(async () => {
     const withTimeout = (promise: Promise<unknown>) =>
       Promise.race([
         promise,
         new Promise<void>((resolve) => {
-          window.setTimeout(resolve, 2500);
+          window.setTimeout(resolve, 5000);
         })
       ]);
+
+    if ("fonts" in document) {
+      await withTimeout(document.fonts.ready);
+    }
 
     await Promise.all(
       Array.from(document.images).map((image) => {
@@ -245,25 +262,38 @@ async function waitForBackgroundImages(page: Page) {
     await Promise.all(
       Array.from(new Set(backgroundUrls)).map(
         (url) =>
-          new Promise<void>((resolve) => {
-            const image = new Image();
+          withTimeout(
+            new Promise<void>((resolve) => {
+              const image = new Image();
 
-            image.onload = () => resolve();
-            image.onerror = () => resolve();
-            image.src = url;
-          })
+              image.onload = () => resolve();
+              image.onerror = () => resolve();
+              image.src = url;
+            })
+          )
       )
     );
+
+    await new Promise<void>((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => resolve());
+      });
+    });
   });
 }
 
 async function capture(page: Page, name: string) {
-  await waitForBackgroundImages(page);
   await page.addStyleTag({
     content: `
+      html {
+        scroll-behavior: auto !important;
+      }
       *, *::before, *::after {
+        animation: none !important;
         animation-delay: 0s !important;
         animation-duration: 0s !important;
+        caret-color: transparent !important;
+        transition: none !important;
         transition-duration: 0s !important;
       }
       .review-v2-summary__header > span {
@@ -271,6 +301,7 @@ async function capture(page: Page, name: string) {
       }
     `
   });
+  await waitForVisualAssets(page);
   await expect(page).toHaveScreenshot(`${name}.png`, {
     animations: "disabled",
     fullPage: true,
