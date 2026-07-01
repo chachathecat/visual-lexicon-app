@@ -103,6 +103,22 @@ type OwnerMinimalInterventionQueue = {
     owner_action_required: boolean;
     mergeable_state: string;
   }[];
+  closed_stale_pull_requests: {
+    id: string;
+    number: number;
+    state: string;
+    stale: boolean;
+    superseded: boolean;
+    resulting_status: string;
+    router_selectable: boolean;
+    auto_selectable: boolean;
+    auto_mergeable: boolean;
+    owner_decision_required: boolean;
+    owner_action_required: boolean;
+    closed_manually_by_owner: boolean;
+    live_mutation_performed_by_this_packet: boolean;
+    mergeable_state: string;
+  }[];
   selection_result: {
     selected_implementation: null;
     selected_runtime_task: null;
@@ -111,6 +127,8 @@ type OwnerMinimalInterventionQueue = {
     tb_090_owner_decision_packet_work_selected: boolean;
     public_paid_beta_selected: boolean;
     private_manual_beta_launch_selected: boolean;
+    pr_121_selected: boolean;
+    tb_110_owner_action_packet_selected: boolean;
   };
   next_safe_task: QueueOutput;
   recommended_next_outputs: QueueOutput[];
@@ -259,7 +277,10 @@ function deterministicQueueOutput(queue: OwnerMinimalInterventionQueue) {
         state: pr.state,
         merged: pr.merged
       })),
-    stalePrs: [...queue.open_stale_pull_requests]
+    stalePrs: [
+      ...queue.open_stale_pull_requests,
+      ...queue.closed_stale_pull_requests
+    ]
       .sort((left, right) => left.number - right.number)
       .map((pr) => ({
         number: pr.number,
@@ -288,11 +309,11 @@ function deterministicQueueOutput(queue: OwnerMinimalInterventionQueue) {
 }
 
 test.describe("owner minimal-intervention queue", () => {
-  test("artifact files exist and summarize the post-PR #144 state", () => {
+  test("artifact files exist and summarize the post-PR #146 state", () => {
     const queue = readQueue();
     const markdown = readFileSync(join(process.cwd(), ...QUEUE_MD_PATH), "utf8");
-    const pr144 = queue.latest_merged_factory_state.merged_factory_prs.find(
-      (pr) => pr.number === 144
+    const pr146 = queue.latest_merged_factory_state.merged_factory_prs.find(
+      (pr) => pr.number === 146
     );
 
     expect(existsSync(join(process.cwd(), ...QUEUE_JSON_PATH))).toBe(true);
@@ -310,35 +331,43 @@ test.describe("owner minimal-intervention queue", () => {
       live_github_mutations_from_implementation_code: false,
       auto_merge_enabled: false
     });
-    expect(pr144).toMatchObject({
-      number: 144,
+    expect(pr146).toMatchObject({
+      number: 146,
       state: "merged",
       merged: true,
       runtime_or_protected_surface_effect: "none"
     });
     expect(markdown).toContain("# Owner Minimal-Intervention Queue");
-    expect(markdown).toContain("PR #144 is merged.");
+    expect(markdown).toContain("PR #146 is merged.");
+    expect(markdown).toContain("PR #121 has been manually closed");
     expect(markdown).toContain("TB-090 remains `partial_verified`");
   });
 
-  test("PR #121 is listed as stale open and not auto-selectable", () => {
+  test("PR #121 is listed as closed stale superseded and not reselected", () => {
     const queue = readQueue();
-    const pr121 = queue.open_stale_pull_requests.find(
+    const pr121 = queue.closed_stale_pull_requests.find(
       (pr) => pr.number === 121
     );
+    const outputIds = queue.recommended_next_outputs.map((output) => output.id);
 
     expect(pr121).toMatchObject({
       id: "PR-121",
       number: 121,
-      state: "open",
+      state: "closed",
       stale: true,
+      superseded: true,
       resulting_status: "stale_not_selectable",
       router_selectable: false,
       auto_selectable: false,
       auto_mergeable: false,
-      owner_decision_required: true,
-      owner_action_required: true
+      owner_decision_required: false,
+      owner_action_required: false,
+      closed_manually_by_owner: true,
+      live_mutation_performed_by_this_packet: false
     });
+    expect(queue.open_stale_pull_requests).toEqual([]);
+    expect(queue.selection_result.pr_121_selected).toBe(false);
+    expect(outputIds).not.toContain("PR-121-STALE-SUPERSEDED-OWNER-DECISION");
     expect(queue.router_contract.stale_prs_are_auto_mergeable).toBe(false);
     expect(queue.evidence_policy.stale_pr_is_auto_mergeable).toBe(false);
   });
@@ -488,8 +517,11 @@ test.describe("owner minimal-intervention queue", () => {
       true
     );
 
+    expect(queue.blocked_human_decisions.some((item) => item.id === "PR-121")).toBe(
+      false
+    );
+
     for (const id of [
-      "PR-121",
       "TB-090",
       "TB-110",
       "PUBLIC-PAID-BETA",
@@ -505,13 +537,13 @@ test.describe("owner minimal-intervention queue", () => {
     }
   });
 
-  test("next outputs are ordered deterministically after PR #144", () => {
+  test("next outputs are ordered deterministically after PR #146 and PR #121 closure", () => {
     const queue = readQueue();
 
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
-      related_pr_number: 121,
+      id: "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
+      task_id: "TB-110",
       router_selectable: false,
       auto_selectable: false,
       auto_mergeable: false,
@@ -520,15 +552,14 @@ test.describe("owner minimal-intervention queue", () => {
       owner_decision_required: true
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).toEqual([
-      "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
       "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
       "POST-MERGE-HANDOFF-GENERATOR"
     ]);
     expect(queue.recommended_next_outputs.map((output) => output.rank)).toEqual([
       1,
-      2,
-      3
+      2
     ]);
+    expect(queue.selection_result.tb_110_owner_action_packet_selected).toBe(true);
     expect(
       queue.recommended_next_outputs.every(
         (output) =>
@@ -573,15 +604,19 @@ test.describe("owner minimal-intervention queue", () => {
       "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1"
     ]);
     expect(queue.codex_prompt_draft).toMatchObject({
-      title: "PR #121 stale/superseded owner decision packet",
+      title: "TB-110 private beta owner action packet",
       allowed_files: [
-        "docs/factory/pr-121-stale-superseded-owner-decision.md",
-        "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
-        "tests/factory-pr-121-stale-superseded-owner-decision.spec.ts"
+        "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+        "docs/factory/tb-110-private-beta-owner-action-packet.md",
+        "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
+        "docs/factory/owner-minimal-intervention-queue.v1.json",
+        "docs/factory/owner-minimal-intervention-queue.md",
+        "tests/factory-owner-minimal-intervention-queue.spec.ts"
       ]
     });
     expect(promptText).toContain("docs/tests-only");
-    expect(promptText).toContain("Do not close, merge, label, comment on");
+    expect(promptText).toContain("PR #121 remains closed as stale/superseded");
+    expect(promptText).toContain("Do not launch private/manual beta");
     expect(promptText).toContain("Public paid beta remains blocked");
     expect(queue.merge_recommendation).toMatchObject({
       for_this_docs_tests_packet: "merge_after_required_validation_passes",
@@ -594,6 +629,10 @@ test.describe("owner minimal-intervention queue", () => {
         "Do not merge any packet that touches protected surfaces."
       ])
     );
+    expect(queue.safety_confirmation).toMatchObject({
+      pr_121_closed_stale_superseded_not_reselected: true,
+      tb_110_owner_action_packet_is_next_safe_output: true
+    });
   });
 
   test("identical input produces identical queue output", () => {

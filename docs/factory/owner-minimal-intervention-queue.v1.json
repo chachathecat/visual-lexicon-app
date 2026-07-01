@@ -9,7 +9,9 @@
     "docs/factory/track-b-product-backlog-status.v1.json",
     "docs/factory/tb-090-account-sync-skeleton-verification.v1.json",
     "docs/factory/tb-090-owner-decision-packet.v1.json",
-    "docs/factory/tb-090-owner-decision-packet.md"
+    "docs/factory/tb-090-owner-decision-packet.md",
+    "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
+    "docs/factory/pr-121-stale-superseded-owner-decision.md"
   ],
   "this_pr": {
     "type": "factory_docs_tests_owner_queue",
@@ -37,7 +39,10 @@
     "expected_files": [
       "docs/factory/owner-minimal-intervention-queue.v1.json",
       "docs/factory/owner-minimal-intervention-queue.md",
-      "tests/factory-owner-minimal-intervention-queue.spec.ts"
+      "tests/factory-owner-minimal-intervention-queue.spec.ts",
+      "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+      "docs/factory/tb-110-private-beta-owner-action-packet.md",
+      "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts"
     ]
   },
   "router_contract": {
@@ -57,8 +62,8 @@
     "stale_evidence_ready": false
   },
   "latest_merged_factory_state": {
-    "state_label": "post_pr_144",
-    "summary": "PR #144 is merged. The TB-090 verification outcome is applied, the TB-090 owner decision packet exists as actual evidence, and the remaining queue is owner-decision work only.",
+    "state_label": "post_pr_146_and_pr_121_manual_close",
+    "summary": "PR #145 and PR #146 are merged, PR #121 has been manually closed as stale/superseded, and the remaining queue is owner-decision work only.",
     "merged_factory_prs": [
       {
         "number": 144,
@@ -69,6 +74,30 @@
           "docs/factory/tb-090-owner-decision-packet.v1.json",
           "docs/factory/tb-090-owner-decision-packet.md",
           "docs/factory/track-b-product-backlog-status.v1.json"
+        ],
+        "runtime_or_protected_surface_effect": "none"
+      },
+      {
+        "number": 145,
+        "state": "merged",
+        "merged": true,
+        "purpose": "Create the owner minimal-intervention queue packet.",
+        "evidence_paths": [
+          "docs/factory/owner-minimal-intervention-queue.v1.json",
+          "docs/factory/owner-minimal-intervention-queue.md",
+          "tests/factory-owner-minimal-intervention-queue.spec.ts"
+        ],
+        "runtime_or_protected_surface_effect": "none"
+      },
+      {
+        "number": 146,
+        "state": "merged",
+        "merged": true,
+        "purpose": "Create the PR #121 stale/superseded owner decision packet.",
+        "evidence_paths": [
+          "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
+          "docs/factory/pr-121-stale-superseded-owner-decision.md",
+          "tests/factory-pr-121-stale-superseded-owner-decision.spec.ts"
         ],
         "runtime_or_protected_surface_effect": "none"
       }
@@ -114,21 +143,25 @@
       }
     ]
   },
-  "open_stale_pull_requests": [
+  "open_stale_pull_requests": [],
+  "closed_stale_pull_requests": [
     {
       "id": "PR-121",
       "number": 121,
-      "state": "open",
+      "state": "closed",
       "stale": true,
+      "superseded": true,
       "resulting_status": "stale_not_selectable",
       "router_selectable": false,
       "auto_selectable": false,
       "auto_mergeable": false,
-      "owner_decision_required": true,
-      "owner_action_required": true,
-      "mergeable_state": "not_mergeable_without_fresh_owner_evidence",
-      "recommended_owner_action": "Prepare a close-as-stale/superseded owner decision. Do not auto-close, auto-merge, comment, label, or mutate GitHub from implementation code.",
-      "evidence_summary": "PR #121 remains stale/open/not auto-selectable."
+      "owner_decision_required": false,
+      "owner_action_required": false,
+      "closed_manually_by_owner": true,
+      "live_mutation_performed_by_this_packet": false,
+      "mergeable_state": "closed_stale_superseded_not_mergeable",
+      "recommended_owner_action": "No further factory selection. PR #121 remains closed as stale/superseded and must not be reselected, auto-merged, reopened, commented on, labeled, or otherwise mutated from implementation code.",
+      "evidence_summary": "PR #121 is closed/stale/superseded and not auto-selectable."
     }
   ],
   "selection_result": {
@@ -139,15 +172,17 @@
     "tb_090_owner_decision_packet_work_selected": false,
     "public_paid_beta_selected": false,
     "private_manual_beta_launch_selected": false,
+    "pr_121_selected": false,
+    "tb_110_owner_action_packet_selected": true,
     "reason": "The queue contains owner-decision packets and handoff generation only. It does not select runtime implementation or live mutations."
   },
   "next_safe_task": {
     "rank": 1,
-    "id": "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
-    "related_pr_number": 121,
-    "title": "PR #121 close as stale/superseded owner decision",
-    "output_type": "owner_decision_packet",
-    "resulting_status": "stale_not_selectable",
+    "id": "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
+    "task_id": "TB-110",
+    "title": "TB-110 private beta owner action packet",
+    "output_type": "owner_action_packet",
+    "resulting_status": "blocked_human",
     "router_candidate_status": "blocked_human",
     "router_selectable": false,
     "auto_selectable": false,
@@ -156,27 +191,11 @@
     "live_mutation_allowed": false,
     "owner_decision_required": true,
     "owner_action_required": true,
-    "recommendation": "Draft the owner-facing close decision for stale PR #121. The implementation must not close, merge, label, comment on, or otherwise mutate PR #121."
+    "recommendation": "Prepare the owner action packet for private/manual beta while keeping private/manual beta gated and public paid beta blocked."
   },
   "recommended_next_outputs": [
     {
       "rank": 1,
-      "id": "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
-      "related_pr_number": 121,
-      "title": "PR #121 close as stale/superseded owner decision",
-      "output_type": "owner_decision_packet",
-      "router_candidate_status": "blocked_human",
-      "router_selectable": false,
-      "auto_selectable": false,
-      "auto_mergeable": false,
-      "implementation_allowed": false,
-      "live_mutation_allowed": false,
-      "owner_decision_required": true,
-      "owner_action_required": true,
-      "recommendation": "Prepare an owner decision to close PR #121 as stale/superseded; do not auto-close or auto-merge it."
-    },
-    {
-      "rank": 2,
       "id": "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
       "task_id": "TB-110",
       "title": "TB-110 private beta owner action packet",
@@ -192,7 +211,7 @@
       "recommendation": "Prepare the owner action packet for private/manual beta while keeping private/manual beta gated and public paid beta blocked."
     },
     {
-      "rank": 3,
+      "rank": 2,
       "id": "POST-MERGE-HANDOFF-GENERATOR",
       "title": "Post-merge handoff generator",
       "output_type": "handoff_generator_packet",
@@ -208,15 +227,6 @@
     }
   ],
   "blocked_human_decisions": [
-    {
-      "id": "PR-121",
-      "title": "Close stale/superseded PR #121",
-      "status": "blocked_human",
-      "owner_approval_required": true,
-      "owner_action_required": true,
-      "auto_selectable": false,
-      "implementation_allowed": false
-    },
     {
       "id": "TB-090",
       "title": "Disabled Account Sync Route Skeleton",
@@ -283,11 +293,15 @@
       "launched_by_this_queue": false,
       "required_before_unblock": [
         "current_manual_qa_execution_report",
-        "owner_approval",
-        "participant_local_state_disclosure",
-        "manual_payment_and_entitlement_policy_acceptance",
-        "support_privacy_refund_and_local_storage_disclosures",
-        "manual_monitoring_issue_log_and_pause_criteria"
+        "owner_approved_participant_list",
+        "participant_disclosure_localStorage_manual_beta_limits",
+        "support_privacy_refund_cancellation_note",
+        "monitoring_issue_log",
+        "pause_criteria",
+        "rollback_criteria",
+        "manual_entitlement_policy_if_any",
+        "explicit_owner_approval",
+        "public_paid_beta_remains_blocked"
       ],
       "safety_summary": "Private/manual beta remains gated and owner-approved only. This queue does not invite, charge, grant entitlement, or launch."
     }
@@ -390,21 +404,25 @@
     ]
   },
   "codex_prompt_draft": {
-    "title": "PR #121 stale/superseded owner decision packet",
-    "purpose": "Prepare the next deterministic owner-only packet after merged PR #144 and this owner minimal-intervention queue.",
+    "title": "TB-110 private beta owner action packet",
+    "purpose": "Prepare the next deterministic owner-only packet after merged PR #146 and the manual PR #121 stale/superseded close.",
     "allowed_files": [
-      "docs/factory/pr-121-stale-superseded-owner-decision.md",
-      "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
-      "tests/factory-pr-121-stale-superseded-owner-decision.spec.ts"
+      "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+      "docs/factory/tb-110-private-beta-owner-action-packet.md",
+      "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
+      "docs/factory/owner-minimal-intervention-queue.v1.json",
+      "docs/factory/owner-minimal-intervention-queue.md",
+      "tests/factory-owner-minimal-intervention-queue.spec.ts"
     ],
     "prompt_lines": [
-      "You are working in C:\\Users\\jmg91\\Desktop\\visual-lexicon-app-owner-queue on chachathecat/visual-lexicon-app.",
-      "Goal: create a docs/tests-only owner decision packet for PR #121 as stale/superseded.",
-      "Use the post-PR #144 owner minimal-intervention queue as input evidence.",
-      "Do not close, merge, label, comment on, or otherwise mutate GitHub from implementation code.",
+      "You are working in C:\\Users\\jmg91\\Desktop\\visual-lexicon-app-tb110-private-beta on chachathecat/visual-lexicon-app.",
+      "Goal: create a docs/tests-only TB-110 private beta owner action packet.",
+      "Use the post-PR #146 owner minimal-intervention queue and the manual PR #121 closed stale/superseded context as input evidence.",
+      "PR #121 remains closed as stale/superseded and must not be reselected, reopened, auto-merged, labeled, commented on, or otherwise mutated from implementation code.",
       "Do not implement account sync, route skeletons, API routes, auth/session behavior, middleware, DB/schema/RLS/migrations/account data, entitlements, payments, billing, runtime UI, workflows, CODEOWNERS, AGENTS.md, DNS, deployment, secrets, Webflow, Cloudflare Workers, R2 production objects, production data, or roadmap status changes.",
-      "Public paid beta remains blocked. Private/manual beta remains gated. Owner approval is required for blocked-human tasks.",
-      "Add targeted tests proving PR #121 is stale/open/not auto-selectable and no live mutation or auto-merge is enabled."
+      "Do not launch private/manual beta, invite beta participants, charge users, grant entitlements, enable payment/billing, or unblock public paid beta.",
+      "Public paid beta remains blocked. Private/manual beta remains gated. TB-110 remains blocked_human / owner-action-required / owner-approval-required.",
+      "Add targeted tests proving the TB-110 packet exists, protected surfaces remain untouched, PR #121 stays closed/stale/superseded and not reselected, and next safe output ordering is deterministic."
     ]
   },
   "merge_recommendation": {
@@ -421,11 +439,12 @@
   },
   "post_merge_next_action_summary": {
     "after_this_packet_merges": [
-      "Prepare the PR #121 close-as-stale/superseded owner decision packet.",
-      "Then prepare the TB-110 private beta owner action packet.",
+      "Prepare the TB-110 private beta owner action packet.",
       "Then prepare the post-merge handoff generator."
     ],
     "do_not_do": [
+      "Do not reselect PR #121.",
+      "Do not reopen PR #121.",
       "Do not reselect TB-090.",
       "Do not reselect TB-090 owner-decision-packet work.",
       "Do not implement account sync.",
@@ -446,6 +465,8 @@
     "auto_merge_remains_disabled": true,
     "live_mutations_remain_disabled": true,
     "unknown_or_stale_evidence_is_not_ready": true,
+    "pr_121_closed_stale_superseded_not_reselected": true,
+    "tb_110_owner_action_packet_is_next_safe_output": true,
     "tb_090_not_reselected": true,
     "tb_090_owner_decision_packet_work_not_reselected": true,
     "account_sync_implementation_not_selected": true
