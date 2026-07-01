@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "tb_110_owner_action_packet_outcome",
+  "repository": "chachathecat/visual-lexicon-app",
+  "created_at": "2026-07-01",
+  "purpose": "Record the merged PR #147 outcome so the TB-110 owner action packet is treated as existing evidence and is not selected again.",
+  "merged_pull_request": {
+    "number": 147,
+    "state": "merged",
+    "merged": true,
+    "merge_commit": "b4dd352f8ece4a660d983365ae60169b4c83566d",
+    "title": "TB-110 owner action packet",
+    "runtime_or_protected_surface_effect": "none"
+  },
+  "evidence": {
+    "tb_110_owner_action_packet_exists": true,
+    "tb_110_owner_action_packet_is_actual_evidence": true,
+    "tb_110_owner_action_packet_path": "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+    "tb_110_owner_action_packet_markdown_path": "docs/factory/tb-110-private-beta-owner-action-packet.md",
+    "tb_110_owner_action_packet_test_path": "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
+    "owner_queue_path": "docs/factory/owner-minimal-intervention-queue.v1.json",
+    "owner_queue_markdown_path": "docs/factory/owner-minimal-intervention-queue.md"
+  },
+  "queue_reconciliation": {
+    "tb_110_owner_action_packet_work_reselectable": false,
+    "tb_110_owner_action_packet_selected": false,
+    "next_safe_task_id": "POST-MERGE-HANDOFF-GENERATOR",
+    "recommended_next_outputs_rank_1": "POST-MERGE-HANDOFF-GENERATOR"
+  },
+  "invariants": {
+    "tb_110": {
+      "status": "blocked_human",
+      "router_candidate_status": "blocked_human",
+      "owner_action_required": true,
+      "owner_approval_required": true,
+      "router_selectable": false,
+      "auto_selectable": false,
+      "private_manual_beta_launched": false,
+      "public_paid_beta_unblocked": false
+    },
+    "tb_090": {
+      "status": "partial_verified",
+      "router_candidate_status": "blocked_human",
+      "auto_selectable": false,
+      "account_sync_implementation_selected": false
+    },
+    "tb_100": {
+      "status": "verified",
+      "evidence": "PR #82",
+      "auto_selectable": false
+    },
+    "pull_request_121": {
+      "state": "closed",
+      "stale": true,
+      "superseded": true,
+      "reselected": false,
+      "auto_mergeable": false
+    }
+  },
+  "release_gates": {
+    "private_manual_beta": {
+      "status": "gated",
+      "owner_action_required": true,
+      "owner_approval_required": true,
+      "launched_by_this_outcome": false,
+      "participants_invited_by_this_outcome": false,
+      "charges_enabled_by_this_outcome": false,
+      "entitlements_granted_by_this_outcome": false
+    },
+    "public_paid_beta": {
+      "status": "blocked",
+      "owner_action_required": true,
+      "owner_approval_required": true,
+      "unblocked_by_this_outcome": false,
+      "launch_allowed": false
+    }
+  },
+  "protected_surfaces": {
+    "runtime_ui_changes": false,
+    "api_routes_added": false,
+    "auth_or_session_behavior_changes": false,
+    "middleware_changes": false,
+    "database_schema_rls_migration_or_account_data_changes": false,
+    "entitlement_mutation_changes": false,
+    "payment_or_billing_changes": false,
+    "account_data_mutation_changes": false,
+    "workflow_changes": false,
+    "codeowners_changes": false,
+    "agents_policy_changes": false,
+    "dns_or_deployment_changes": false,
+    "secrets_or_env_changes": false,
+    "webflow_changes": false,
+    "cloudflare_worker_changes": false,
+    "r2_production_object_changes": false,
+    "production_data_changes": false,
+    "roadmap_status_changes": false,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false
+  },
+  "non_actions": {
+    "private_manual_beta_launch_performed": false,
+    "public_paid_beta_unblock_performed": false,
+    "manual_beta_invites_sent": false,
+    "users_charged": false,
+    "entitlements_granted": false,
+    "payment_or_billing_enabled": false,
+    "account_data_modified": false,
+    "runtime_ui_touched": false,
+    "api_routes_touched": false,
+    "auth_or_session_behavior_modified": false,
+    "middleware_touched": false,
+    "database_schema_rls_migrations_modified": false,
+    "workflows_touched": false,
+    "dns_touched": false,
+    "deployment_touched": false,
+    "secrets_touched": false,
+    "webflow_touched": false,
+    "cloudflare_workers_touched": false,
+    "r2_production_objects_touched": false,
+    "production_data_touched": false,
+    "live_github_mutations_performed": false,
+    "auto_merge_enabled": false
+  },
+  "safety_confirmation": {
+    "docs_tests_only": true,
+    "pr_147_represented_as_merged_evidence": true,
+    "tb_110_owner_action_packet_exists_as_actual_evidence": true,
+    "tb_110_owner_action_packet_not_reselected": true,
+    "tb_110_remains_blocked_human": true,
+    "tb_110_owner_action_required": true,
+    "tb_110_owner_approval_required": true,
+    "private_manual_beta_remains_gated": true,
+    "public_paid_beta_remains_blocked": true,
+    "private_manual_beta_not_launched": true,
+    "public_paid_beta_not_unblocked": true,
+    "no_invites": true,
+    "no_charges": true,
+    "no_entitlement_grants": true,
+    "protected_surfaces_untouched": true,
+    "no_live_github_mutations": true,
+    "auto_merge_remains_disabled": true,
+    "pr_121_closed_stale_superseded_not_reselected": true,
+    "tb_090_partial_verified_blocked_human_not_auto_selectable": true,
+    "tb_100_verified_via_pr_82": true,
+    "post_merge_handoff_generator_is_next_safe_output": true
+  }
+}

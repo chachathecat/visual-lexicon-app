@@ -2,9 +2,12 @@
 
 `docs/factory/owner-minimal-intervention-queue.v1.json` is the deterministic
 owner queue after merged factory/status work. It assumes the current expected
-state after PR #144:
+state after PR #147:
 
 - PR #144 is merged.
+- PR #145 is merged.
+- PR #146 is merged.
+- PR #147 is merged at `b4dd352f8ece4a660d983365ae60169b4c83566d`.
 - The TB-090 verification outcome is applied.
 - The TB-090 owner decision packet exists as actual evidence.
 - TB-090 remains `partial_verified` / `blocked_human` / not auto-selectable.
@@ -12,7 +15,12 @@ state after PR #144:
 - TB-090 does not approve disabled route skeleton runtime files.
 - TB-100 remains verified via PR #82.
 - TB-110 remains `blocked_human` / owner-action-required.
-- PR #121 remains stale, open, and not auto-selectable.
+- The TB-110 owner action packet exists as actual evidence at
+  `docs/factory/tb-110-private-beta-owner-action-packet.v1.json`.
+- The TB-110 owner action packet markdown exists as actual evidence at
+  `docs/factory/tb-110-private-beta-owner-action-packet.md`.
+- TB-110 owner action packet work is not reselectable.
+- PR #121 remains closed/stale/superseded and not auto-selectable.
 - Public paid beta remains blocked.
 - Private/manual beta remains gated.
 
@@ -34,45 +42,49 @@ ordered by `rank`, then `id`.
 
 ## Latest Merged Factory State
 
-PR #144 is treated as the latest merged factory/status state. The merged state
-records the TB-090 owner decision packet as actual evidence, but only as
-packet-production evidence. It does not authorize account sync, disabled route
-skeleton runtime files, API routes, auth/session changes, middleware, database
-changes, entitlement changes, payment, billing, or production mutations.
+PR #147 is treated as the latest merged factory/status state. The merged state
+records the TB-090 owner decision packet and the TB-110 owner action packet as
+actual evidence, but only as packet-production evidence. It does not authorize
+account sync, disabled route skeleton runtime files, private/manual beta launch,
+public paid beta launch, invites, entitlement grants, API routes, auth/session
+changes, middleware, database changes, entitlement changes, payment, billing, or
+production mutations.
 
 TB-100 is already verified through PR #82 and is not reselected. TB-110 remains
-blocked-human because private/manual beta launch requires owner action.
+blocked-human because private/manual beta launch requires owner action. The
+already-merged TB-110 owner action packet is not selected again.
 
-## Open Stale PRs
+## Closed Stale PRs
 
-PR #121 is the only open stale PR in this packet. It remains:
+PR #121 is the closed stale PR in this packet. It remains:
 
-- open;
+- closed;
 - stale;
+- superseded;
 - `stale_not_selectable`;
 - not auto-selectable;
 - not auto-mergeable;
-- owner-action-required.
+- not owner-action-required.
 
-Implementation code must not close, merge, label, comment on, or otherwise
-mutate PR #121.
+Implementation code must not reopen, close, merge, label, comment on, or
+otherwise mutate PR #121.
 
 ## Next Safe Outputs
 
-After PR #144, the next safe owner outputs are:
+After PR #147, the next safe owner output is:
 
-1. PR #121 close as stale/superseded owner decision.
-2. TB-110 private beta owner action packet.
-3. Post-merge handoff generator.
+1. Post-merge handoff generator.
 
-These are owner packets and handoff work only. They are not runtime
-implementation tasks and they do not permit live GitHub mutations.
+The TB-110 private beta owner action packet was already merged in PR #147 and
+must not be selected again. The remaining output is handoff work only. It is not
+a runtime implementation task and it does not permit live GitHub mutations.
 
 ## Blocked-Human Decisions
 
-The blocked-human queue contains PR #121, TB-090, TB-110, public paid beta, and
+The blocked-human queue contains TB-090, TB-110, public paid beta, and
 private/manual beta. Every blocked-human item requires owner approval and is not
-auto-selectable.
+auto-selectable. PR #121 is closed/stale/superseded, not a blocked-human queue
+candidate.
 
 ## Release Gates
 
@@ -100,7 +112,8 @@ Workers, R2 production objects, production data, and roadmap status.
 Run the targeted packet spec:
 
 ```powershell
-npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1
+npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts tests/factory-tb-110-private-beta-owner-action-packet.spec.ts --workers=1
+npm.cmd run test -- tests/factory-tb-110-owner-action-packet-outcome.spec.ts --workers=1
 ```
 
 Before finishing, run:
@@ -115,13 +128,14 @@ npm.cmd run test -- --workers=1
 ## Codex Prompt Draft
 
 ```txt
-You are working in C:\Users\jmg91\Desktop\visual-lexicon-app-owner-queue on chachathecat/visual-lexicon-app.
-Goal: create a docs/tests-only owner decision packet for PR #121 as stale/superseded.
-Use the post-PR #144 owner minimal-intervention queue as input evidence.
-Do not close, merge, label, comment on, or otherwise mutate GitHub from implementation code.
+You are working in C:\Users\jmg91\Desktop\visual-lexicon-app-post-merge-handoff on chachathecat/visual-lexicon-app.
+Goal: create a docs/tests-only post-merge handoff generator packet.
+Use the post-PR #147 owner minimal-intervention queue as input evidence.
+PR #147 is merged at b4dd352f8ece4a660d983365ae60169b4c83566d, so the TB-110 owner action packet must not be selected again.
+Do not reopen, close, merge, label, comment on, or otherwise mutate GitHub from implementation code.
 Do not implement account sync, route skeletons, API routes, auth/session behavior, middleware, DB/schema/RLS/migrations/account data, entitlements, payments, billing, runtime UI, workflows, CODEOWNERS, AGENTS.md, DNS, deployment, secrets, Webflow, Cloudflare Workers, R2 production objects, production data, or roadmap status changes.
 Public paid beta remains blocked. Private/manual beta remains gated. Owner approval is required for blocked-human tasks.
-Add targeted tests proving PR #121 is stale/open/not auto-selectable and no live mutation or auto-merge is enabled.
+Add targeted tests proving PR #147 merged evidence is represented, PR #121 is closed/stale/superseded/not auto-selectable, TB-110 owner action packet work is not selected again, `POST-MERGE-HANDOFF-GENERATOR` is rank 1, and no live mutation or auto-merge is enabled.
 ```
 
 ## Merge Recommendation
@@ -133,11 +147,10 @@ no-op-only validation as ready.
 
 ## Post-Merge Next Action
 
-After this packet merges, prepare the PR #121 close-as-stale/superseded owner
-decision packet, then the TB-110 private beta owner action packet, then the
-post-merge handoff generator.
+After this packet merges, prepare the post-merge handoff generator.
 
 Do not reselect TB-090, do not reselect TB-090 owner-decision-packet work, do
-not implement account sync, do not add API routes, do not enable public paid
-beta, do not launch private/manual beta, do not enable auto-merge, and do not
-perform live GitHub mutations from implementation code.
+not reselect the TB-110 owner action packet, do not implement account sync, do
+not add API routes, do not enable public paid beta, do not launch private/manual
+beta, do not enable auto-merge, and do not perform live GitHub mutations from
+implementation code.
