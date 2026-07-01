@@ -69,6 +69,7 @@ type OwnerMinimalInterventionQueue = {
       number: number;
       state: string;
       merged: boolean;
+      merge_commit?: string;
       evidence_paths: string[];
       runtime_or_protected_surface_effect: string;
     }[];
@@ -80,13 +81,19 @@ type OwnerMinimalInterventionQueue = {
       router_selectable: boolean;
       auto_selectable: boolean;
       owner_action_required?: boolean;
+      owner_approval_required?: boolean;
       owner_decision_packet_exists?: boolean;
       owner_decision_packet_is_actual_evidence?: boolean;
       owner_decision_packet_path?: string;
+      owner_action_packet_exists?: boolean;
+      owner_action_packet_is_actual_evidence?: boolean;
+      owner_action_packet_path?: string;
+      owner_action_packet_markdown_path?: string;
       account_sync_implementation_exists?: boolean;
       account_sync_implementation_approved?: boolean;
       disabled_route_skeleton_runtime_files_approved?: boolean;
       tb_090_owner_decision_packet_work_reselectable?: boolean;
+      tb_110_owner_action_packet_work_reselectable?: boolean;
       evidence?: string;
     }[];
   };
@@ -172,6 +179,8 @@ type OwnerMinimalInterventionQueue = {
     stale_pr_is_auto_mergeable: boolean;
     requires_actual_artifacts: boolean;
     tb_090_owner_decision_packet_actual_evidence_path: string;
+    tb_110_owner_action_packet_actual_evidence_path: string;
+    tb_110_owner_action_packet_markdown_evidence_path: string;
     unknown_or_stale_evidence_result: string;
   };
   required_validation: {
@@ -213,6 +222,30 @@ type Tb090OwnerDecisionPacket = {
   };
 };
 
+type Tb110OwnerActionPacketOutcome = {
+  schema_version: string;
+  kind: string;
+  merged_pull_request: {
+    number: number;
+    state: string;
+    merged: boolean;
+    merge_commit: string;
+  };
+  evidence: {
+    tb_110_owner_action_packet_exists: boolean;
+    tb_110_owner_action_packet_is_actual_evidence: boolean;
+    tb_110_owner_action_packet_path: string;
+    tb_110_owner_action_packet_markdown_path: string;
+  };
+  queue_reconciliation: {
+    tb_110_owner_action_packet_work_reselectable: boolean;
+    tb_110_owner_action_packet_selected: boolean;
+    next_safe_task_id: string;
+    recommended_next_outputs_rank_1: string;
+  };
+  safety_confirmation: Record<string, boolean>;
+};
+
 const QUEUE_JSON_PATH = [
   "docs",
   "factory",
@@ -228,6 +261,26 @@ const TB_090_PACKET_PATH = [
   "factory",
   "tb-090-owner-decision-packet.v1.json"
 ];
+const TB_110_PACKET_PATH = [
+  "docs",
+  "factory",
+  "tb-110-private-beta-owner-action-packet.v1.json"
+];
+const TB_110_PACKET_MD_PATH = [
+  "docs",
+  "factory",
+  "tb-110-private-beta-owner-action-packet.md"
+];
+const TB_110_OUTCOME_PATH = [
+  "docs",
+  "factory",
+  "tb-110-owner-action-packet-outcome.v1.json"
+];
+const TB_110_OUTCOME_MD_PATH = [
+  "docs",
+  "factory",
+  "tb-110-owner-action-packet-outcome.md"
+];
 
 function readJson<T>(...parts: string[]): T {
   return JSON.parse(readFileSync(join(process.cwd(), ...parts), "utf8")) as T;
@@ -239,6 +292,10 @@ function readQueue(): OwnerMinimalInterventionQueue {
 
 function readTb090Packet(): Tb090OwnerDecisionPacket {
   return readJson(...TB_090_PACKET_PATH);
+}
+
+function readTb110Outcome(): Tb110OwnerActionPacketOutcome {
+  return readJson(...TB_110_OUTCOME_PATH);
 }
 
 function taskById(queue: OwnerMinimalInterventionQueue, taskId: string) {
@@ -309,15 +366,20 @@ function deterministicQueueOutput(queue: OwnerMinimalInterventionQueue) {
 }
 
 test.describe("owner minimal-intervention queue", () => {
-  test("artifact files exist and summarize the post-PR #146 state", () => {
+  test("artifact files exist and summarize the post-PR #147 state", () => {
     const queue = readQueue();
+    const outcome = readTb110Outcome();
     const markdown = readFileSync(join(process.cwd(), ...QUEUE_MD_PATH), "utf8");
-    const pr146 = queue.latest_merged_factory_state.merged_factory_prs.find(
-      (pr) => pr.number === 146
+    const pr147 = queue.latest_merged_factory_state.merged_factory_prs.find(
+      (pr) => pr.number === 147
     );
 
     expect(existsSync(join(process.cwd(), ...QUEUE_JSON_PATH))).toBe(true);
     expect(existsSync(join(process.cwd(), ...QUEUE_MD_PATH))).toBe(true);
+    expect(existsSync(join(process.cwd(), ...TB_110_OUTCOME_PATH))).toBe(true);
+    expect(existsSync(join(process.cwd(), ...TB_110_OUTCOME_MD_PATH))).toBe(
+      true
+    );
     expect(queue).toMatchObject({
       schema_version: "1.0.0",
       kind: "owner_minimal_intervention_queue",
@@ -331,15 +393,32 @@ test.describe("owner minimal-intervention queue", () => {
       live_github_mutations_from_implementation_code: false,
       auto_merge_enabled: false
     });
-    expect(pr146).toMatchObject({
-      number: 146,
+    expect(pr147).toMatchObject({
+      number: 147,
       state: "merged",
       merged: true,
+      merge_commit: "b4dd352f8ece4a660d983365ae60169b4c83566d",
+      evidence_paths: [
+        "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+        "docs/factory/tb-110-private-beta-owner-action-packet.md",
+        "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts"
+      ],
       runtime_or_protected_surface_effect: "none"
     });
+    expect(outcome).toMatchObject({
+      schema_version: "1.0.0",
+      kind: "tb_110_owner_action_packet_outcome",
+      merged_pull_request: {
+        number: 147,
+        state: "merged",
+        merged: true,
+        merge_commit: "b4dd352f8ece4a660d983365ae60169b4c83566d"
+      }
+    });
     expect(markdown).toContain("# Owner Minimal-Intervention Queue");
-    expect(markdown).toContain("PR #146 is merged.");
-    expect(markdown).toContain("PR #121 has been manually closed");
+    expect(markdown).toContain("PR #147 is merged");
+    expect(markdown).toContain("PR #121 remains closed/stale/superseded");
+    expect(markdown).toContain("TB-110 owner action packet work is not reselectable");
     expect(markdown).toContain("TB-090 remains `partial_verified`");
   });
 
@@ -370,6 +449,67 @@ test.describe("owner minimal-intervention queue", () => {
     expect(outputIds).not.toContain("PR-121-STALE-SUPERSEDED-OWNER-DECISION");
     expect(queue.router_contract.stale_prs_are_auto_mergeable).toBe(false);
     expect(queue.evidence_policy.stale_pr_is_auto_mergeable).toBe(false);
+  });
+
+  test("TB-110 owner action packet exists as evidence and is not reselected", () => {
+    const queue = readQueue();
+    const outcome = readTb110Outcome();
+    const tb110 = taskById(queue, "TB-110");
+    const packet = readJson<{
+      kind: string;
+      task: {
+        task_id: string;
+        status: string;
+        owner_action_required: boolean;
+        owner_approval_required: boolean;
+      };
+    }>(...TB_110_PACKET_PATH);
+    const outputIds = queue.recommended_next_outputs.map((output) => output.id);
+
+    expect(existsSync(join(process.cwd(), ...TB_110_PACKET_PATH))).toBe(true);
+    expect(existsSync(join(process.cwd(), ...TB_110_PACKET_MD_PATH))).toBe(true);
+    expect(packet).toMatchObject({
+      kind: "tb_110_private_beta_owner_action_packet",
+      task: {
+        task_id: "TB-110",
+        status: "blocked_human",
+        owner_action_required: true,
+        owner_approval_required: true
+      }
+    });
+    expect(tb110).toMatchObject({
+      resulting_status: "blocked_human",
+      router_candidate_status: "blocked_human",
+      router_selectable: false,
+      auto_selectable: false,
+      owner_action_required: true,
+      owner_approval_required: true,
+      owner_action_packet_exists: true,
+      owner_action_packet_is_actual_evidence: true,
+      owner_action_packet_path:
+        "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+      owner_action_packet_markdown_path:
+        "docs/factory/tb-110-private-beta-owner-action-packet.md",
+      tb_110_owner_action_packet_work_reselectable: false
+    });
+    expect(queue.evidence_policy).toMatchObject({
+      tb_110_owner_action_packet_actual_evidence_path:
+        "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+      tb_110_owner_action_packet_markdown_evidence_path:
+        "docs/factory/tb-110-private-beta-owner-action-packet.md"
+    });
+    expect(outcome.evidence).toMatchObject({
+      tb_110_owner_action_packet_exists: true,
+      tb_110_owner_action_packet_is_actual_evidence: true,
+      tb_110_owner_action_packet_path:
+        "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+      tb_110_owner_action_packet_markdown_path:
+        "docs/factory/tb-110-private-beta-owner-action-packet.md"
+    });
+    expect(queue.selection_result.tb_110_owner_action_packet_selected).toBe(
+      false
+    );
+    expect(outputIds).not.toContain("TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET");
   });
 
   test("TB-090 and TB-090 owner-decision-packet work are not reselected", () => {
@@ -537,13 +677,12 @@ test.describe("owner minimal-intervention queue", () => {
     }
   });
 
-  test("next outputs are ordered deterministically after PR #146 and PR #121 closure", () => {
+  test("next outputs are ordered deterministically after PR #147", () => {
     const queue = readQueue();
 
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
-      task_id: "TB-110",
+      id: "POST-MERGE-HANDOFF-GENERATOR",
       router_selectable: false,
       auto_selectable: false,
       auto_mergeable: false,
@@ -552,14 +691,14 @@ test.describe("owner minimal-intervention queue", () => {
       owner_decision_required: true
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).toEqual([
-      "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
       "POST-MERGE-HANDOFF-GENERATOR"
     ]);
     expect(queue.recommended_next_outputs.map((output) => output.rank)).toEqual([
-      1,
-      2
+      1
     ]);
-    expect(queue.selection_result.tb_110_owner_action_packet_selected).toBe(true);
+    expect(queue.selection_result.tb_110_owner_action_packet_selected).toBe(
+      false
+    );
     expect(
       queue.recommended_next_outputs.every(
         (output) =>
@@ -601,20 +740,20 @@ test.describe("owner minimal-intervention queue", () => {
       "npm.cmd run test -- --workers=1"
     ]);
     expect(queue.required_validation.targeted).toEqual([
-      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1"
+      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts tests/factory-tb-110-private-beta-owner-action-packet.spec.ts --workers=1",
+      "npm.cmd run test -- tests/factory-tb-110-owner-action-packet-outcome.spec.ts --workers=1"
     ]);
     expect(queue.codex_prompt_draft).toMatchObject({
-      title: "TB-110 private beta owner action packet",
+      title: "Post-merge handoff generator",
       allowed_files: [
-        "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
-        "docs/factory/tb-110-private-beta-owner-action-packet.md",
-        "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
         "docs/factory/owner-minimal-intervention-queue.v1.json",
         "docs/factory/owner-minimal-intervention-queue.md",
         "tests/factory-owner-minimal-intervention-queue.spec.ts"
       ]
     });
     expect(promptText).toContain("docs/tests-only");
+    expect(promptText).toContain("PR #147 is merged");
+    expect(promptText).toContain("must not be selected again");
     expect(promptText).toContain("PR #121 remains closed as stale/superseded");
     expect(promptText).toContain("Do not launch private/manual beta");
     expect(promptText).toContain("Public paid beta remains blocked");
@@ -626,12 +765,16 @@ test.describe("owner minimal-intervention queue", () => {
     expect(queue.merge_recommendation.no_merge_recommendations).toEqual(
       expect.arrayContaining([
         "Do not merge PR #121 automatically.",
+        "Do not reselect the TB-110 owner action packet after merged PR #147.",
         "Do not merge any packet that touches protected surfaces."
       ])
     );
     expect(queue.safety_confirmation).toMatchObject({
       pr_121_closed_stale_superseded_not_reselected: true,
-      tb_110_owner_action_packet_is_next_safe_output: true
+      pr_147_merged_owner_action_packet_evidence_recorded: true,
+      tb_110_owner_action_packet_exists_as_actual_evidence: true,
+      tb_110_owner_action_packet_not_reselected: true,
+      post_merge_handoff_generator_is_next_safe_output: true
     });
   });
 

@@ -11,10 +11,16 @@
     "docs/factory/tb-090-owner-decision-packet.v1.json",
     "docs/factory/tb-090-owner-decision-packet.md",
     "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
-    "docs/factory/pr-121-stale-superseded-owner-decision.md"
+    "docs/factory/pr-121-stale-superseded-owner-decision.md",
+    "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+    "docs/factory/tb-110-private-beta-owner-action-packet.md",
+    "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
+    "docs/factory/tb-110-owner-action-packet-outcome.v1.json",
+    "docs/factory/tb-110-owner-action-packet-outcome.md",
+    "tests/factory-tb-110-owner-action-packet-outcome.spec.ts"
   ],
   "this_pr": {
-    "type": "factory_docs_tests_owner_queue",
+    "type": "factory_docs_tests_owner_action_packet_outcome",
     "docs_tests_only": true,
     "runtime_ui_changes": false,
     "account_sync_implementation": false,
@@ -40,9 +46,10 @@
       "docs/factory/owner-minimal-intervention-queue.v1.json",
       "docs/factory/owner-minimal-intervention-queue.md",
       "tests/factory-owner-minimal-intervention-queue.spec.ts",
-      "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
-      "docs/factory/tb-110-private-beta-owner-action-packet.md",
-      "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts"
+      "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
+      "docs/factory/tb-110-owner-action-packet-outcome.v1.json",
+      "docs/factory/tb-110-owner-action-packet-outcome.md",
+      "tests/factory-tb-110-owner-action-packet-outcome.spec.ts"
     ]
   },
   "router_contract": {
@@ -62,8 +69,8 @@
     "stale_evidence_ready": false
   },
   "latest_merged_factory_state": {
-    "state_label": "post_pr_146_and_pr_121_manual_close",
-    "summary": "PR #145 and PR #146 are merged, PR #121 has been manually closed as stale/superseded, and the remaining queue is owner-decision work only.",
+    "state_label": "post_pr_147_tb_110_owner_action_packet_merged",
+    "summary": "PR #145, PR #146, and PR #147 are merged, PR #121 has been manually closed as stale/superseded, the TB-110 owner action packet exists as actual evidence, and the remaining queue is owner handoff work only.",
     "merged_factory_prs": [
       {
         "number": 144,
@@ -98,6 +105,19 @@
           "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
           "docs/factory/pr-121-stale-superseded-owner-decision.md",
           "tests/factory-pr-121-stale-superseded-owner-decision.spec.ts"
+        ],
+        "runtime_or_protected_surface_effect": "none"
+      },
+      {
+        "number": 147,
+        "state": "merged",
+        "merged": true,
+        "merge_commit": "b4dd352f8ece4a660d983365ae60169b4c83566d",
+        "purpose": "Create the TB-110 private beta owner action packet.",
+        "evidence_paths": [
+          "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+          "docs/factory/tb-110-private-beta-owner-action-packet.md",
+          "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts"
         ],
         "runtime_or_protected_surface_effect": "none"
       }
@@ -139,7 +159,12 @@
         "auto_selectable": false,
         "owner_action_required": true,
         "owner_approval_required": true,
-        "evidence_summary": "Private/manual beta remains owner-action-required and gated."
+        "owner_action_packet_exists": true,
+        "owner_action_packet_is_actual_evidence": true,
+        "owner_action_packet_path": "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+        "owner_action_packet_markdown_path": "docs/factory/tb-110-private-beta-owner-action-packet.md",
+        "tb_110_owner_action_packet_work_reselectable": false,
+        "evidence_summary": "Private/manual beta remains owner-action-required and gated. The PR #147 TB-110 owner action packet satisfies only the previous packet-production output and must not be reselected."
       }
     ]
   },
@@ -173,15 +198,14 @@
     "public_paid_beta_selected": false,
     "private_manual_beta_launch_selected": false,
     "pr_121_selected": false,
-    "tb_110_owner_action_packet_selected": true,
-    "reason": "The queue contains owner-decision packets and handoff generation only. It does not select runtime implementation or live mutations."
+    "tb_110_owner_action_packet_selected": false,
+    "reason": "PR #147 merged the TB-110 owner action packet, so packet-production work is existing evidence and is not selected again. The queue contains handoff generation only and does not select runtime implementation or live mutations."
   },
   "next_safe_task": {
     "rank": 1,
-    "id": "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
-    "task_id": "TB-110",
-    "title": "TB-110 private beta owner action packet",
-    "output_type": "owner_action_packet",
+    "id": "POST-MERGE-HANDOFF-GENERATOR",
+    "title": "Post-merge handoff generator",
+    "output_type": "handoff_generator_packet",
     "resulting_status": "blocked_human",
     "router_candidate_status": "blocked_human",
     "router_selectable": false,
@@ -191,27 +215,11 @@
     "live_mutation_allowed": false,
     "owner_decision_required": true,
     "owner_action_required": true,
-    "recommendation": "Prepare the owner action packet for private/manual beta while keeping private/manual beta gated and public paid beta blocked."
+    "recommendation": "Prepare a deterministic post-merge handoff generator that summarizes merged evidence and next owner-only actions without creating branches, PRs, issues, labels, comments, merges, or live GitHub mutations."
   },
   "recommended_next_outputs": [
     {
       "rank": 1,
-      "id": "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
-      "task_id": "TB-110",
-      "title": "TB-110 private beta owner action packet",
-      "output_type": "owner_action_packet",
-      "router_candidate_status": "blocked_human",
-      "router_selectable": false,
-      "auto_selectable": false,
-      "auto_mergeable": false,
-      "implementation_allowed": false,
-      "live_mutation_allowed": false,
-      "owner_decision_required": true,
-      "owner_action_required": true,
-      "recommendation": "Prepare the owner action packet for private/manual beta while keeping private/manual beta gated and public paid beta blocked."
-    },
-    {
-      "rank": 2,
       "id": "POST-MERGE-HANDOFF-GENERATOR",
       "title": "Post-merge handoff generator",
       "output_type": "handoff_generator_packet",
@@ -390,11 +398,14 @@
     "stale_pr_is_auto_mergeable": false,
     "requires_actual_artifacts": true,
     "tb_090_owner_decision_packet_actual_evidence_path": "docs/factory/tb-090-owner-decision-packet.v1.json",
+    "tb_110_owner_action_packet_actual_evidence_path": "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
+    "tb_110_owner_action_packet_markdown_evidence_path": "docs/factory/tb-110-private-beta-owner-action-packet.md",
     "unknown_or_stale_evidence_result": "blocked_human"
   },
   "required_validation": {
     "targeted": [
-      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1"
+      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts tests/factory-tb-110-private-beta-owner-action-packet.spec.ts --workers=1",
+      "npm.cmd run test -- tests/factory-tb-110-owner-action-packet-outcome.spec.ts --workers=1"
     ],
     "before_finish": [
       "npm.cmd run typecheck",
@@ -404,25 +415,23 @@
     ]
   },
   "codex_prompt_draft": {
-    "title": "TB-110 private beta owner action packet",
-    "purpose": "Prepare the next deterministic owner-only packet after merged PR #146 and the manual PR #121 stale/superseded close.",
+    "title": "Post-merge handoff generator",
+    "purpose": "Prepare the next deterministic owner-only handoff after merged PR #147 applied the TB-110 owner action packet outcome.",
     "allowed_files": [
-      "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
-      "docs/factory/tb-110-private-beta-owner-action-packet.md",
-      "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
       "docs/factory/owner-minimal-intervention-queue.v1.json",
       "docs/factory/owner-minimal-intervention-queue.md",
       "tests/factory-owner-minimal-intervention-queue.spec.ts"
     ],
     "prompt_lines": [
-      "You are working in C:\\Users\\jmg91\\Desktop\\visual-lexicon-app-tb110-private-beta on chachathecat/visual-lexicon-app.",
-      "Goal: create a docs/tests-only TB-110 private beta owner action packet.",
-      "Use the post-PR #146 owner minimal-intervention queue and the manual PR #121 closed stale/superseded context as input evidence.",
+      "You are working in C:\\Users\\jmg91\\Desktop\\visual-lexicon-app-post-merge-handoff on chachathecat/visual-lexicon-app.",
+      "Goal: create a docs/tests-only post-merge handoff generator packet.",
+      "Use the post-PR #147 owner minimal-intervention queue, the merged TB-110 owner action packet, and the manual PR #121 closed stale/superseded context as input evidence.",
+      "PR #147 is merged at b4dd352f8ece4a660d983365ae60169b4c83566d, so the TB-110 owner action packet must not be selected again.",
       "PR #121 remains closed as stale/superseded and must not be reselected, reopened, auto-merged, labeled, commented on, or otherwise mutated from implementation code.",
       "Do not implement account sync, route skeletons, API routes, auth/session behavior, middleware, DB/schema/RLS/migrations/account data, entitlements, payments, billing, runtime UI, workflows, CODEOWNERS, AGENTS.md, DNS, deployment, secrets, Webflow, Cloudflare Workers, R2 production objects, production data, or roadmap status changes.",
       "Do not launch private/manual beta, invite beta participants, charge users, grant entitlements, enable payment/billing, or unblock public paid beta.",
       "Public paid beta remains blocked. Private/manual beta remains gated. TB-110 remains blocked_human / owner-action-required / owner-approval-required.",
-      "Add targeted tests proving the TB-110 packet exists, protected surfaces remain untouched, PR #121 stays closed/stale/superseded and not reselected, and next safe output ordering is deterministic."
+      "Add targeted tests proving merged evidence is summarized, protected surfaces remain untouched, PR #121 and TB-110 owner action packet work are not reselected, and next safe output ordering is deterministic."
     ]
   },
   "merge_recommendation": {
@@ -431,6 +440,7 @@
     "live_mutations_enabled": false,
     "no_merge_recommendations": [
       "Do not merge PR #121 automatically.",
+      "Do not reselect the TB-110 owner action packet after merged PR #147.",
       "Do not merge any packet that touches protected surfaces.",
       "Do not merge if validation is missing, stale, failed, unknown, or no-op-only.",
       "Do not merge if public paid beta is unblocked or private/manual beta is launched without owner approval.",
@@ -439,14 +449,14 @@
   },
   "post_merge_next_action_summary": {
     "after_this_packet_merges": [
-      "Prepare the TB-110 private beta owner action packet.",
-      "Then prepare the post-merge handoff generator."
+      "Prepare the post-merge handoff generator."
     ],
     "do_not_do": [
       "Do not reselect PR #121.",
       "Do not reopen PR #121.",
       "Do not reselect TB-090.",
       "Do not reselect TB-090 owner-decision-packet work.",
+      "Do not reselect TB-110 owner action packet work.",
       "Do not implement account sync.",
       "Do not add API routes.",
       "Do not enable public paid beta.",
@@ -466,7 +476,10 @@
     "live_mutations_remain_disabled": true,
     "unknown_or_stale_evidence_is_not_ready": true,
     "pr_121_closed_stale_superseded_not_reselected": true,
-    "tb_110_owner_action_packet_is_next_safe_output": true,
+    "pr_147_merged_owner_action_packet_evidence_recorded": true,
+    "tb_110_owner_action_packet_exists_as_actual_evidence": true,
+    "tb_110_owner_action_packet_not_reselected": true,
+    "post_merge_handoff_generator_is_next_safe_output": true,
     "tb_090_not_reselected": true,
     "tb_090_owner_decision_packet_work_not_reselected": true,
     "account_sync_implementation_not_selected": true
