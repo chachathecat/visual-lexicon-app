@@ -1,0 +1,136 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "ci_failure_triage_seed",
+  "repository": "chachathecat/visual-lexicon-app",
+  "created_at": "2026-07-01",
+  "purpose": "Seed deterministic CI failure triage evidence for the PR #148 Visual Screenshot Parity incident and the PR #149 stabilization resolution.",
+  "source_documents": [
+    "tests/figma-parity-screenshots.spec.ts",
+    "docs/factory/post-merge-handoff-generator.v1.json",
+    "docs/factory/tb-110-owner-action-packet-outcome.v1.json",
+    "docs/factory/owner-minimal-intervention-queue.v1.json"
+  ],
+  "incident": {
+    "id": "pr_148_visual_screenshot_parity",
+    "status": "resolved",
+    "blocked_pull_request": {
+      "number": 148,
+      "state": "merged_after_rerun_passed",
+      "blocked_by_ci": true,
+      "merge_commit": "4560e556ff682f3813983f4bc4f07c7868255ad9",
+      "checks_rerun_and_passed_before_merge": true
+    },
+    "blocking_check": {
+      "name": "Visual Screenshot Parity",
+      "failure_step": "Run Figma parity screenshots",
+      "failure_class": "visual_parity",
+      "setup_or_install_failure": false,
+      "timeout_failure": false,
+      "network_install_failure": false,
+      "observed_not_setup_install_timeout": true,
+      "requires_artifact_trace_diff_triage": true
+    },
+    "local_evidence": {
+      "local_parity_tests_passed": true,
+      "local_ci_mode_parity_tests_passed": true,
+      "commands": [
+        "npm.cmd run test -- tests/figma-parity-screenshots.spec.ts --workers=1",
+        "$env:CI='true'; npm.cmd run test -- tests/figma-parity-screenshots.spec.ts --workers=1"
+      ]
+    },
+    "negative_findings": {
+      "screenshot_baseline_update_justified": false,
+      "runtime_ui_change_justified": false,
+      "setup_install_timeout_root_cause": false,
+      "blind_snapshot_update_allowed": false
+    },
+    "resolution": {
+      "resolved_by_pull_request": {
+        "number": 149,
+        "state": "merged",
+        "merge_commit": "fcdd91f7b5cec444d25d35be3a6bdcc38519bcf6",
+        "method": "deterministic_test_context_changes_only",
+        "screenshot_baseline_updated": false,
+        "runtime_ui_changed": false
+      },
+      "classification": "resolved_by_pr_149_deterministic_test_context_stabilization",
+      "pr_148_checks_rerun_and_passed_before_merge": true
+    }
+  },
+  "future_visual_parity_policy": {
+    "blind_screenshot_updates_allowed": false,
+    "artifact_trace_diff_triage_required_before_snapshot_update": true,
+    "snapshot_update_requires_owner_review_when_visual_change_is_real": true,
+    "runtime_ui_change_requires_separate_product_justification": true,
+    "setup_install_timeout_must_be_supported_by_observed_evidence": true,
+    "required_triage_order": [
+      "collect_ci_artifacts",
+      "inspect_trace",
+      "inspect_visual_diff",
+      "compare_local_and_ci_mode_results",
+      "classify_root_cause",
+      "only_then_consider_snapshot_update"
+    ]
+  },
+  "protected_surface_changes": {
+    "runtime_ui": false,
+    "app_routes": false,
+    "assets": false,
+    "fonts": false,
+    "auth": false,
+    "billing": false,
+    "database": false,
+    "api": false,
+    "middleware": false,
+    "workflows": false,
+    "codeowners": false,
+    "agents_policy": false,
+    "dns": false,
+    "deployment": false,
+    "secrets": false,
+    "webflow": false,
+    "cloudflare_workers": false,
+    "r2_production_objects": false,
+    "production_data": false,
+    "roadmap_status": false,
+    "screenshot_baselines": false
+  },
+  "mutation_policy": {
+    "live_github_mutations_from_triage_seed": false,
+    "create_branches": false,
+    "create_pull_requests": false,
+    "create_issues": false,
+    "create_labels": false,
+    "create_comments": false,
+    "merge_pull_requests": false,
+    "auto_merge_enabled": false
+  },
+  "determinism": {
+    "same_input_produces_identical_output": true,
+    "fixed_created_at": "2026-07-01",
+    "incident_order": [
+      "PR-148",
+      "PR-149"
+    ],
+    "sort_keys": [
+      "incident.id",
+      "future_visual_parity_policy.required_triage_order"
+    ]
+  },
+  "safety_confirmation": {
+    "docs_tests_only": true,
+    "pr_148_blocked_by_visual_screenshot_parity_recorded": true,
+    "failure_step_run_figma_parity_screenshots_recorded": true,
+    "failure_not_setup_install_timeout_based_on_observed_ci": true,
+    "local_and_local_ci_mode_parity_passed": true,
+    "no_screenshot_baseline_update_justified": true,
+    "no_runtime_ui_change_justified": true,
+    "pr_149_stabilized_by_deterministic_test_context_only": true,
+    "pr_148_checks_rerun_passed_before_merge": true,
+    "future_failures_require_artifact_trace_diff_triage_before_snapshot_update": true,
+    "blind_screenshot_updates_forbidden": true,
+    "protected_surfaces_unchanged": true,
+    "no_live_github_mutation_allowed": true,
+    "auto_merge_remains_disabled": true
+  }
+}
