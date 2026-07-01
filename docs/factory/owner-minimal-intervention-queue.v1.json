@@ -1,0 +1,453 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "owner_minimal_intervention_queue",
+  "repository": "chachathecat/visual-lexicon-app",
+  "created_at": "2026-06-30",
+  "purpose": "Record the deterministic owner queue after merged factory/status PRs so the factory reduces owner involvement without treating blocked-human work as automatically implementable.",
+  "source_documents": [
+    "docs/factory/track-b-product-backlog.v1.json",
+    "docs/factory/track-b-product-backlog-status.v1.json",
+    "docs/factory/tb-090-account-sync-skeleton-verification.v1.json",
+    "docs/factory/tb-090-owner-decision-packet.v1.json",
+    "docs/factory/tb-090-owner-decision-packet.md"
+  ],
+  "this_pr": {
+    "type": "factory_docs_tests_owner_queue",
+    "docs_tests_only": true,
+    "runtime_ui_changes": false,
+    "account_sync_implementation": false,
+    "api_routes_added": false,
+    "auth_or_session_behavior_changes": false,
+    "middleware_changes": false,
+    "database_schema_rls_migration_or_account_data_changes": false,
+    "entitlement_mutation_changes": false,
+    "payment_or_billing_changes": false,
+    "workflow_changes": false,
+    "codeowners_changes": false,
+    "agents_policy_changes": false,
+    "dns_or_deployment_changes": false,
+    "secrets_or_env_changes": false,
+    "webflow_changes": false,
+    "cloudflare_worker_changes": false,
+    "r2_production_object_changes": false,
+    "production_data_changes": false,
+    "roadmap_status_changes": false,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false,
+    "expected_files": [
+      "docs/factory/owner-minimal-intervention-queue.v1.json",
+      "docs/factory/owner-minimal-intervention-queue.md",
+      "tests/factory-owner-minimal-intervention-queue.spec.ts"
+    ]
+  },
+  "router_contract": {
+    "dry_run_only": true,
+    "live_github_mutations_from_implementation_code": false,
+    "auto_merge_enabled": false,
+    "same_input_produces_identical_queue_output": true,
+    "sort_keys": [
+      "rank",
+      "id"
+    ],
+    "blocked_human_is_auto_selectable": false,
+    "stale_prs_are_auto_mergeable": false,
+    "protected_surfaces_block_implementation": true,
+    "owner_approval_required_for_blocked_human": true,
+    "unknown_evidence_ready": false,
+    "stale_evidence_ready": false
+  },
+  "latest_merged_factory_state": {
+    "state_label": "post_pr_144",
+    "summary": "PR #144 is merged. The TB-090 verification outcome is applied, the TB-090 owner decision packet exists as actual evidence, and the remaining queue is owner-decision work only.",
+    "merged_factory_prs": [
+      {
+        "number": 144,
+        "state": "merged",
+        "merged": true,
+        "purpose": "Apply the TB-090 owner decision packet and backlog status reconciliation evidence.",
+        "evidence_paths": [
+          "docs/factory/tb-090-owner-decision-packet.v1.json",
+          "docs/factory/tb-090-owner-decision-packet.md",
+          "docs/factory/track-b-product-backlog-status.v1.json"
+        ],
+        "runtime_or_protected_surface_effect": "none"
+      }
+    ],
+    "tasks": [
+      {
+        "task_id": "TB-090",
+        "title": "Disabled Account Sync Route Skeleton",
+        "resulting_status": "partial_verified",
+        "router_candidate_status": "blocked_human",
+        "router_selectable": false,
+        "auto_selectable": false,
+        "owner_action_required": true,
+        "owner_decision_packet_exists": true,
+        "owner_decision_packet_is_actual_evidence": true,
+        "owner_decision_packet_path": "docs/factory/tb-090-owner-decision-packet.v1.json",
+        "account_sync_implementation_exists": false,
+        "account_sync_implementation_approved": false,
+        "disabled_route_skeleton_runtime_files_approved": false,
+        "tb_090_owner_decision_packet_work_reselectable": false,
+        "evidence_summary": "TB-090 remains partial_verified / blocked_human / not auto-selectable. The owner decision packet satisfies only the previous packet-production output and does not approve account sync or disabled route skeleton runtime files."
+      },
+      {
+        "task_id": "TB-100",
+        "title": "Account Sync Preview / Digest Mock",
+        "resulting_status": "verified",
+        "router_candidate_status": "verified",
+        "router_selectable": false,
+        "auto_selectable": false,
+        "evidence": "PR #82",
+        "evidence_summary": "TB-100 remains verified via PR #82 and is not reselected."
+      },
+      {
+        "task_id": "TB-110",
+        "title": "Private Beta Gate",
+        "resulting_status": "blocked_human",
+        "router_candidate_status": "blocked_human",
+        "router_selectable": false,
+        "auto_selectable": false,
+        "owner_action_required": true,
+        "owner_approval_required": true,
+        "evidence_summary": "Private/manual beta remains owner-action-required and gated."
+      }
+    ]
+  },
+  "open_stale_pull_requests": [
+    {
+      "id": "PR-121",
+      "number": 121,
+      "state": "open",
+      "stale": true,
+      "resulting_status": "stale_not_selectable",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "auto_mergeable": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "mergeable_state": "not_mergeable_without_fresh_owner_evidence",
+      "recommended_owner_action": "Prepare a close-as-stale/superseded owner decision. Do not auto-close, auto-merge, comment, label, or mutate GitHub from implementation code.",
+      "evidence_summary": "PR #121 remains stale/open/not auto-selectable."
+    }
+  ],
+  "selection_result": {
+    "selected_implementation": null,
+    "selected_runtime_task": null,
+    "account_sync_implementation_selected": false,
+    "tb_090_selected": false,
+    "tb_090_owner_decision_packet_work_selected": false,
+    "public_paid_beta_selected": false,
+    "private_manual_beta_launch_selected": false,
+    "reason": "The queue contains owner-decision packets and handoff generation only. It does not select runtime implementation or live mutations."
+  },
+  "next_safe_task": {
+    "rank": 1,
+    "id": "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
+    "related_pr_number": 121,
+    "title": "PR #121 close as stale/superseded owner decision",
+    "output_type": "owner_decision_packet",
+    "resulting_status": "stale_not_selectable",
+    "router_candidate_status": "blocked_human",
+    "router_selectable": false,
+    "auto_selectable": false,
+    "auto_mergeable": false,
+    "implementation_allowed": false,
+    "live_mutation_allowed": false,
+    "owner_decision_required": true,
+    "owner_action_required": true,
+    "recommendation": "Draft the owner-facing close decision for stale PR #121. The implementation must not close, merge, label, comment on, or otherwise mutate PR #121."
+  },
+  "recommended_next_outputs": [
+    {
+      "rank": 1,
+      "id": "PR-121-STALE-SUPERSEDED-OWNER-DECISION",
+      "related_pr_number": 121,
+      "title": "PR #121 close as stale/superseded owner decision",
+      "output_type": "owner_decision_packet",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "auto_mergeable": false,
+      "implementation_allowed": false,
+      "live_mutation_allowed": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "recommendation": "Prepare an owner decision to close PR #121 as stale/superseded; do not auto-close or auto-merge it."
+    },
+    {
+      "rank": 2,
+      "id": "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
+      "task_id": "TB-110",
+      "title": "TB-110 private beta owner action packet",
+      "output_type": "owner_action_packet",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "auto_mergeable": false,
+      "implementation_allowed": false,
+      "live_mutation_allowed": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "recommendation": "Prepare the owner action packet for private/manual beta while keeping private/manual beta gated and public paid beta blocked."
+    },
+    {
+      "rank": 3,
+      "id": "POST-MERGE-HANDOFF-GENERATOR",
+      "title": "Post-merge handoff generator",
+      "output_type": "handoff_generator_packet",
+      "router_candidate_status": "blocked_human",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "auto_mergeable": false,
+      "implementation_allowed": false,
+      "live_mutation_allowed": false,
+      "owner_decision_required": true,
+      "owner_action_required": true,
+      "recommendation": "Prepare a deterministic post-merge handoff generator that summarizes merged evidence and next owner-only actions without creating branches, PRs, issues, labels, comments, merges, or live GitHub mutations."
+    }
+  ],
+  "blocked_human_decisions": [
+    {
+      "id": "PR-121",
+      "title": "Close stale/superseded PR #121",
+      "status": "blocked_human",
+      "owner_approval_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "implementation_allowed": false
+    },
+    {
+      "id": "TB-090",
+      "title": "Disabled Account Sync Route Skeleton",
+      "status": "blocked_human",
+      "owner_approval_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "implementation_allowed": false
+    },
+    {
+      "id": "TB-110",
+      "title": "Private Beta Gate",
+      "status": "blocked_human",
+      "owner_approval_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "implementation_allowed": false
+    },
+    {
+      "id": "PUBLIC-PAID-BETA",
+      "title": "Public paid beta launch",
+      "status": "blocked_human",
+      "owner_approval_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "implementation_allowed": false
+    },
+    {
+      "id": "PRIVATE-MANUAL-BETA",
+      "title": "Private/manual beta launch",
+      "status": "blocked_human",
+      "owner_approval_required": true,
+      "owner_action_required": true,
+      "auto_selectable": false,
+      "implementation_allowed": false
+    }
+  ],
+  "release_gates": {
+    "public_paid_beta": {
+      "status": "blocked",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "owner_decision_required": true,
+      "unblocked_by_this_queue": false,
+      "blockers": [
+        "account_owned_learning_persistence",
+        "server_authoritative_entitlements",
+        "payment_provider_policy_and_billing_lifecycle",
+        "privacy_support_refund_and_cancellation_operations",
+        "production_monitoring_alerting_and_rollback",
+        "accessibility_and_mobile_manual_qa",
+        "trusted_public_analytics",
+        "production_pack_content_and_entitlement_evidence",
+        "owner_public_launch_signoff"
+      ],
+      "safety_summary": "Public paid beta remains blocked. This queue must not unblock it."
+    },
+    "private_manual_beta": {
+      "status": "gated",
+      "router_selectable": false,
+      "auto_selectable": false,
+      "owner_approval_required": true,
+      "manual_only": true,
+      "launched_by_this_queue": false,
+      "required_before_unblock": [
+        "current_manual_qa_execution_report",
+        "owner_approval",
+        "participant_local_state_disclosure",
+        "manual_payment_and_entitlement_policy_acceptance",
+        "support_privacy_refund_and_local_storage_disclosures",
+        "manual_monitoring_issue_log_and_pause_criteria"
+      ],
+      "safety_summary": "Private/manual beta remains gated and owner-approved only. This queue does not invite, charge, grant entitlement, or launch."
+    }
+  },
+  "protected_surfaces": [
+    {
+      "id": "runtime_ui",
+      "blocked": true,
+      "implementation_allowed": false,
+      "examples": [
+        "src/app",
+        "src/components",
+        "review runtime",
+        "saved library runtime"
+      ]
+    },
+    {
+      "id": "account_sync",
+      "blocked": true,
+      "implementation_allowed": false,
+      "examples": [
+        "account sync implementation",
+        "disabled route skeleton runtime files",
+        "account sync preview/apply/digest/audit route handlers"
+      ]
+    },
+    {
+      "id": "auth_session_middleware",
+      "blocked": true,
+      "implementation_allowed": false,
+      "examples": [
+        "auth behavior",
+        "session behavior",
+        "middleware"
+      ]
+    },
+    {
+      "id": "database_account_data",
+      "blocked": true,
+      "implementation_allowed": false,
+      "examples": [
+        "DB schema",
+        "RLS",
+        "migrations",
+        "account data"
+      ]
+    },
+    {
+      "id": "entitlements_payment_billing",
+      "blocked": true,
+      "implementation_allowed": false,
+      "examples": [
+        "entitlement mutation",
+        "payment",
+        "billing",
+        "checkout",
+        "subscriptions",
+        "invoices",
+        "webhooks",
+        "provider settings"
+      ]
+    },
+    {
+      "id": "ops_and_production_surfaces",
+      "blocked": true,
+      "implementation_allowed": false,
+      "examples": [
+        "workflows",
+        "CODEOWNERS",
+        "AGENTS.md",
+        "DNS",
+        "deployment",
+        "secrets",
+        "Webflow",
+        "Cloudflare Workers",
+        "R2 production objects",
+        "production data",
+        "roadmap status"
+      ]
+    }
+  ],
+  "evidence_policy": {
+    "unknown_evidence_is_ready": false,
+    "stale_evidence_is_ready": false,
+    "stale_pr_is_ready": false,
+    "stale_pr_is_auto_mergeable": false,
+    "requires_actual_artifacts": true,
+    "tb_090_owner_decision_packet_actual_evidence_path": "docs/factory/tb-090-owner-decision-packet.v1.json",
+    "unknown_or_stale_evidence_result": "blocked_human"
+  },
+  "required_validation": {
+    "targeted": [
+      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1"
+    ],
+    "before_finish": [
+      "npm.cmd run typecheck",
+      "npm.cmd run lint",
+      "npm.cmd run build",
+      "npm.cmd run test -- --workers=1"
+    ]
+  },
+  "codex_prompt_draft": {
+    "title": "PR #121 stale/superseded owner decision packet",
+    "purpose": "Prepare the next deterministic owner-only packet after merged PR #144 and this owner minimal-intervention queue.",
+    "allowed_files": [
+      "docs/factory/pr-121-stale-superseded-owner-decision.md",
+      "docs/factory/pr-121-stale-superseded-owner-decision.v1.json",
+      "tests/factory-pr-121-stale-superseded-owner-decision.spec.ts"
+    ],
+    "prompt_lines": [
+      "You are working in C:\\Users\\jmg91\\Desktop\\visual-lexicon-app-owner-queue on chachathecat/visual-lexicon-app.",
+      "Goal: create a docs/tests-only owner decision packet for PR #121 as stale/superseded.",
+      "Use the post-PR #144 owner minimal-intervention queue as input evidence.",
+      "Do not close, merge, label, comment on, or otherwise mutate GitHub from implementation code.",
+      "Do not implement account sync, route skeletons, API routes, auth/session behavior, middleware, DB/schema/RLS/migrations/account data, entitlements, payments, billing, runtime UI, workflows, CODEOWNERS, AGENTS.md, DNS, deployment, secrets, Webflow, Cloudflare Workers, R2 production objects, production data, or roadmap status changes.",
+      "Public paid beta remains blocked. Private/manual beta remains gated. Owner approval is required for blocked-human tasks.",
+      "Add targeted tests proving PR #121 is stale/open/not auto-selectable and no live mutation or auto-merge is enabled."
+    ]
+  },
+  "merge_recommendation": {
+    "for_this_docs_tests_packet": "merge_after_required_validation_passes",
+    "auto_merge_enabled": false,
+    "live_mutations_enabled": false,
+    "no_merge_recommendations": [
+      "Do not merge PR #121 automatically.",
+      "Do not merge any packet that touches protected surfaces.",
+      "Do not merge if validation is missing, stale, failed, unknown, or no-op-only.",
+      "Do not merge if public paid beta is unblocked or private/manual beta is launched without owner approval.",
+      "Do not merge if account sync implementation, API routes, auth/session changes, middleware changes, DB/schema/RLS/migrations/account data, entitlement mutation, payment, or billing changes appear."
+    ]
+  },
+  "post_merge_next_action_summary": {
+    "after_this_packet_merges": [
+      "Prepare the PR #121 close-as-stale/superseded owner decision packet.",
+      "Then prepare the TB-110 private beta owner action packet.",
+      "Then prepare the post-merge handoff generator."
+    ],
+    "do_not_do": [
+      "Do not reselect TB-090.",
+      "Do not reselect TB-090 owner-decision-packet work.",
+      "Do not implement account sync.",
+      "Do not add API routes.",
+      "Do not enable public paid beta.",
+      "Do not launch private/manual beta.",
+      "Do not enable auto-merge.",
+      "Do not perform live GitHub mutations from implementation code."
+    ]
+  },
+  "safety_confirmation": {
+    "docs_tests_only": true,
+    "stale_prs_are_not_auto_mergeable": true,
+    "protected_surfaces_block_implementation": true,
+    "public_paid_beta_remains_blocked": true,
+    "private_manual_beta_remains_gated": true,
+    "owner_approval_required_for_blocked_human": true,
+    "auto_merge_remains_disabled": true,
+    "live_mutations_remain_disabled": true,
+    "unknown_or_stale_evidence_is_not_ready": true,
+    "tb_090_not_reselected": true,
+    "tb_090_owner_decision_packet_work_not_reselected": true,
+    "account_sync_implementation_not_selected": true
+  }
+}
