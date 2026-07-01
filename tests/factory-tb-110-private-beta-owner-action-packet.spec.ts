@@ -515,17 +515,22 @@ test.describe("TB-110 private beta owner action packet", () => {
     ]);
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
-      task_id: "TB-110"
+      id: "POST-MERGE-HANDOFF-GENERATOR",
+      output_type: "handoff_generator_packet",
+      auto_selectable: false,
+      auto_mergeable: false,
+      implementation_allowed: false,
+      live_mutation_allowed: false
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).toEqual([
-      "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET",
       "POST-MERGE-HANDOFF-GENERATOR"
     ]);
     expect(queue.recommended_next_outputs.map((output) => output.rank)).toEqual([
-      1,
-      2
+      1
     ]);
+    expect(queue.selection_result.tb_110_owner_action_packet_selected).toBe(
+      false
+    );
     expect(
       queue.recommended_next_outputs.every(
         (output) =>
