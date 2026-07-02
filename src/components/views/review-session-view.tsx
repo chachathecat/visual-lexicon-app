@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PaywallPrompt } from "@/components/paywall-prompt";
 import {
+  MetricPill,
   TrackBAppShell,
   type TrackBNavigationItemId
 } from "@/components/track-b";
@@ -52,6 +53,7 @@ import type {
   VlxSavedWord,
   VlxSavedWordsStore
 } from "@/lib/srs/types";
+import { VLX_FAST_RESPONSE_MS } from "@/lib/srs/types";
 import {
   getWordVisualFallbackClass,
   getWordVisualImage
@@ -108,6 +110,8 @@ type PendingSelection = {
   selectedAt: string;
 };
 
+type ReviewFeedbackKind = "correct-fast" | "correct-slow" | "guessed" | "wrong";
+
 type SessionAnswer = {
   eventId: string;
   slug: string;
@@ -127,6 +131,7 @@ type SessionAnswer = {
   movedForward: boolean;
   masteryAfter: VlxMasteryLabel;
   nextDueAt?: string;
+  feedbackKind: ReviewFeedbackKind;
   explanation: string;
 };
 
@@ -953,16 +958,26 @@ function getNextReviewMessage(nextDueAt?: string, word?: string) {
   return word ? `${word} is next due ${label}.` : `Next review is due ${label}.`;
 }
 
+function getNextDueExplanation(summary: SessionSummary) {
+  const nextReview = getNextReviewMessage(summary.nextDueAt, summary.nextDueWord);
+
+  if (nextReview) {
+    return `${nextReview} This comes from the updated memory schedule.`;
+  }
+
+  return "No next due time was scheduled because no committed answer had a due date.";
+}
+
 function formatWordCount(value: number) {
   return `${value} ${value === 1 ? "word" : "words"}`;
 }
 
 function getSessionSummaryHeadline(summary: SessionSummary) {
-  const reviewed = formatWordCount(summary.reviewed);
-  const moved = `${summary.movedForward} moved closer to memory`;
-  const anotherPassVerb = summary.wrong === 1 ? "needs" : "need";
+  if (summary.reviewed === 0) {
+    return "No committed answers were saved.";
+  }
 
-  return `You reviewed ${reviewed}. ${moved}. ${summary.wrong} ${anotherPassVerb} another pass tomorrow.`;
+  return `${formatWordCount(summary.reviewed)} reviewed. ${summary.correct} correct, ${summary.wrong} wrong.`;
 }
 
 function formatConfidence(confidence: VlxReviewConfidence) {
@@ -981,22 +996,81 @@ function formatPercent(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
-function getFeedbackExplanation(question: ReviewQuestion, confidence: VlxReviewConfidence) {
+function getReviewFeedbackKind({
+  confidence,
+  responseMs,
+  result
+}: {
+  confidence: VlxReviewConfidence;
+  responseMs: number;
+  result: VlxReviewResult;
+}): ReviewFeedbackKind {
+  if (result === "wrong") {
+    return "wrong";
+  }
+
+  if (confidence === "guessed" || confidence === "forgot") {
+    return "guessed";
+  }
+
+  return responseMs <= VLX_FAST_RESPONSE_MS ? "correct-fast" : "correct-slow";
+}
+
+function getFeedbackLabel(kind: ReviewFeedbackKind) {
+  if (kind === "correct-fast") {
+    return "Correct fast";
+  }
+
+  if (kind === "correct-slow") {
+    return "Correct slow";
+  }
+
+  if (kind === "guessed") {
+    return "Guessed";
+  }
+
+  return "Wrong";
+}
+
+function getFeedbackTitle(kind: ReviewFeedbackKind) {
+  if (kind === "correct-fast") {
+    return "Fast recall moved this card forward.";
+  }
+
+  if (kind === "correct-slow") {
+    return "Correct, but still close to review.";
+  }
+
+  if (kind === "guessed") {
+    return "Guess recorded without fake progress.";
+  }
+
+  return "Wrong answer recorded.";
+}
+
+function getFeedbackExplanation(
+  question: ReviewQuestion,
+  kind: ReviewFeedbackKind
+) {
   const hook = question.memoryHook
     ? `Memory hook: ${question.memoryHook}`
     : question.definition
       ? `Definition: ${question.definition}`
       : "This feedback uses only the existing static card data.";
 
-  if (confidence === "guessed") {
+  if (kind === "correct-fast") {
+    return `${hook} Fast confident recall can move the box forward and schedule a longer gap.`;
+  }
+
+  if (kind === "correct-slow") {
+    return `${hook} Slow correct recall is saved, but the card stays closer until recall is steadier.`;
+  }
+
+  if (kind === "guessed") {
     return `${hook} Guessed correct answers are recorded, but they do not inflate the SRS box.`;
   }
 
-  if (confidence === "forgot") {
-    return `${hook} Forgotten answers stay closer to review so the mistake record remains honest.`;
-  }
-
-  return hook;
+  return `${hook} Wrong answers increase weakness and bring the card back sooner.`;
 }
 
 function getReviewSummaryPaywallSurface({
@@ -1054,7 +1128,7 @@ function getReviewSummaryPaywallSurface({
 }
 
 function getReviewAnswerLiveMessage(answer: SessionAnswer) {
-  const result = answer.result === "correct" ? "Correct" : "Wrong";
+  const result = getFeedbackLabel(answer.feedbackKind);
   const nextDue = answer.nextDueAt
     ? `Next due ${formatDateLabel(answer.nextDueAt) ?? "soon"}.`
     : "Next due was not scheduled.";
@@ -1373,10 +1447,7 @@ export function ReviewSessionView({
   const selectedAnswer = currentAnswer?.selected ?? pendingSelection?.selected ?? null;
   const liveSummary = useMemo(() => getAnswerSummary(answers), [answers]);
   const summary = completedSummary ?? liveSummary;
-  const nextReviewMessage = getNextReviewMessage(
-    summary.nextDueAt,
-    summary.nextDueWord
-  );
+  const nextDueExplanation = getNextDueExplanation(summary);
 
   function handleSelect(option: string) {
     if (
@@ -1434,6 +1505,11 @@ export function ReviewSessionView({
         confidence,
         createdAt: pendingSelection.selectedAt
       });
+      const feedbackKind = getReviewFeedbackKind({
+        confidence: output.event.confidence ?? confidence,
+        responseMs: output.event.responseMs,
+        result: output.event.result
+      });
       const answer: SessionAnswer = {
         eventId: output.event.eventId,
         slug: output.state.slug,
@@ -1456,7 +1532,8 @@ export function ReviewSessionView({
         movedForward: output.event.boxAfter > output.event.boxBefore,
         masteryAfter: output.state.mastery,
         nextDueAt: output.state.nextDueAt,
-        explanation: getFeedbackExplanation(currentQuestion, confidence)
+        feedbackKind,
+        explanation: getFeedbackExplanation(currentQuestion, feedbackKind)
       };
 
       setCurrentAnswer(answer);
@@ -1750,9 +1827,7 @@ export function ReviewSessionView({
                     </span>
                     <div>
                       <h3>
-                        {currentAnswer.result === "correct"
-                          ? "You recalled it."
-                          : "Almost there."}
+                        {getFeedbackLabel(currentAnswer.feedbackKind)}
                       </h3>
                       <p>
                         {currentQuestion.definition ??
@@ -1858,13 +1933,9 @@ export function ReviewSessionView({
               >
                 <div className="review-v2-feedback__copy">
                   <p className="track-b-eyebrow">
-                    {currentAnswer.result === "correct" ? "Correct" : "Review again"}
+                    {getFeedbackLabel(currentAnswer.feedbackKind)}
                   </p>
-                  <h3>
-                    {currentAnswer.result === "correct"
-                      ? "You recalled it."
-                      : "This card will return sooner."}
-                  </h3>
+                  <h3>{getFeedbackTitle(currentAnswer.feedbackKind)}</h3>
                   <p>{currentAnswer.explanation}</p>
                   <p className="sr-only">
                     Memory state updated from this answer and confidence.
@@ -1927,11 +1998,45 @@ export function ReviewSessionView({
                   ref={summaryHeadingRef}
                   tabIndex={-1}
                 >
-                  {summary.correct === summary.reviewed
-                    ? "Every word recalled."
-                    : `${summary.correct} moved closer to memory.`}
+                  {getSessionSummaryHeadline(summary)}
                 </h3>
-                {nextReviewMessage ? <p>{nextReviewMessage}</p> : null}
+                <p>{nextDueExplanation}</p>
+              </div>
+
+              <div
+                aria-label="Session results"
+                className="review-v2-summary-stats"
+                data-testid="review-summary-stats"
+              >
+                <MetricPill
+                  detail="answers committed"
+                  label="Reviewed"
+                  value={summary.reviewed}
+                />
+                <MetricPill
+                  detail="answers marked correct"
+                  label="Correct"
+                  tone="strong"
+                  value={summary.correct}
+                />
+                <MetricPill
+                  detail="answers marked wrong"
+                  label="Wrong"
+                  tone="weak"
+                  value={summary.wrong}
+                />
+                <MetricPill
+                  detail="box or weak score improved"
+                  label="Improved"
+                  tone="learning"
+                  value={summary.weakImproved}
+                />
+                <MetricPill
+                  detail="still needs review evidence"
+                  label="Still weak"
+                  tone="weak"
+                  value={summary.stillWeak}
+                />
               </div>
 
               <div className="review-results" aria-label="Reviewed cards">
