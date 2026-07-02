@@ -3,6 +3,13 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  MasteryBadge,
+  MemoryMissionCard,
+  MetricPill,
+  PrimaryActionPanel,
   TRACK_B_APP_SHELL_V2_VERSION,
   TrackBAppShell,
   TrackBBottomNav,
@@ -26,6 +33,13 @@ const workspaceRoot = process.cwd();
 
 const componentExports = {
   TrackBAppShell,
+  MemoryMissionCard,
+  MetricPill,
+  MasteryBadge,
+  PrimaryActionPanel,
+  EmptyState,
+  LoadingState,
+  ErrorState,
   TrackBPageHeader,
   TrackBPrimaryActionCard,
   TrackBMetricCard,
@@ -83,17 +97,36 @@ const requiredAccessibleRoutes = [
 
 test.describe("Track B app shell v2 foundation", () => {
   test("exports the required component and contract surface", () => {
-    expect(TRACK_B_APP_SHELL_V2_VERSION).toBe(1);
+    expect(TRACK_B_APP_SHELL_V2_VERSION).toBe(2);
 
     for (const [exportName, exportedValue] of Object.entries(componentExports)) {
       expect(typeof exportedValue, exportName).toBe("function");
     }
 
     expect(trackBAppShellV2Contract).toMatchObject({
-      version: 1,
-      branch: "release/track-b-app-shell-v2",
-      pullRequest: "#73 Track B design tokens / app shell v2",
+      version: 2,
+      branch: "feat/track-b-app-shell-v2",
+      pullRequest: "[Track B] Add app shell and design tokens v2",
       northStarMetric: "Weekly Reviewed Words",
+      tokenCategories: [
+        "spacing",
+        "radius",
+        "typography",
+        "card elevation",
+        "button hierarchy",
+        "focus states",
+        "mobile spacing"
+      ],
+      componentSurface: [
+        "TrackBAppShell",
+        "MemoryMissionCard",
+        "MetricPill",
+        "MasteryBadge",
+        "PrimaryActionPanel",
+        "EmptyState",
+        "LoadingState",
+        "ErrorState"
+      ],
       safetyBoundaries: {
         routeIntegrationInThisPr: false,
         apiRoutesAllowed: false,
@@ -115,7 +148,11 @@ test.describe("Track B app shell v2 foundation", () => {
       "typography",
       "border",
       "shadow",
+      "cardElevation",
+      "buttonHierarchy",
       "focusRing",
+      "focusStates",
+      "mobileSpacing",
       "statusTones",
       "motion"
     ]);
@@ -129,7 +166,26 @@ test.describe("Track B app shell v2 foundation", () => {
     expect(trackBDesignTokens.typography).toHaveProperty("display");
     expect(trackBDesignTokens.border).toHaveProperty("subtle");
     expect(trackBDesignTokens.shadow).toHaveProperty("panel");
+    expect(trackBDesignTokens.cardElevation).toMatchObject({
+      flat: "var(--vlx-track-b-card-elevation-flat)",
+      panel: "var(--vlx-track-b-card-elevation-panel)",
+      raised: "var(--vlx-track-b-card-elevation-raised)"
+    });
+    expect(trackBDesignTokens.buttonHierarchy.primary).toMatchObject({
+      className: "track-b-button track-b-button--primary",
+      background: "var(--vlx-track-b-button-primary-bg)",
+      foreground: "var(--vlx-track-b-button-primary-fg)"
+    });
     expect(trackBDesignTokens.focusRing).toHaveProperty("outline");
+    expect(trackBDesignTokens.focusStates).toMatchObject({
+      visibleOutline: "var(--vlx-track-b-focus-outline)",
+      visibleShadow: "var(--vlx-track-b-focus-shadow)",
+      selector: ":focus-visible"
+    });
+    expect(trackBDesignTokens.mobileSpacing).toMatchObject({
+      pageInline: "var(--vlx-track-b-mobile-page-inline)",
+      bottomNavReserved: "var(--vlx-track-b-bottom-nav-reserved)"
+    });
     expect(trackBDesignTokens.motion).toHaveProperty("steady");
 
     for (const tone of requiredStatusTones) {
@@ -207,7 +263,14 @@ test.describe("Track B app shell v2 foundation", () => {
       "--vlx-track-b-warm-border",
       "--vlx-track-b-border-subtle",
       "--vlx-track-b-shadow-panel",
+      "--vlx-track-b-card-elevation-panel",
+      "--vlx-track-b-button-primary-bg",
+      "--vlx-track-b-button-secondary-bg",
+      "--vlx-track-b-button-quiet-bg",
       "--vlx-track-b-focus-outline",
+      "--vlx-track-b-focus-offset",
+      "--vlx-track-b-mobile-page-inline",
+      "--vlx-track-b-mobile-section-gap",
       "--vlx-track-b-status-due-bg",
       "--vlx-track-b-status-weak-bg",
       "--vlx-track-b-status-new-bg",
@@ -296,8 +359,12 @@ test.describe("Track B app shell v2 foundation", () => {
     expect(readme).toContain("docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md");
     expect(readme).toContain("docs/TRACK_B_SALMON_BRAND_TOKENS.md");
     expect(doc).toContain("Today -> Save -> Review -> Queue -> Early Access");
-    expect(doc).toContain("No payment, billing, subscription");
-    expect(doc).toContain("#74 should use this foundation");
+    expect(doc).toContain("## Visual Principles");
+    expect(doc).toContain("## Component Usage");
+    expect(doc).toContain("## Accessibility Baseline");
+    expect(doc).toContain("## Mobile Behavior");
+    expect(doc).toContain("## Blocked Surfaces");
+    expect(doc).toContain("Billing, payment, checkout, subscription");
     expect(cleanupDoc).toContain("skip link is the first meaningful tab stop");
     expect(cleanupDoc).toContain("one `main` landmark");
     expect(cleanupDoc).toContain("Public paid beta remains **No-Go**");
@@ -309,6 +376,11 @@ test.describe("Track B app shell v2 foundation", () => {
     expect(salmonDoc).toContain("Shell/navigation cleanup");
     expect(salmonDoc).toContain("Public paid beta remains **No-Go**");
     expect(componentReadme).toContain("TrackBAppShell");
+    expect(componentReadme).toContain("MemoryMissionCard");
+    expect(componentReadme).toContain("MetricPill");
+    expect(componentReadme).toContain("MasteryBadge");
+    expect(componentReadme).toContain("LoadingState");
+    expect(componentReadme).toContain("ErrorState");
     expect(componentReadme).toContain("Status badges communicate text labels");
   });
 

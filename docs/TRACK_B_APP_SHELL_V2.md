@@ -1,110 +1,160 @@
 # Track B App Shell V2
 
-PR: `#73 Track B design tokens / app shell v2`  
-Branch: `release/track-b-app-shell-v2`  
+Branch: `feat/track-b-app-shell-v2`  
+Draft PR title: `[Track B] Add app shell and design tokens v2`  
 North Star Metric: **Weekly Reviewed Words**
 
 ## Purpose
 
-This PR creates the reusable design foundation for the Track B learning app
-rebuild. It prepares the next route PRs without rebuilding Dashboard, Review,
-Saved, Packs, Pricing, or any paid access flow.
+This document defines the reusable UI foundation for the paid Track B learning
+app. The foundation is intentionally small: shared design tokens, shell
+structure, and presentation components that future route PRs can use without
+changing SRS, auth, billing, Webflow, Cloudflare Workers, production data, or
+deployment settings.
 
-Track B should feel like a premium visual vocabulary learning app organized
-around:
-
-```txt
-Today -> Save -> Review -> Queue -> Early Access
-```
-
-The product loop remains:
+Track B should keep the learning loop visible:
 
 ```txt
 Visual metaphor -> Active recall -> Mistake record -> Spaced review -> Mastery status -> Paid habit
 ```
 
-## Added Foundation
-
-Component entrypoint:
+Baseline shell navigation stays ordered around:
 
 ```txt
-src/components/track-b/index.ts
+Today -> Save -> Review -> Queue -> Early Access
 ```
 
-Design token groups:
+## Visual Principles
 
-- spacing
-- radius
-- typography scale
-- border
-- shadow
-- focus ring
-- status tones for Due, Weak, New, Learning, Strong, and Mastered
-- motion duration tokens
+- Calm and premium before decorative. The interface should feel warm, credible,
+  quiet, and focused on repeat review behavior.
+- Dashboard priority remains Today Memory Mission, then Start Review, Practice
+  Weak Words, and Continue Deck. Saved Library supports the loop; it should not
+  dominate the product.
+- Due, Weak, Strong, and Mastered labels must be rendered from real review state
+  in route work. Foundation components only display values passed to them.
+- Visual meaning cannot depend on color alone. Badges, pills, and progress
+  states include text labels.
+- Button hierarchy is limited to primary, secondary, and quiet actions so route
+  screens do not invent competing CTA styles.
 
-Reusable components:
+## Design Tokens
 
-- `TrackBAppShell`
-- `TrackBPageHeader`
-- `TrackBPrimaryActionCard`
-- `TrackBMetricCard`
-- `TrackBProgressBadge`
-- `TrackBStatusBadge`
-- `TrackBEmptyState`
-- `TrackBSection`
-- `TrackBBottomNav`
-- `TrackBFocusPanel`
-- `TrackBUpgradeNudge`
+The canonical token entrypoint is:
 
-## Accessibility Contract
+```txt
+src/components/track-b/tokens.ts
+```
 
-- The shell includes a keyboard skip link.
-- Navigation uses desktop top navigation, mobile bottom navigation, semantic
-  landmarks, and `aria-current` for the active item.
-- Headings are semantic and controlled by component props where nesting matters.
-- Focus styles are visible through namespaced `--vlx-track-b-focus-*` tokens.
-- Status and progress components include text labels and ARIA labels, so meaning
-  is not color-only.
-- Reduced-motion defaults are covered by a scoped media query.
+Token groups:
 
-## Safety Boundary
+- `spacing`
+- `radius`
+- `typography`
+- `cardElevation`
+- `buttonHierarchy`
+- `focusStates`
+- `mobileSpacing`
+- existing compatibility groups: `border`, `shadow`, `focusRing`,
+  `statusTones`, and `motion`
 
-This PR is additive foundation work only.
+CSS variables live in `src/app/globals.css` under the `--vlx-track-b-*`
+namespace. Do not create competing Track B token names in route files.
 
-- No Dashboard rebuild.
-- No Review Session rebuild.
-- No Saved Library rebuild.
-- No Packs rebuild.
-- No Pricing or paywall rebuild.
-- No payment, billing, subscription, checkout, invoice, billing portal, or
-  entitlement logic.
-- No API routes.
-- No route handlers.
-- No middleware.
-- No database/provider SDK integrations.
-- No auth changes.
-- No environment variable changes.
-- No production data mutation.
-- No deployment changes.
-- No Webflow, Cloudflare Workers, Vercel, DNS, or production setting changes.
-- No fake mastery, fake streaks, or fake pack progress.
+## Component Usage
 
-## Planned Integration
+Import components from the barrel:
 
-#74 should use this foundation to rebuild `/dashboard` around Today's Memory
-Mission. The dashboard integration should keep:
+```tsx
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  MasteryBadge,
+  MemoryMissionCard,
+  MetricPill,
+  PrimaryActionPanel,
+  TrackBAppShell
+} from "@/components/track-b";
+```
 
-- Due, Weak, and Mastered counts derived from real review state.
-- Start Review pointed at due review when due words exist.
-- Saved Queue subordinate to review behavior.
-- No desktop left sidebar on Track B app routes.
+Core components:
 
-If a route integration starts requiring new data contracts, paid access logic,
-or SRS changes, keep it out of this PR and move it into the relevant future PR.
+- `TrackBAppShell`: page shell with skip link, desktop learning navigation,
+  mobile bottom navigation, and one `main` landmark.
+- `MemoryMissionCard`: primary mission surface for due or weak review prompts.
+  It renders only caller-provided counts and labels.
+- `MetricPill`: compact metric display for real due, weak, saved, or progress
+  values.
+- `MasteryBadge`: display badge for the review-state mastery union:
+  `New`, `Learning`, `Weak`, `Strong`, `Mastered`.
+- `PrimaryActionPanel`: reusable high-priority action surface.
+- `EmptyState`: empty queue or unavailable content state with optional actions.
+- `LoadingState`: polite, busy state for client-side or route-level loading.
+- `ErrorState`: alert state for recoverable UI failures.
+
+Example:
+
+```tsx
+<TrackBAppShell activeItemId="today" currentPath="/dashboard">
+  <MemoryMissionCard
+    action={{ href: "/review/due", label: "Start review" }}
+    body="Review the words most likely to fade before browsing saved words."
+    eyebrow="Today's Memory Mission"
+    metrics={[
+      { label: "Due", value: dueCount, tone: "due" },
+      { label: "Weak", value: weakCount, tone: "weak" }
+    ]}
+    status="due"
+    title="Review due words"
+  />
+</TrackBAppShell>
+```
+
+## Accessibility Baseline
+
+- The shell skip link is the first meaningful tab stop.
+- Track B pages should render one `main` landmark.
+- Navigation uses `aria-current="page"` for active destinations.
+- Loading states use `role="status"`, `aria-live="polite"`, and
+  `aria-busy="true"`.
+- Error states use `role="alert"` only for visible recoverable failures.
+- Focus styles must use `--vlx-track-b-focus-*` tokens and remain visible on
+  keyboard navigation.
+- Status and mastery components must include readable labels; do not use color
+  as the only signal.
+
+## Mobile Behavior
+
+- Mobile spacing is controlled by `trackBDesignTokens.mobileSpacing` and
+  `--vlx-track-b-mobile-*` CSS variables.
+- The bottom navigation reserves space through
+  `--vlx-track-b-bottom-nav-reserved` and accounts for
+  `env(safe-area-inset-bottom, 0px)`.
+- Mobile route content should not be hidden behind the bottom navigation.
+- Primary action rows may wrap; labels must remain readable and should not
+  overflow their buttons.
+- Avoid new desktop sidebars on Track B routes. Keep desktop navigation at the
+  top and mobile navigation at the bottom.
+
+## Blocked Surfaces
+
+This foundation PR must not include:
+
+- Webflow publishing or Webflow CMS mutation.
+- Cloudflare production Worker changes.
+- Auth, login, account creation, session, or provider behavior changes.
+- Billing, payment, checkout, subscription, invoice, or billing portal logic.
+- DNS, deployment settings, secrets, environment variables, or production data.
+- Real payment SDKs or production provider SDK integrations.
+- New SRS storage keys or fake mastery, streak, pack progress, or dashboard
+  metrics.
+- Large Dashboard v2, Review Session v2, Saved Library v2, Packs v2, or Pricing
+  rewrites.
 
 ## Validation
 
-Required commands for this PR:
+Required local checks:
 
 ```powershell
 npm.cmd run typecheck

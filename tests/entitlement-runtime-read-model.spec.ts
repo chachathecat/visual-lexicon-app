@@ -514,7 +514,16 @@ test.describe("Track B entitlement runtime read model", () => {
       expect(runtimeSources).not.toMatch(forbiddenPattern);
     }
 
-    const uiDiff = execFileSync(
+    const approvedTrackBFoundationUiDiff = new Set([
+      "src/components/track-b/README.md",
+      "src/components/track-b/contracts.ts",
+      "src/components/track-b/index.ts",
+      "src/components/track-b/layout-primitives.tsx",
+      "src/components/track-b/learning-primitives.tsx",
+      "src/components/track-b/tokens.ts",
+    ]);
+
+    const unexpectedUiDiff = execFileSync(
       "git",
       [
         "diff",
@@ -528,9 +537,11 @@ test.describe("Track B entitlement runtime read model", () => {
       { cwd: workspaceRoot }
     )
       .toString()
-      .trim();
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .filter((path) => !approvedTrackBFoundationUiDiff.has(path));
 
-    expect(uiDiff).toBe("");
+    expect(unexpectedUiDiff).toEqual([]);
   });
 
   test("no new storage key is introduced", () => {

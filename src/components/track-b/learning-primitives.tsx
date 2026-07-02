@@ -14,6 +14,20 @@ type ActionLink = {
 };
 
 type TrackBCardTone = "neutral" | TrackBStatusTone;
+export type TrackBMasteryLevel =
+  | "New"
+  | "Learning"
+  | "Weak"
+  | "Strong"
+  | "Mastered";
+
+const masteryToneByLevel: Record<TrackBMasteryLevel, TrackBStatusTone> = {
+  New: "new",
+  Learning: "learning",
+  Weak: "weak",
+  Strong: "strong",
+  Mastered: "mastered"
+};
 
 export type TrackBStatusBadgeProps = {
   status: TrackBStatusTone;
@@ -99,6 +113,59 @@ export function TrackBProgressBadge({
   );
 }
 
+export type MetricPillProps = {
+  label: string;
+  value: string | number;
+  detail?: string;
+  tone?: TrackBCardTone;
+  className?: string;
+};
+
+export function MetricPill({
+  className,
+  detail,
+  label,
+  tone = "neutral",
+  value
+}: MetricPillProps) {
+  const ariaLabel = detail
+    ? `${label}: ${value}. ${detail}`
+    : `${label}: ${value}`;
+
+  return (
+    <span
+      aria-label={ariaLabel}
+      className={cx("track-b-metric-pill", `track-b-metric-pill--${tone}`, className)}
+    >
+      <span className="track-b-metric-pill__label">{label}</span>
+      <strong className="track-b-metric-pill__value">{value}</strong>
+      {detail ? (
+        <span className="track-b-metric-pill__detail">{detail}</span>
+      ) : null}
+    </span>
+  );
+}
+
+export type MasteryBadgeProps = {
+  mastery: TrackBMasteryLevel;
+  detail?: string;
+  className?: string;
+};
+
+export function MasteryBadge({
+  className,
+  detail,
+  mastery
+}: MasteryBadgeProps) {
+  return (
+    <TrackBStatusBadge
+      className={cx("track-b-mastery-badge", className)}
+      detail={detail}
+      status={masteryToneByLevel[mastery]}
+    />
+  );
+}
+
 export type TrackBPrimaryActionCardProps = {
   eyebrow?: string;
   title: string;
@@ -142,6 +209,103 @@ export function TrackBPrimaryActionCard({
         >
           <strong>{metric.value}</strong>
           <span>{metric.label}</span>
+        </div>
+      ) : null}
+      {children ? (
+        <div className="track-b-primary-action-card__content">{children}</div>
+      ) : null}
+      <div className="track-b-action-row">
+        <Link
+          aria-label={action.ariaLabel}
+          className="track-b-button track-b-button--primary"
+          href={action.href}
+        >
+          {action.label}
+        </Link>
+        {secondaryAction ? (
+          <Link
+            aria-label={secondaryAction.ariaLabel}
+            className="track-b-button track-b-button--quiet"
+            href={secondaryAction.href}
+          >
+            {secondaryAction.label}
+          </Link>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+export type PrimaryActionPanelProps = TrackBPrimaryActionCardProps;
+
+export function PrimaryActionPanel({
+  className,
+  ...props
+}: PrimaryActionPanelProps) {
+  return (
+    <TrackBPrimaryActionCard
+      {...props}
+      className={cx("track-b-primary-action-panel", className)}
+    />
+  );
+}
+
+export type MemoryMissionCardProps = {
+  eyebrow?: string;
+  title: string;
+  body: string;
+  action: ActionLink;
+  secondaryAction?: ActionLink;
+  metrics?: readonly MetricPillProps[];
+  mastery?: TrackBMasteryLevel;
+  status?: TrackBStatusTone;
+  children?: ReactNode;
+  className?: string;
+};
+
+export function MemoryMissionCard({
+  action,
+  body,
+  children,
+  className,
+  eyebrow,
+  mastery,
+  metrics = [],
+  secondaryAction,
+  status,
+  title
+}: MemoryMissionCardProps) {
+  return (
+    <article
+      className={cx(
+        "track-b-primary-action-card",
+        "track-b-memory-mission-card",
+        className
+      )}
+    >
+      <div className="track-b-primary-action-card__copy">
+        {eyebrow ? <p className="track-b-eyebrow">{eyebrow}</p> : null}
+        <div className="track-b-primary-action-card__topline">
+          <h2 className="track-b-primary-action-card__title">{title}</h2>
+          {mastery ? (
+            <MasteryBadge mastery={mastery} />
+          ) : status ? (
+            <TrackBStatusBadge status={status} />
+          ) : null}
+        </div>
+        <p className="track-b-primary-action-card__body">{body}</p>
+      </div>
+      {metrics.length > 0 ? (
+        <div
+          aria-label="Memory mission metrics"
+          className="track-b-memory-mission-card__metrics"
+        >
+          {metrics.map((metric) => (
+            <MetricPill
+              {...metric}
+              key={`${metric.label}-${metric.value}-${metric.tone ?? "neutral"}`}
+            />
+          ))}
         </div>
       ) : null}
       {children ? (

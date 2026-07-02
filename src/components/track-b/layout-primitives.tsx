@@ -215,3 +215,92 @@ export function TrackBEmptyState({
     </section>
   );
 }
+
+export type EmptyStateProps = TrackBEmptyStateProps;
+
+export function EmptyState(props: EmptyStateProps) {
+  return <TrackBEmptyState {...props} />;
+}
+
+export type LoadingStateProps = {
+  title?: string;
+  body?: string;
+  className?: string;
+  headingLevel?: HeadingLevel;
+};
+
+export function LoadingState({
+  body = "Preparing the next memory review.",
+  className,
+  headingLevel = 2,
+  title = "Loading"
+}: LoadingStateProps) {
+  return (
+    <section
+      aria-busy="true"
+      aria-live="polite"
+      className={cx("track-b-loading-state", className)}
+      role="status"
+    >
+      <span className="track-b-loading-state__spinner" aria-hidden="true" />
+      <div className="track-b-loading-state__copy">
+        <TrackBHeading
+          className="track-b-loading-state__title"
+          level={headingLevel}
+        >
+          {title}
+        </TrackBHeading>
+        <p className="track-b-loading-state__body">{body}</p>
+      </div>
+    </section>
+  );
+}
+
+export type ErrorStateProps = {
+  title: string;
+  body: string;
+  action?: ActionLink;
+  secondaryAction?: ActionLink;
+  className?: string;
+  headingLevel?: HeadingLevel;
+};
+
+export function ErrorState({
+  action,
+  body,
+  className,
+  headingLevel = 2,
+  secondaryAction,
+  title
+}: ErrorStateProps) {
+  return (
+    <section className={cx("track-b-error-state", className)} role="alert">
+      <TrackBHeading className="track-b-error-state__title" level={headingLevel}>
+        {title}
+      </TrackBHeading>
+      <p className="track-b-error-state__body">{body}</p>
+      {action || secondaryAction ? (
+        <div className="track-b-action-row">
+          {action ? (
+            <Link
+              aria-label={action.ariaLabel}
+              className="track-b-button track-b-button--primary"
+              href={action.href}
+            >
+              {action.label}
+            </Link>
+          ) : null}
+          {secondaryAction ? (
+            <Link
+              aria-label={secondaryAction.ariaLabel}
+              className="track-b-button track-b-button--quiet"
+              href={secondaryAction.href}
+            >
+              {secondaryAction.label}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}

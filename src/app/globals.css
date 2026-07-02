@@ -2081,8 +2081,24 @@ select {
   --vlx-track-b-border-strong: 1px solid rgba(169, 52, 43, 0.42);
   --vlx-track-b-shadow-raised: 0 24px 72px rgba(73, 42, 31, 0.13);
   --vlx-track-b-shadow-panel: 0 1px 0 rgba(55, 38, 30, 0.035), 0 16px 44px rgba(55, 38, 30, 0.07);
+  --vlx-track-b-card-elevation-flat: none;
+  --vlx-track-b-card-elevation-panel: var(--vlx-track-b-shadow-panel);
+  --vlx-track-b-card-elevation-raised: var(--vlx-track-b-shadow-raised);
+  --vlx-track-b-button-primary-bg: var(--vlx-track-b-accent);
+  --vlx-track-b-button-primary-fg: var(--vlx-track-b-surface);
+  --vlx-track-b-button-primary-border: var(--vlx-track-b-accent);
+  --vlx-track-b-button-secondary-bg: #eef5f7;
+  --vlx-track-b-button-secondary-fg: var(--vlx-track-b-blue);
+  --vlx-track-b-button-secondary-border: rgba(51, 95, 118, 0.32);
+  --vlx-track-b-button-quiet-bg: rgba(255, 253, 248, 0.3);
+  --vlx-track-b-button-quiet-fg: var(--vlx-track-b-ink);
+  --vlx-track-b-button-quiet-border: rgba(105, 78, 65, 0.13);
   --vlx-track-b-focus-outline: 2px solid var(--vlx-track-b-coral-deep);
   --vlx-track-b-focus-shadow: 0 0 0 4px rgba(169, 52, 43, 0.2);
+  --vlx-track-b-focus-offset: 3px;
+  --vlx-track-b-mobile-page-inline: 20px;
+  --vlx-track-b-mobile-page-block: 28px;
+  --vlx-track-b-mobile-section-gap: var(--vlx-track-b-space-lg);
   --vlx-track-b-status-due-bg: #e4edf1;
   --vlx-track-b-status-due-ink: #254f63;
   --vlx-track-b-status-weak-bg: #fae1d8;
@@ -2108,10 +2124,18 @@ select {
 .track-b-focus-panel *,
 .track-b-empty-state,
 .track-b-empty-state *,
+.track-b-loading-state,
+.track-b-loading-state *,
+.track-b-error-state,
+.track-b-error-state *,
 .track-b-primary-action-card,
 .track-b-primary-action-card *,
+.track-b-memory-mission-card,
+.track-b-memory-mission-card *,
 .track-b-metric-card,
 .track-b-metric-card *,
+.track-b-metric-pill,
+.track-b-metric-pill *,
 .track-b-progress-badge,
 .track-b-progress-badge *,
 .track-b-status-badge,
@@ -2341,6 +2365,7 @@ select {
 .track-b-page-header__copy,
 .track-b-section__copy,
 .track-b-focus-panel__copy,
+.track-b-loading-state__copy,
 .track-b-primary-action-card__copy,
 .track-b-upgrade-nudge__copy {
   display: grid;
@@ -2372,6 +2397,8 @@ select {
 .track-b-section__title,
 .track-b-focus-panel__title,
 .track-b-empty-state__title,
+.track-b-loading-state__title,
+.track-b-error-state__title,
 .track-b-primary-action-card__title,
 .track-b-upgrade-nudge__title {
   margin: 0;
@@ -2398,6 +2425,8 @@ select {
 .track-b-section__description,
 .track-b-focus-panel__description,
 .track-b-empty-state__body,
+.track-b-loading-state__body,
+.track-b-error-state__body,
 .track-b-primary-action-card__body,
 .track-b-metric-card__description,
 .track-b-upgrade-nudge__body {
@@ -2411,6 +2440,8 @@ select {
 .track-b-section,
 .track-b-focus-panel,
 .track-b-empty-state,
+.track-b-loading-state,
+.track-b-error-state,
 .track-b-primary-action-card,
 .track-b-metric-card,
 .track-b-upgrade-nudge {
@@ -2433,6 +2464,8 @@ select {
 
 .track-b-focus-panel,
 .track-b-empty-state,
+.track-b-loading-state,
+.track-b-error-state,
 .track-b-primary-action-card,
 .track-b-upgrade-nudge {
   display: grid;
@@ -2445,6 +2478,31 @@ select {
 .track-b-focus-panel__footer,
 .track-b-primary-action-card__content {
   min-width: 0;
+}
+
+.track-b-loading-state {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.track-b-loading-state__spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(169, 52, 43, 0.18);
+  border-top-color: var(--vlx-track-b-accent);
+  border-radius: var(--vlx-track-b-radius-pill);
+  animation: track-b-loading-spin 900ms linear infinite;
+}
+
+.track-b-error-state {
+  border-color: rgba(169, 52, 43, 0.24);
+  background: #fff8f4;
+}
+
+@keyframes track-b-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .track-b-action-row {
@@ -2474,21 +2532,22 @@ select {
 }
 
 .track-b-button--primary {
-  border-color: var(--vlx-track-b-accent);
-  background: var(--vlx-track-b-accent);
-  color: var(--vlx-track-b-surface);
+  border-color: var(--vlx-track-b-button-primary-border);
+  background: var(--vlx-track-b-button-primary-bg);
+  color: var(--vlx-track-b-button-primary-fg);
   box-shadow: 0 14px 32px rgba(232, 101, 74, 0.2);
 }
 
 .track-b-button--secondary {
-  border-color: rgba(51, 95, 118, 0.32);
-  background: #eef5f7;
-  color: var(--vlx-track-b-blue);
+  border-color: var(--vlx-track-b-button-secondary-border);
+  background: var(--vlx-track-b-button-secondary-bg);
+  color: var(--vlx-track-b-button-secondary-fg);
 }
 
 .track-b-button--quiet {
-  background: rgba(255, 253, 248, 0.3);
-  color: var(--vlx-track-b-ink);
+  border-color: var(--vlx-track-b-button-quiet-border);
+  background: var(--vlx-track-b-button-quiet-bg);
+  color: var(--vlx-track-b-button-quiet-fg);
   box-shadow: none;
 }
 
@@ -2541,6 +2600,14 @@ select {
   grid-column: 1 / -1;
 }
 
+.track-b-memory-mission-card__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: var(--vlx-track-b-space-xs);
+  min-width: 0;
+}
+
 .track-b-metric-card {
   display: grid;
   align-content: start;
@@ -2559,6 +2626,69 @@ select {
   color: var(--vlx-track-b-ink);
   font-size: var(--vlx-track-b-type-metric);
   line-height: 1;
+}
+
+.track-b-metric-pill {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  max-width: 100%;
+  min-height: 34px;
+  column-gap: var(--vlx-track-b-space-xs);
+  row-gap: 2px;
+  padding: 5px var(--vlx-track-b-space-xs);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-pill);
+  background: var(--vlx-track-b-surface-muted);
+  color: var(--vlx-track-b-ink-soft);
+}
+
+.track-b-metric-pill__label,
+.track-b-metric-pill__detail {
+  color: var(--vlx-track-b-ink-muted);
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 700;
+}
+
+.track-b-metric-pill__value {
+  color: var(--vlx-track-b-ink);
+  font-size: 0.95rem;
+  font-weight: 780;
+}
+
+.track-b-metric-pill__detail {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.track-b-metric-pill--due {
+  background: var(--vlx-track-b-status-due-bg);
+  color: var(--vlx-track-b-status-due-ink);
+}
+
+.track-b-metric-pill--weak {
+  background: var(--vlx-track-b-status-weak-bg);
+  color: var(--vlx-track-b-status-weak-ink);
+}
+
+.track-b-metric-pill--new {
+  background: var(--vlx-track-b-status-new-bg);
+  color: var(--vlx-track-b-status-new-ink);
+}
+
+.track-b-metric-pill--learning {
+  background: var(--vlx-track-b-status-learning-bg);
+  color: var(--vlx-track-b-status-learning-ink);
+}
+
+.track-b-metric-pill--strong {
+  background: var(--vlx-track-b-status-strong-bg);
+  color: var(--vlx-track-b-status-strong-ink);
+}
+
+.track-b-metric-pill--mastered {
+  background: var(--vlx-track-b-status-mastered-bg);
+  color: var(--vlx-track-b-status-mastered-ink);
 }
 
 .track-b-status-badge {
@@ -2699,13 +2829,16 @@ select {
 .track-b-section a:focus-visible,
 .track-b-focus-panel a:focus-visible,
 .track-b-empty-state a:focus-visible,
+.track-b-loading-state a:focus-visible,
+.track-b-error-state a:focus-visible,
 .track-b-primary-action-card a:focus-visible,
+.track-b-memory-mission-card a:focus-visible,
 .track-b-upgrade-nudge a:focus-visible,
 .track-b-bottom-nav a:focus-visible,
 .track-b-shell button:focus-visible,
 .track-b-button:focus-visible {
   outline: var(--vlx-track-b-focus-outline);
-  outline-offset: 3px;
+  outline-offset: var(--vlx-track-b-focus-offset);
   box-shadow: var(--vlx-track-b-focus-shadow);
 }
 
@@ -4511,8 +4644,8 @@ select {
 
   .track-b-shell__header,
   .track-b-shell__main {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: var(--vlx-track-b-mobile-page-inline);
+    padding-right: var(--vlx-track-b-mobile-page-inline);
   }
 
   .track-b-shell__header {
@@ -4628,8 +4761,8 @@ select {
   }
 
   .track-b-shell__main {
-    gap: var(--vlx-track-b-space-lg);
-    padding-top: var(--vlx-track-b-space-lg);
+    gap: var(--vlx-track-b-mobile-section-gap);
+    padding-top: var(--vlx-track-b-mobile-page-block);
   }
 
   .track-b-page-header__title {
@@ -4869,5 +5002,9 @@ select {
     animation-duration: var(--vlx-track-b-motion-instant) !important;
     scroll-behavior: auto !important;
     transition-duration: var(--vlx-track-b-motion-instant) !important;
+  }
+
+  .track-b-loading-state__spinner {
+    animation: none !important;
   }
 }

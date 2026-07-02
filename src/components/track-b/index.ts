@@ -5,21 +5,36 @@ export {
   type TrackBBottomNavProps
 } from "@/components/track-b/app-shell";
 export {
+  EmptyState,
+  ErrorState,
+  LoadingState,
   TrackBEmptyState,
   TrackBFocusPanel,
   TrackBPageHeader,
   TrackBSection,
+  type EmptyStateProps,
+  type ErrorStateProps,
+  type LoadingStateProps,
   type TrackBEmptyStateProps,
   type TrackBFocusPanelProps,
   type TrackBPageHeaderProps,
   type TrackBSectionProps
 } from "@/components/track-b/layout-primitives";
 export {
+  MasteryBadge,
+  MemoryMissionCard,
+  MetricPill,
+  PrimaryActionPanel,
   TrackBMetricCard,
   TrackBPrimaryActionCard,
   TrackBProgressBadge,
   TrackBStatusBadge,
   TrackBUpgradeNudge,
+  type MasteryBadgeProps,
+  type MemoryMissionCardProps,
+  type MetricPillProps,
+  type PrimaryActionPanelProps,
+  type TrackBMasteryLevel,
   type TrackBMetricCardProps,
   type TrackBPrimaryActionCardProps,
   type TrackBProgressBadgeProps,
