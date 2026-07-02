@@ -132,6 +132,9 @@ blocked surface.
 
 P0 must stop if:
 
+- Save creates or preserves review state is not true for the changed flow;
+- Review answers create events and update memory state is not true for the
+  changed flow;
 - save does not create or preserve review state;
 - review answers do not create events and update memory state;
 - Due, Weak, or Mastered can be faked;

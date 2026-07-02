@@ -5,9 +5,8 @@ import { expect, test } from "@playwright/test";
 
 const RUNWAY_DOCS = [
   "docs/goals/track-b-private-paid-beta-runway.md",
-  "docs/factory/track-b-owner-command-center.md",
-  "docs/factory/track-b-pr-lanes.md",
-  "docs/factory/track-b-merge-gates.md"
+  "docs/factory/track-b-goal-lanes.md",
+  "docs/factory/track-b-owner-approval-gates.md"
 ];
 
 const EXPECTED_LANES = [

@@ -266,6 +266,8 @@ Agent and release guidance:
 AGENTS.md
 PLANS.md
 docs/goals/track-b-private-paid-beta-runway.md
+docs/factory/track-b-goal-lanes.md
+docs/factory/track-b-owner-approval-gates.md
 docs/factory/track-b-owner-command-center.md
 docs/factory/track-b-pr-lanes.md
 docs/factory/track-b-merge-gates.md
@@ -285,6 +287,8 @@ beta hardening. They do not change runtime behavior.
 Factory goal runway docs:
 
 - [Track B Private Paid Beta Goal Runway](docs/goals/track-b-private-paid-beta-runway.md)
+- [Track B Goal Lanes](docs/factory/track-b-goal-lanes.md)
+- [Track B Owner Approval Gates](docs/factory/track-b-owner-approval-gates.md)
 - [Track B Owner Command Center](docs/factory/track-b-owner-command-center.md)
 - [Track B PR Lanes](docs/factory/track-b-pr-lanes.md)
 - [Track B Merge Gates](docs/factory/track-b-merge-gates.md)
