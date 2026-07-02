@@ -1,8 +1,27 @@
 export const trackBAppShellV2Contract = {
-  version: 1,
-  branch: "release/track-b-app-shell-v2",
-  pullRequest: "#73 Track B design tokens / app shell v2",
+  version: 2,
+  branch: "feat/track-b-app-shell-v2",
+  pullRequest: "[Track B] Add app shell and design tokens v2",
   northStarMetric: "Weekly Reviewed Words",
+  tokenCategories: [
+    "spacing",
+    "radius",
+    "typography",
+    "card elevation",
+    "button hierarchy",
+    "focus states",
+    "mobile spacing"
+  ],
+  componentSurface: [
+    "TrackBAppShell",
+    "MemoryMissionCard",
+    "MetricPill",
+    "MasteryBadge",
+    "PrimaryActionPanel",
+    "EmptyState",
+    "LoadingState",
+    "ErrorState"
+  ],
   productDirection: [
     "Today",
     "Review",

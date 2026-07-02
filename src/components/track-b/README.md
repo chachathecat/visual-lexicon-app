@@ -1,13 +1,19 @@
 # Track B Component Foundation
 
 This folder contains the additive app-shell v2 foundation for the paid Track B
-learning app. It is intentionally not wired into the current routes yet; #74 can
-use these components while rebuilding Dashboard v2 around Today's Memory
-Mission.
+learning app. Route work should import these primitives instead of introducing
+new shell, badge, metric, action, loading, or error-state patterns.
 
 ## Exports
 
 - `TrackBAppShell`
+- `MemoryMissionCard`
+- `MetricPill`
+- `MasteryBadge`
+- `PrimaryActionPanel`
+- `EmptyState`
+- `LoadingState`
+- `ErrorState`
 - `TrackBPageHeader`
 - `TrackBPrimaryActionCard`
 - `TrackBMetricCard`
@@ -26,9 +32,9 @@ Mission.
 
 ```tsx
 import {
+  MemoryMissionCard,
   TrackBAppShell,
-  TrackBPageHeader,
-  TrackBPrimaryActionCard
+  TrackBPageHeader
 } from "@/components/track-b";
 
 export function DashboardV2Foundation() {
@@ -39,10 +45,10 @@ export function DashboardV2Foundation() {
         title="Today's Memory Mission"
         description="Review the words most likely to fade before browsing the saved library."
       />
-      <TrackBPrimaryActionCard
+      <MemoryMissionCard
         action={{ href: "/review/due", label: "Start review" }}
         body="Due words should come from real review_state nextDueAt values."
-        metric={{ label: "due now", value: 0 }}
+        metrics={[{ label: "Due now", value: 0, tone: "due" }]}
         status="due"
         title="Review due words"
       />
@@ -56,6 +62,8 @@ export function DashboardV2Foundation() {
 - Components are presentation primitives only.
 - Upgrade nudges are visual only and do not implement entitlement logic.
 - Status badges communicate text labels, not color alone.
+- `MemoryMissionCard`, `MetricPill`, and `MasteryBadge` render caller-provided
+  values; they do not calculate mastery or SRS state.
 - Navigation follows `Today -> Save -> Review -> Queue -> Early Access`.
 - Track B app routes use desktop top navigation and mobile bottom navigation,
   not a desktop left sidebar.

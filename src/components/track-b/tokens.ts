@@ -1,4 +1,4 @@
-export const TRACK_B_APP_SHELL_V2_VERSION = 1;
+export const TRACK_B_APP_SHELL_V2_VERSION = 2;
 
 export type TrackBStatusTone =
   | "due"
@@ -58,9 +58,46 @@ export const trackBDesignTokens = {
     raised: "var(--vlx-track-b-shadow-raised)",
     panel: "var(--vlx-track-b-shadow-panel)"
   },
+  cardElevation: {
+    flat: "var(--vlx-track-b-card-elevation-flat)",
+    panel: "var(--vlx-track-b-card-elevation-panel)",
+    raised: "var(--vlx-track-b-card-elevation-raised)"
+  },
+  buttonHierarchy: {
+    primary: {
+      className: "track-b-button track-b-button--primary",
+      background: "var(--vlx-track-b-button-primary-bg)",
+      foreground: "var(--vlx-track-b-button-primary-fg)",
+      border: "var(--vlx-track-b-button-primary-border)"
+    },
+    secondary: {
+      className: "track-b-button track-b-button--secondary",
+      background: "var(--vlx-track-b-button-secondary-bg)",
+      foreground: "var(--vlx-track-b-button-secondary-fg)",
+      border: "var(--vlx-track-b-button-secondary-border)"
+    },
+    quiet: {
+      className: "track-b-button track-b-button--quiet",
+      background: "var(--vlx-track-b-button-quiet-bg)",
+      foreground: "var(--vlx-track-b-button-quiet-fg)",
+      border: "var(--vlx-track-b-button-quiet-border)"
+    }
+  },
   focusRing: {
     outline: "var(--vlx-track-b-focus-outline)",
     shadow: "var(--vlx-track-b-focus-shadow)"
+  },
+  focusStates: {
+    visibleOutline: "var(--vlx-track-b-focus-outline)",
+    visibleShadow: "var(--vlx-track-b-focus-shadow)",
+    offset: "var(--vlx-track-b-focus-offset)",
+    selector: ":focus-visible"
+  },
+  mobileSpacing: {
+    pageInline: "var(--vlx-track-b-mobile-page-inline)",
+    pageBlock: "var(--vlx-track-b-mobile-page-block)",
+    sectionGap: "var(--vlx-track-b-mobile-section-gap)",
+    bottomNavReserved: "var(--vlx-track-b-bottom-nav-reserved)"
   },
   statusTones: {
     due: {
