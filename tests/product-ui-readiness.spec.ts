@@ -138,6 +138,42 @@ const trackBShellMobileRoutes = [
   "/settings"
 ] as const;
 
+const requiredAuditDocRoutes = [
+  "/dashboard",
+  "/review",
+  "/review/due",
+  "/review/weak",
+  "/review/weak-sprint",
+  "/saved",
+  "/packs",
+  "/packs/academic-vocabulary",
+  "/pricing",
+  "/word/dissonance",
+  "/settings"
+] as const;
+
+const requiredAuditCriteria = [
+  "primary user action clarity",
+  "cognitive load",
+  "Weekly Reviewed Words contribution",
+  "Save -> Review loop clarity",
+  "Due / Weak / Mastered truthfulness",
+  "Paywall trigger placement",
+  "Accessibility and mobile risks",
+  "Fake mastery risk"
+] as const;
+
+const requiredRebuildSteps = [
+  "Track B App Shell / Design Tokens",
+  "Dashboard v2",
+  "Review Session v2",
+  "Saved Library v2",
+  "Packs v2",
+  "Pricing / Paywall v2",
+  "Manual QA Execution Report",
+  "Private Beta Gate"
+] as const;
+
 const wordOverflowDiagnosticSelectors = [
   ".sidebar",
   ".brand",
@@ -486,21 +522,75 @@ function queueSection(page: Page, heading: string) {
 }
 
 test.describe("Track B product/UI readiness rendered audit", () => {
-  test("documents rendered-audit precedence over the static typed baseline", () => {
+  test("documents post-PR 154 audit scope, precedence, and rebuild sequence", () => {
     const auditReport = readFileSync(
       "docs/TRACK_B_PRODUCT_UI_READINESS_AUDIT.md",
       "utf8"
     );
+    const rebuildSequence = readFileSync(
+      "docs/TRACK_B_UI_REBUILD_SEQUENCE.md",
+      "utf8"
+    );
 
-    expect(auditReport).toContain("Report version: 2");
+    expect(auditReport).toContain("Report version: 3");
+    expect(auditReport).toContain("after merged PR #154");
     expect(auditReport).toContain(
-      "supersedes the static typed product/UI readiness baseline v1"
+      "673e48e9aedc7d0eb52ca1298603c260b482e23b"
     );
     expect(auditReport).toContain(
-      "must not be used as the current automated release gate"
+      "supersedes the previous rendered audit dated 2026-06-29"
+    );
+    expect(auditReport).toContain(
+      "must not be treated as the current release gate"
     );
     expect(auditReport).toContain(
       "does not supersede canonical non-UI blockers"
+    );
+    expect(auditReport).toContain(
+      "Private/manual beta: **Conditional / Manual-only**"
+    );
+    expect(auditReport).toContain("Public paid beta: **No-Go**");
+    expect(auditReport).toContain(
+      "**Docs/tests only; no runtime UI changes.**"
+    );
+
+    const normalizedAuditReport = auditReport.toLowerCase();
+
+    for (const route of requiredAuditDocRoutes) {
+      expect(auditReport, route).toContain(route);
+    }
+
+    for (const criterion of requiredAuditCriteria) {
+      expect(normalizedAuditReport, criterion).toContain(
+        criterion.toLowerCase()
+      );
+    }
+
+    for (const severity of [
+      "## P0 Issue List",
+      "## P1 Issue List",
+      "## P2 Issue List"
+    ] as const) {
+      expect(auditReport, severity).toContain(severity);
+    }
+
+    let previousStepIndex = -1;
+
+    for (const step of requiredRebuildSteps) {
+      const currentStepIndex = rebuildSequence.indexOf(step);
+
+      expect(currentStepIndex, step).toBeGreaterThan(previousStepIndex);
+      previousStepIndex = currentStepIndex;
+    }
+
+    expect(rebuildSequence).toContain(
+      "Save must create or preserve review state."
+    );
+    expect(rebuildSequence).toContain(
+      "Review answers must create events and update review state and daily stats."
+    );
+    expect(rebuildSequence).toContain(
+      "Due, Weak, and Mastered must come from real review state."
     );
   });
 
