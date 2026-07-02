@@ -516,15 +516,16 @@ test.describe("TB-110 private beta owner action packet", () => {
     ]);
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "OWNER-QUEUE-POST-HANDOFF-AUDIT",
-      output_type: "owner_queue_audit_packet",
+      id: "OWNER-AUDIT-REQUIRED",
+      output_type: "audit_required_owner_decision",
+      resulting_status: "audit_required",
       auto_selectable: false,
       auto_mergeable: false,
       implementation_allowed: false,
       live_mutation_allowed: false
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).toEqual([
-      "OWNER-QUEUE-POST-HANDOFF-AUDIT"
+      "OWNER-AUDIT-REQUIRED"
     ]);
     expect(queue.recommended_next_outputs.map((output) => output.rank)).toEqual([
       1
@@ -537,6 +538,9 @@ test.describe("TB-110 private beta owner action packet", () => {
     );
     expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
       "POST-MERGE-HANDOFF-GENERATOR"
+    );
+    expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
+      "OWNER-QUEUE-POST-HANDOFF-AUDIT"
     );
     expect(
       queue.recommended_next_outputs.every(
