@@ -282,16 +282,20 @@ test.describe("post-merge handoff generator packet", () => {
     });
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "OWNER-QUEUE-POST-HANDOFF-AUDIT",
+      id: "OWNER-AUDIT-REQUIRED",
+      resulting_status: "audit_required",
       implementation_allowed: false,
       live_mutation_allowed: false,
       auto_mergeable: false
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).toEqual([
-      "OWNER-QUEUE-POST-HANDOFF-AUDIT"
+      "OWNER-AUDIT-REQUIRED"
     ]);
     expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
       "POST-MERGE-HANDOFF-GENERATOR"
+    );
+    expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
+      "OWNER-QUEUE-POST-HANDOFF-AUDIT"
     );
     expect(queue.selection_result).toMatchObject({
       selected_implementation: null,
