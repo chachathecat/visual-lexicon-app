@@ -113,6 +113,8 @@ docs/TRACK_B_SHELL_NAVIGATION_CLEANUP.md
 docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md
 docs/TRACK_B_DASHBOARD_V2.md
 docs/TRACK_B_REVIEW_SESSION_V2.md
+docs/REVIEW_SESSION_V2_CONTRACT.md
+docs/REVIEW_SESSION_V2_IMPLEMENTATION_SEQUENCE.md
 docs/TRACK_B_REVIEW_RELIABILITY_GATE.md
 docs/TRACK_B_ANALYTICS_RETENTION_GATE.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
@@ -148,6 +150,8 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B Review Shell Consistency](docs/TRACK_B_REVIEW_SHELL_CONSISTENCY.md)
 - [Track B Dashboard V2](docs/TRACK_B_DASHBOARD_V2.md)
 - [Track B Review Session V2](docs/TRACK_B_REVIEW_SESSION_V2.md)
+- [Review Session V2 Contract](docs/REVIEW_SESSION_V2_CONTRACT.md)
+- [Review Session V2 Implementation Sequence](docs/REVIEW_SESSION_V2_IMPLEMENTATION_SEQUENCE.md)
 - [Track B Review Reliability Gate](docs/TRACK_B_REVIEW_RELIABILITY_GATE.md)
 - [Track B Analytics & Retention Gate](docs/TRACK_B_ANALYTICS_RETENTION_GATE.md) - test: `tests/track-b-analytics-retention-gate.spec.ts`
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
