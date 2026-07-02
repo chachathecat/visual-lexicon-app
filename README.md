@@ -265,6 +265,10 @@ Agent and release guidance:
 ```txt
 AGENTS.md
 PLANS.md
+docs/goals/track-b-private-paid-beta-runway.md
+docs/factory/track-b-owner-command-center.md
+docs/factory/track-b-pr-lanes.md
+docs/factory/track-b-merge-gates.md
 docs/world_class_bar.md
 docs/product_quality_rubric.md
 docs/golden_user_flows.md
@@ -277,6 +281,13 @@ evals/visual_lexicon_golden_cases.json
 These docs define the product bar, quality rubric, golden flows, review
 standards, safety boundaries, release checklist, and golden eval cases for paid
 beta hardening. They do not change runtime behavior.
+
+Factory goal runway docs:
+
+- [Track B Private Paid Beta Goal Runway](docs/goals/track-b-private-paid-beta-runway.md)
+- [Track B Owner Command Center](docs/factory/track-b-owner-command-center.md)
+- [Track B PR Lanes](docs/factory/track-b-pr-lanes.md)
+- [Track B Merge Gates](docs/factory/track-b-merge-gates.md)
 
 ## Current Scope
 
