@@ -103,6 +103,7 @@ type Queue = {
     tb_090_selected: boolean;
     tb_090_owner_decision_packet_work_selected: boolean;
     tb_110_owner_action_packet_selected: boolean;
+    post_merge_handoff_generator_selected?: boolean;
     public_paid_beta_selected: boolean;
     private_manual_beta_launch_selected: boolean;
   };
@@ -287,17 +288,23 @@ test.describe("TB-110 owner action packet outcome", () => {
     );
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "POST-MERGE-HANDOFF-GENERATOR"
+      id: "OWNER-QUEUE-POST-HANDOFF-AUDIT"
     });
     expect(queue.recommended_next_outputs[0]).toMatchObject({
       rank: 1,
-      id: "POST-MERGE-HANDOFF-GENERATOR",
+      id: "OWNER-QUEUE-POST-HANDOFF-AUDIT",
       auto_selectable: false,
       implementation_allowed: false,
       live_mutation_allowed: false
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
       "TB-110-PRIVATE-BETA-OWNER-ACTION-PACKET"
+    );
+    expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
+      "POST-MERGE-HANDOFF-GENERATOR"
+    );
+    expect(queue.selection_result.post_merge_handoff_generator_selected).toBe(
+      false
     );
   });
 
@@ -397,7 +404,8 @@ test.describe("TB-110 owner action packet outcome", () => {
     expect(queue.safety_confirmation).toMatchObject({
       live_mutations_remain_disabled: true,
       auto_merge_remains_disabled: true,
-      post_merge_handoff_generator_is_next_safe_output: true
+      post_merge_handoff_generator_not_reselected: true,
+      owner_queue_post_handoff_audit_is_next_safe_output: true
     });
   });
 });
