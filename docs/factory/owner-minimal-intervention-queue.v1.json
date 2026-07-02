@@ -17,10 +17,19 @@
     "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
     "docs/factory/tb-110-owner-action-packet-outcome.v1.json",
     "docs/factory/tb-110-owner-action-packet-outcome.md",
-    "tests/factory-tb-110-owner-action-packet-outcome.spec.ts"
+    "tests/factory-tb-110-owner-action-packet-outcome.spec.ts",
+    "docs/factory/post-merge-handoff-generator.v1.json",
+    "docs/factory/post-merge-handoff-generator.md",
+    "tests/factory-post-merge-handoff-generator.spec.ts",
+    "docs/factory/ci-failure-triage-seed.v1.json",
+    "docs/factory/ci-failure-triage-seed.md",
+    "tests/factory-ci-failure-triage-seed.spec.ts",
+    "docs/factory/post-merge-handoff-generator-outcome.v1.json",
+    "docs/factory/post-merge-handoff-generator-outcome.md",
+    "tests/factory-post-merge-handoff-generator-outcome.spec.ts"
   ],
   "this_pr": {
-    "type": "factory_docs_tests_owner_action_packet_outcome",
+    "type": "factory_docs_tests_post_merge_handoff_generator_outcome",
     "docs_tests_only": true,
     "runtime_ui_changes": false,
     "account_sync_implementation": false,
@@ -49,7 +58,10 @@
       "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts",
       "docs/factory/tb-110-owner-action-packet-outcome.v1.json",
       "docs/factory/tb-110-owner-action-packet-outcome.md",
-      "tests/factory-tb-110-owner-action-packet-outcome.spec.ts"
+      "tests/factory-tb-110-owner-action-packet-outcome.spec.ts",
+      "docs/factory/post-merge-handoff-generator-outcome.v1.json",
+      "docs/factory/post-merge-handoff-generator-outcome.md",
+      "tests/factory-post-merge-handoff-generator-outcome.spec.ts"
     ]
   },
   "router_contract": {
@@ -69,8 +81,8 @@
     "stale_evidence_ready": false
   },
   "latest_merged_factory_state": {
-    "state_label": "post_pr_147_tb_110_owner_action_packet_merged",
-    "summary": "PR #145, PR #146, and PR #147 are merged, PR #121 has been manually closed as stale/superseded, the TB-110 owner action packet exists as actual evidence, and the remaining queue is owner handoff work only.",
+    "state_label": "post_pr_150_post_merge_handoff_generator_merged",
+    "summary": "PR #147, PR #149, PR #148, and PR #150 are merged. PR #150 added the post-merge handoff generator and CI failure triage seed as actual evidence, so POST-MERGE-HANDOFF-GENERATOR is not selected again. The remaining queue is owner-only docs/tests reconciliation work.",
     "merged_factory_prs": [
       {
         "number": 144,
@@ -120,6 +132,69 @@
           "tests/factory-tb-110-private-beta-owner-action-packet.spec.ts"
         ],
         "runtime_or_protected_surface_effect": "none"
+      },
+      {
+        "number": 149,
+        "state": "merged",
+        "merged": true,
+        "merge_commit": "fcdd91f7b5cec444d25d35be3a6bdcc38519bcf6",
+        "purpose": "Stabilize Figma parity screenshots with deterministic test-context changes only.",
+        "evidence_paths": [
+          "tests/figma-parity-screenshots.spec.ts"
+        ],
+        "runtime_or_protected_surface_effect": "none"
+      },
+      {
+        "number": 148,
+        "state": "merged",
+        "merged": true,
+        "merge_commit": "4560e556ff682f3813983f4bc4f07c7868255ad9",
+        "purpose": "Apply the owner queue outcome update after the TB-110 owner action packet merged.",
+        "evidence_paths": [
+          "docs/factory/tb-110-owner-action-packet-outcome.v1.json",
+          "docs/factory/tb-110-owner-action-packet-outcome.md",
+          "docs/factory/owner-minimal-intervention-queue.v1.json",
+          "docs/factory/owner-minimal-intervention-queue.md",
+          "tests/factory-tb-110-owner-action-packet-outcome.spec.ts",
+          "tests/factory-owner-minimal-intervention-queue.spec.ts"
+        ],
+        "runtime_or_protected_surface_effect": "none"
+      },
+      {
+        "number": 150,
+        "state": "merged",
+        "merged": true,
+        "merge_commit": "96d53a7bd3f054aaa9b2af43f04feab43b97304c",
+        "purpose": "Create the post-merge handoff generator and CI failure triage seed.",
+        "evidence_paths": [
+          "docs/factory/post-merge-handoff-generator.v1.json",
+          "docs/factory/post-merge-handoff-generator.md",
+          "tests/factory-post-merge-handoff-generator.spec.ts",
+          "docs/factory/ci-failure-triage-seed.v1.json",
+          "docs/factory/ci-failure-triage-seed.md",
+          "tests/factory-ci-failure-triage-seed.spec.ts"
+        ],
+        "runtime_or_protected_surface_effect": "none"
+      }
+    ],
+    "completed_owner_outputs": [
+      {
+        "id": "POST-MERGE-HANDOFF-GENERATOR",
+        "title": "Post-merge handoff generator",
+        "completed_by_pull_request": 150,
+        "merge_commit": "96d53a7bd3f054aaa9b2af43f04feab43b97304c",
+        "actual_evidence_paths": [
+          "docs/factory/post-merge-handoff-generator.v1.json",
+          "docs/factory/post-merge-handoff-generator.md",
+          "tests/factory-post-merge-handoff-generator.spec.ts",
+          "docs/factory/ci-failure-triage-seed.v1.json",
+          "docs/factory/ci-failure-triage-seed.md",
+          "tests/factory-ci-failure-triage-seed.spec.ts"
+        ],
+        "router_reselectable": false,
+        "auto_selectable": false,
+        "implementation_allowed": false,
+        "live_mutation_allowed": false
       }
     ],
     "tasks": [
@@ -199,13 +274,14 @@
     "private_manual_beta_launch_selected": false,
     "pr_121_selected": false,
     "tb_110_owner_action_packet_selected": false,
-    "reason": "PR #147 merged the TB-110 owner action packet, so packet-production work is existing evidence and is not selected again. The queue contains handoff generation only and does not select runtime implementation or live mutations."
+    "post_merge_handoff_generator_selected": false,
+    "reason": "PR #150 merged the post-merge handoff generator and CI failure triage seed, so POST-MERGE-HANDOFF-GENERATOR is existing evidence and is not selected again. The queue contains only owner-only docs/tests reconciliation and does not select runtime implementation or live mutations."
   },
   "next_safe_task": {
     "rank": 1,
-    "id": "POST-MERGE-HANDOFF-GENERATOR",
-    "title": "Post-merge handoff generator",
-    "output_type": "handoff_generator_packet",
+    "id": "OWNER-QUEUE-POST-HANDOFF-AUDIT",
+    "title": "Owner queue post-handoff audit packet",
+    "output_type": "owner_queue_audit_packet",
     "resulting_status": "blocked_human",
     "router_candidate_status": "blocked_human",
     "router_selectable": false,
@@ -215,14 +291,14 @@
     "live_mutation_allowed": false,
     "owner_decision_required": true,
     "owner_action_required": true,
-    "recommendation": "Prepare a deterministic post-merge handoff generator that summarizes merged evidence and next owner-only actions without creating branches, PRs, issues, labels, comments, merges, or live GitHub mutations."
+    "recommendation": "Prepare a deterministic docs/tests-only owner queue audit packet after PR #150 without selecting implementation work or creating branches, PRs, issues, labels, comments, merges, or live GitHub mutations."
   },
   "recommended_next_outputs": [
     {
       "rank": 1,
-      "id": "POST-MERGE-HANDOFF-GENERATOR",
-      "title": "Post-merge handoff generator",
-      "output_type": "handoff_generator_packet",
+      "id": "OWNER-QUEUE-POST-HANDOFF-AUDIT",
+      "title": "Owner queue post-handoff audit packet",
+      "output_type": "owner_queue_audit_packet",
       "router_candidate_status": "blocked_human",
       "router_selectable": false,
       "auto_selectable": false,
@@ -231,7 +307,7 @@
       "live_mutation_allowed": false,
       "owner_decision_required": true,
       "owner_action_required": true,
-      "recommendation": "Prepare a deterministic post-merge handoff generator that summarizes merged evidence and next owner-only actions without creating branches, PRs, issues, labels, comments, merges, or live GitHub mutations."
+      "recommendation": "Prepare a deterministic docs/tests-only owner queue audit packet after PR #150 without selecting implementation work or creating branches, PRs, issues, labels, comments, merges, or live GitHub mutations."
     }
   ],
   "blocked_human_decisions": [
@@ -400,12 +476,16 @@
     "tb_090_owner_decision_packet_actual_evidence_path": "docs/factory/tb-090-owner-decision-packet.v1.json",
     "tb_110_owner_action_packet_actual_evidence_path": "docs/factory/tb-110-private-beta-owner-action-packet.v1.json",
     "tb_110_owner_action_packet_markdown_evidence_path": "docs/factory/tb-110-private-beta-owner-action-packet.md",
+    "post_merge_handoff_generator_actual_evidence_path": "docs/factory/post-merge-handoff-generator.v1.json",
+    "post_merge_handoff_generator_markdown_evidence_path": "docs/factory/post-merge-handoff-generator.md",
+    "ci_failure_triage_seed_actual_evidence_path": "docs/factory/ci-failure-triage-seed.v1.json",
+    "ci_failure_triage_seed_markdown_evidence_path": "docs/factory/ci-failure-triage-seed.md",
     "unknown_or_stale_evidence_result": "blocked_human"
   },
   "required_validation": {
     "targeted": [
-      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts tests/factory-tb-110-private-beta-owner-action-packet.spec.ts --workers=1",
-      "npm.cmd run test -- tests/factory-tb-110-owner-action-packet-outcome.spec.ts --workers=1"
+      "npm.cmd run test -- tests/factory-post-merge-handoff-generator-outcome.spec.ts tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1",
+      "npm.cmd run test -- tests/factory-post-merge-handoff-generator.spec.ts tests/factory-ci-failure-triage-seed.spec.ts tests/factory-post-merge-handoff-generator-outcome.spec.ts --workers=1"
     ],
     "before_finish": [
       "npm.cmd run typecheck",
@@ -415,23 +495,27 @@
     ]
   },
   "codex_prompt_draft": {
-    "title": "Post-merge handoff generator",
-    "purpose": "Prepare the next deterministic owner-only handoff after merged PR #147 applied the TB-110 owner action packet outcome.",
+    "title": "Owner queue post-handoff audit packet",
+    "purpose": "Prepare the next deterministic owner-only audit after merged PR #150 added the post-merge handoff generator and CI failure triage seed as actual evidence.",
     "allowed_files": [
       "docs/factory/owner-minimal-intervention-queue.v1.json",
       "docs/factory/owner-minimal-intervention-queue.md",
-      "tests/factory-owner-minimal-intervention-queue.spec.ts"
+      "tests/factory-owner-minimal-intervention-queue.spec.ts",
+      "docs/factory/owner-queue-post-handoff-audit.v1.json",
+      "docs/factory/owner-queue-post-handoff-audit.md",
+      "tests/factory-owner-queue-post-handoff-audit.spec.ts"
     ],
     "prompt_lines": [
-      "You are working in C:\\Users\\jmg91\\Desktop\\visual-lexicon-app-post-merge-handoff on chachathecat/visual-lexicon-app.",
-      "Goal: create a docs/tests-only post-merge handoff generator packet.",
-      "Use the post-PR #147 owner minimal-intervention queue, the merged TB-110 owner action packet, and the manual PR #121 closed stale/superseded context as input evidence.",
+      "You are working in C:\\Users\\jmg91\\Desktop\\visual-lexicon-app-post-merge-handoff-outcome on chachathecat/visual-lexicon-app.",
+      "Goal: create a docs/tests-only owner queue post-handoff audit packet.",
+      "Use the post-PR #150 owner minimal-intervention queue, post-merge handoff generator, CI failure triage seed, and generator outcome packet as input evidence.",
+      "PR #150 is merged at 96d53a7bd3f054aaa9b2af43f04feab43b97304c, so POST-MERGE-HANDOFF-GENERATOR must not be selected again.",
       "PR #147 is merged at b4dd352f8ece4a660d983365ae60169b4c83566d, so the TB-110 owner action packet must not be selected again.",
       "PR #121 remains closed as stale/superseded and must not be reselected, reopened, auto-merged, labeled, commented on, or otherwise mutated from implementation code.",
       "Do not implement account sync, route skeletons, API routes, auth/session behavior, middleware, DB/schema/RLS/migrations/account data, entitlements, payments, billing, runtime UI, workflows, CODEOWNERS, AGENTS.md, DNS, deployment, secrets, Webflow, Cloudflare Workers, R2 production objects, production data, or roadmap status changes.",
       "Do not launch private/manual beta, invite beta participants, charge users, grant entitlements, enable payment/billing, or unblock public paid beta.",
       "Public paid beta remains blocked. Private/manual beta remains gated. TB-110 remains blocked_human / owner-action-required / owner-approval-required.",
-      "Add targeted tests proving merged evidence is summarized, protected surfaces remain untouched, PR #121 and TB-110 owner action packet work are not reselected, and next safe output ordering is deterministic."
+      "Add targeted tests proving PR #150 evidence is summarized, protected surfaces remain untouched, POST-MERGE-HANDOFF-GENERATOR is not reselected, and next safe output ordering is deterministic."
     ]
   },
   "merge_recommendation": {
@@ -441,6 +525,7 @@
     "no_merge_recommendations": [
       "Do not merge PR #121 automatically.",
       "Do not reselect the TB-110 owner action packet after merged PR #147.",
+      "Do not reselect POST-MERGE-HANDOFF-GENERATOR after merged PR #150.",
       "Do not merge any packet that touches protected surfaces.",
       "Do not merge if validation is missing, stale, failed, unknown, or no-op-only.",
       "Do not merge if public paid beta is unblocked or private/manual beta is launched without owner approval.",
@@ -449,7 +534,7 @@
   },
   "post_merge_next_action_summary": {
     "after_this_packet_merges": [
-      "Prepare the post-merge handoff generator."
+      "Prepare the owner queue post-handoff audit packet."
     ],
     "do_not_do": [
       "Do not reselect PR #121.",
@@ -457,6 +542,7 @@
       "Do not reselect TB-090.",
       "Do not reselect TB-090 owner-decision-packet work.",
       "Do not reselect TB-110 owner action packet work.",
+      "Do not reselect POST-MERGE-HANDOFF-GENERATOR.",
       "Do not implement account sync.",
       "Do not add API routes.",
       "Do not enable public paid beta.",
@@ -477,9 +563,13 @@
     "unknown_or_stale_evidence_is_not_ready": true,
     "pr_121_closed_stale_superseded_not_reselected": true,
     "pr_147_merged_owner_action_packet_evidence_recorded": true,
+    "pr_150_merged_post_merge_handoff_generator_evidence_recorded": true,
     "tb_110_owner_action_packet_exists_as_actual_evidence": true,
     "tb_110_owner_action_packet_not_reselected": true,
-    "post_merge_handoff_generator_is_next_safe_output": true,
+    "post_merge_handoff_generator_exists_as_actual_evidence": true,
+    "post_merge_handoff_generator_not_reselected": true,
+    "ci_failure_triage_seed_exists_as_actual_evidence": true,
+    "owner_queue_post_handoff_audit_is_next_safe_output": true,
     "tb_090_not_reselected": true,
     "tb_090_owner_decision_packet_work_not_reselected": true,
     "account_sync_implementation_not_selected": true

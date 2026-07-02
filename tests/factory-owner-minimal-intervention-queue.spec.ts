@@ -73,6 +73,16 @@ type OwnerMinimalInterventionQueue = {
       evidence_paths: string[];
       runtime_or_protected_surface_effect: string;
     }[];
+    completed_owner_outputs?: {
+      id: string;
+      completed_by_pull_request: number;
+      merge_commit: string;
+      actual_evidence_paths: string[];
+      router_reselectable: boolean;
+      auto_selectable: boolean;
+      implementation_allowed: boolean;
+      live_mutation_allowed: boolean;
+    }[];
     tasks: {
       task_id: string;
       title: string;
@@ -136,6 +146,7 @@ type OwnerMinimalInterventionQueue = {
     private_manual_beta_launch_selected: boolean;
     pr_121_selected: boolean;
     tb_110_owner_action_packet_selected: boolean;
+    post_merge_handoff_generator_selected: boolean;
   };
   next_safe_task: QueueOutput;
   recommended_next_outputs: QueueOutput[];
@@ -181,6 +192,10 @@ type OwnerMinimalInterventionQueue = {
     tb_090_owner_decision_packet_actual_evidence_path: string;
     tb_110_owner_action_packet_actual_evidence_path: string;
     tb_110_owner_action_packet_markdown_evidence_path: string;
+    post_merge_handoff_generator_actual_evidence_path: string;
+    post_merge_handoff_generator_markdown_evidence_path: string;
+    ci_failure_triage_seed_actual_evidence_path: string;
+    ci_failure_triage_seed_markdown_evidence_path: string;
     unknown_or_stale_evidence_result: string;
   };
   required_validation: {
@@ -246,6 +261,34 @@ type Tb110OwnerActionPacketOutcome = {
   safety_confirmation: Record<string, boolean>;
 };
 
+type PostMergeHandoffGeneratorOutcome = {
+  schema_version: string;
+  kind: string;
+  merged_pull_request: {
+    number: number;
+    state: string;
+    merged: boolean;
+    merge_commit: string;
+  };
+  evidence: {
+    post_merge_handoff_generator_exists: boolean;
+    post_merge_handoff_generator_is_actual_evidence: boolean;
+    post_merge_handoff_generator_path: string;
+    post_merge_handoff_generator_markdown_path: string;
+    ci_failure_triage_seed_exists: boolean;
+    ci_failure_triage_seed_is_actual_evidence: boolean;
+    ci_failure_triage_seed_path: string;
+    ci_failure_triage_seed_markdown_path: string;
+  };
+  queue_reconciliation: {
+    post_merge_handoff_generator_work_reselectable: boolean;
+    post_merge_handoff_generator_selected: boolean;
+    next_safe_task_id: string;
+    recommended_next_outputs_rank_1: string;
+  };
+  safety_confirmation: Record<string, boolean>;
+};
+
 const QUEUE_JSON_PATH = [
   "docs",
   "factory",
@@ -281,6 +324,36 @@ const TB_110_OUTCOME_MD_PATH = [
   "factory",
   "tb-110-owner-action-packet-outcome.md"
 ];
+const POST_MERGE_HANDOFF_GENERATOR_PATH = [
+  "docs",
+  "factory",
+  "post-merge-handoff-generator.v1.json"
+];
+const POST_MERGE_HANDOFF_GENERATOR_MD_PATH = [
+  "docs",
+  "factory",
+  "post-merge-handoff-generator.md"
+];
+const CI_FAILURE_TRIAGE_SEED_PATH = [
+  "docs",
+  "factory",
+  "ci-failure-triage-seed.v1.json"
+];
+const CI_FAILURE_TRIAGE_SEED_MD_PATH = [
+  "docs",
+  "factory",
+  "ci-failure-triage-seed.md"
+];
+const POST_MERGE_HANDOFF_GENERATOR_OUTCOME_PATH = [
+  "docs",
+  "factory",
+  "post-merge-handoff-generator-outcome.v1.json"
+];
+const POST_MERGE_HANDOFF_GENERATOR_OUTCOME_MD_PATH = [
+  "docs",
+  "factory",
+  "post-merge-handoff-generator-outcome.md"
+];
 
 function readJson<T>(...parts: string[]): T {
   return JSON.parse(readFileSync(join(process.cwd(), ...parts), "utf8")) as T;
@@ -296,6 +369,10 @@ function readTb090Packet(): Tb090OwnerDecisionPacket {
 
 function readTb110Outcome(): Tb110OwnerActionPacketOutcome {
   return readJson(...TB_110_OUTCOME_PATH);
+}
+
+function readPostMergeHandoffGeneratorOutcome(): PostMergeHandoffGeneratorOutcome {
+  return readJson(...POST_MERGE_HANDOFF_GENERATOR_OUTCOME_PATH);
 }
 
 function taskById(queue: OwnerMinimalInterventionQueue, taskId: string) {
@@ -366,12 +443,16 @@ function deterministicQueueOutput(queue: OwnerMinimalInterventionQueue) {
 }
 
 test.describe("owner minimal-intervention queue", () => {
-  test("artifact files exist and summarize the post-PR #147 state", () => {
+  test("artifact files exist and summarize the post-PR #150 state", () => {
     const queue = readQueue();
     const outcome = readTb110Outcome();
+    const generatorOutcome = readPostMergeHandoffGeneratorOutcome();
     const markdown = readFileSync(join(process.cwd(), ...QUEUE_MD_PATH), "utf8");
     const pr147 = queue.latest_merged_factory_state.merged_factory_prs.find(
       (pr) => pr.number === 147
+    );
+    const pr150 = queue.latest_merged_factory_state.merged_factory_prs.find(
+      (pr) => pr.number === 150
     );
 
     expect(existsSync(join(process.cwd(), ...QUEUE_JSON_PATH))).toBe(true);
@@ -380,6 +461,24 @@ test.describe("owner minimal-intervention queue", () => {
     expect(existsSync(join(process.cwd(), ...TB_110_OUTCOME_MD_PATH))).toBe(
       true
     );
+    expect(existsSync(join(process.cwd(), ...POST_MERGE_HANDOFF_GENERATOR_PATH))).toBe(
+      true
+    );
+    expect(
+      existsSync(join(process.cwd(), ...POST_MERGE_HANDOFF_GENERATOR_MD_PATH))
+    ).toBe(true);
+    expect(existsSync(join(process.cwd(), ...CI_FAILURE_TRIAGE_SEED_PATH))).toBe(
+      true
+    );
+    expect(existsSync(join(process.cwd(), ...CI_FAILURE_TRIAGE_SEED_MD_PATH))).toBe(
+      true
+    );
+    expect(
+      existsSync(join(process.cwd(), ...POST_MERGE_HANDOFF_GENERATOR_OUTCOME_PATH))
+    ).toBe(true);
+    expect(
+      existsSync(join(process.cwd(), ...POST_MERGE_HANDOFF_GENERATOR_OUTCOME_MD_PATH))
+    ).toBe(true);
     expect(queue).toMatchObject({
       schema_version: "1.0.0",
       kind: "owner_minimal_intervention_queue",
@@ -415,10 +514,37 @@ test.describe("owner minimal-intervention queue", () => {
         merge_commit: "b4dd352f8ece4a660d983365ae60169b4c83566d"
       }
     });
+    expect(pr150).toMatchObject({
+      number: 150,
+      state: "merged",
+      merged: true,
+      merge_commit: "96d53a7bd3f054aaa9b2af43f04feab43b97304c",
+      evidence_paths: [
+        "docs/factory/post-merge-handoff-generator.v1.json",
+        "docs/factory/post-merge-handoff-generator.md",
+        "tests/factory-post-merge-handoff-generator.spec.ts",
+        "docs/factory/ci-failure-triage-seed.v1.json",
+        "docs/factory/ci-failure-triage-seed.md",
+        "tests/factory-ci-failure-triage-seed.spec.ts"
+      ],
+      runtime_or_protected_surface_effect: "none"
+    });
+    expect(generatorOutcome).toMatchObject({
+      schema_version: "1.0.0",
+      kind: "post_merge_handoff_generator_outcome",
+      merged_pull_request: {
+        number: 150,
+        state: "merged",
+        merged: true,
+        merge_commit: "96d53a7bd3f054aaa9b2af43f04feab43b97304c"
+      }
+    });
     expect(markdown).toContain("# Owner Minimal-Intervention Queue");
     expect(markdown).toContain("PR #147 is merged");
+    expect(markdown).toContain("PR #150 is merged");
     expect(markdown).toContain("PR #121 remains closed/stale/superseded");
     expect(markdown).toContain("TB-110 owner action packet work is not reselectable");
+    expect(markdown).toContain("POST-MERGE-HANDOFF-GENERATOR` is not reselected");
     expect(markdown).toContain("TB-090 remains `partial_verified`");
   });
 
@@ -677,12 +803,16 @@ test.describe("owner minimal-intervention queue", () => {
     }
   });
 
-  test("next outputs are ordered deterministically after PR #147", () => {
+  test("next outputs are ordered deterministically after PR #150", () => {
     const queue = readQueue();
+    const completedGenerator =
+      queue.latest_merged_factory_state.completed_owner_outputs?.find(
+        (output) => output.id === "POST-MERGE-HANDOFF-GENERATOR"
+      );
 
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "POST-MERGE-HANDOFF-GENERATOR",
+      id: "OWNER-QUEUE-POST-HANDOFF-AUDIT",
       router_selectable: false,
       auto_selectable: false,
       auto_mergeable: false,
@@ -691,13 +821,36 @@ test.describe("owner minimal-intervention queue", () => {
       owner_decision_required: true
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).toEqual([
-      "POST-MERGE-HANDOFF-GENERATOR"
+      "OWNER-QUEUE-POST-HANDOFF-AUDIT"
     ]);
     expect(queue.recommended_next_outputs.map((output) => output.rank)).toEqual([
       1
     ]);
     expect(queue.selection_result.tb_110_owner_action_packet_selected).toBe(
       false
+    );
+    expect(queue.selection_result.post_merge_handoff_generator_selected).toBe(
+      false
+    );
+    expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
+      "POST-MERGE-HANDOFF-GENERATOR"
+    );
+    expect(completedGenerator).toMatchObject({
+      id: "POST-MERGE-HANDOFF-GENERATOR",
+      completed_by_pull_request: 150,
+      merge_commit: "96d53a7bd3f054aaa9b2af43f04feab43b97304c",
+      router_reselectable: false,
+      auto_selectable: false,
+      implementation_allowed: false,
+      live_mutation_allowed: false
+    });
+    expect(completedGenerator?.actual_evidence_paths).toEqual(
+      expect.arrayContaining([
+        "docs/factory/post-merge-handoff-generator.v1.json",
+        "docs/factory/post-merge-handoff-generator.md",
+        "docs/factory/ci-failure-triage-seed.v1.json",
+        "docs/factory/ci-failure-triage-seed.md"
+      ])
     );
     expect(
       queue.recommended_next_outputs.every(
@@ -722,6 +875,14 @@ test.describe("owner minimal-intervention queue", () => {
       unknown_evidence_is_ready: false,
       stale_evidence_is_ready: false,
       stale_pr_is_ready: false,
+      post_merge_handoff_generator_actual_evidence_path:
+        "docs/factory/post-merge-handoff-generator.v1.json",
+      post_merge_handoff_generator_markdown_evidence_path:
+        "docs/factory/post-merge-handoff-generator.md",
+      ci_failure_triage_seed_actual_evidence_path:
+        "docs/factory/ci-failure-triage-seed.v1.json",
+      ci_failure_triage_seed_markdown_evidence_path:
+        "docs/factory/ci-failure-triage-seed.md",
       unknown_or_stale_evidence_result: "blocked_human"
     });
     expect(queue.safety_confirmation.unknown_or_stale_evidence_is_not_ready).toBe(
@@ -740,18 +901,22 @@ test.describe("owner minimal-intervention queue", () => {
       "npm.cmd run test -- --workers=1"
     ]);
     expect(queue.required_validation.targeted).toEqual([
-      "npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts tests/factory-tb-110-private-beta-owner-action-packet.spec.ts --workers=1",
-      "npm.cmd run test -- tests/factory-tb-110-owner-action-packet-outcome.spec.ts --workers=1"
+      "npm.cmd run test -- tests/factory-post-merge-handoff-generator-outcome.spec.ts tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1",
+      "npm.cmd run test -- tests/factory-post-merge-handoff-generator.spec.ts tests/factory-ci-failure-triage-seed.spec.ts tests/factory-post-merge-handoff-generator-outcome.spec.ts --workers=1"
     ]);
     expect(queue.codex_prompt_draft).toMatchObject({
-      title: "Post-merge handoff generator",
+      title: "Owner queue post-handoff audit packet",
       allowed_files: [
         "docs/factory/owner-minimal-intervention-queue.v1.json",
         "docs/factory/owner-minimal-intervention-queue.md",
-        "tests/factory-owner-minimal-intervention-queue.spec.ts"
+        "tests/factory-owner-minimal-intervention-queue.spec.ts",
+        "docs/factory/owner-queue-post-handoff-audit.v1.json",
+        "docs/factory/owner-queue-post-handoff-audit.md",
+        "tests/factory-owner-queue-post-handoff-audit.spec.ts"
       ]
     });
     expect(promptText).toContain("docs/tests-only");
+    expect(promptText).toContain("PR #150 is merged");
     expect(promptText).toContain("PR #147 is merged");
     expect(promptText).toContain("must not be selected again");
     expect(promptText).toContain("PR #121 remains closed as stale/superseded");
@@ -766,15 +931,20 @@ test.describe("owner minimal-intervention queue", () => {
       expect.arrayContaining([
         "Do not merge PR #121 automatically.",
         "Do not reselect the TB-110 owner action packet after merged PR #147.",
+        "Do not reselect POST-MERGE-HANDOFF-GENERATOR after merged PR #150.",
         "Do not merge any packet that touches protected surfaces."
       ])
     );
     expect(queue.safety_confirmation).toMatchObject({
       pr_121_closed_stale_superseded_not_reselected: true,
       pr_147_merged_owner_action_packet_evidence_recorded: true,
+      pr_150_merged_post_merge_handoff_generator_evidence_recorded: true,
       tb_110_owner_action_packet_exists_as_actual_evidence: true,
       tb_110_owner_action_packet_not_reselected: true,
-      post_merge_handoff_generator_is_next_safe_output: true
+      post_merge_handoff_generator_exists_as_actual_evidence: true,
+      ci_failure_triage_seed_exists_as_actual_evidence: true,
+      post_merge_handoff_generator_not_reselected: true,
+      owner_queue_post_handoff_audit_is_next_safe_output: true
     });
   });
 

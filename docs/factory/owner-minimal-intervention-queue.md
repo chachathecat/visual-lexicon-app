@@ -2,12 +2,12 @@
 
 `docs/factory/owner-minimal-intervention-queue.v1.json` is the deterministic
 owner queue after merged factory/status work. It assumes the current expected
-state after PR #147:
+state after PR #150:
 
-- PR #144 is merged.
-- PR #145 is merged.
-- PR #146 is merged.
 - PR #147 is merged at `b4dd352f8ece4a660d983365ae60169b4c83566d`.
+- PR #149 is merged at `fcdd91f7b5cec444d25d35be3a6bdcc38519bcf6`.
+- PR #148 is merged at `4560e556ff682f3813983f4bc4f07c7868255ad9`.
+- PR #150 is merged at `96d53a7bd3f054aaa9b2af43f04feab43b97304c`.
 - The TB-090 verification outcome is applied.
 - The TB-090 owner decision packet exists as actual evidence.
 - TB-090 remains `partial_verified` / `blocked_human` / not auto-selectable.
@@ -20,6 +20,15 @@ state after PR #147:
 - The TB-110 owner action packet markdown exists as actual evidence at
   `docs/factory/tb-110-private-beta-owner-action-packet.md`.
 - TB-110 owner action packet work is not reselectable.
+- The post-merge handoff generator exists as actual evidence at
+  `docs/factory/post-merge-handoff-generator.v1.json`.
+- The post-merge handoff generator markdown exists as actual evidence at
+  `docs/factory/post-merge-handoff-generator.md`.
+- The CI failure triage seed exists as actual evidence at
+  `docs/factory/ci-failure-triage-seed.v1.json`.
+- The CI failure triage seed markdown exists as actual evidence at
+  `docs/factory/ci-failure-triage-seed.md`.
+- `POST-MERGE-HANDOFF-GENERATOR` is not reselected.
 - PR #121 remains closed/stale/superseded and not auto-selectable.
 - Public paid beta remains blocked.
 - Private/manual beta remains gated.
@@ -42,9 +51,9 @@ ordered by `rank`, then `id`.
 
 ## Latest Merged Factory State
 
-PR #147 is treated as the latest merged factory/status state. The merged state
-records the TB-090 owner decision packet and the TB-110 owner action packet as
-actual evidence, but only as packet-production evidence. It does not authorize
+PR #150 is treated as the latest merged factory/status state. The merged state
+records the post-merge handoff generator and the CI failure triage seed as
+actual evidence, but only as docs/tests packet evidence. It does not authorize
 account sync, disabled route skeleton runtime files, private/manual beta launch,
 public paid beta launch, invites, entitlement grants, API routes, auth/session
 changes, middleware, database changes, entitlement changes, payment, billing, or
@@ -52,7 +61,8 @@ production mutations.
 
 TB-100 is already verified through PR #82 and is not reselected. TB-110 remains
 blocked-human because private/manual beta launch requires owner action. The
-already-merged TB-110 owner action packet is not selected again.
+already-merged TB-110 owner action packet is not selected again. The
+already-merged `POST-MERGE-HANDOFF-GENERATOR` output is not selected again.
 
 ## Closed Stale PRs
 
@@ -71,13 +81,13 @@ otherwise mutate PR #121.
 
 ## Next Safe Outputs
 
-After PR #147, the next safe owner output is:
+After PR #150, the next safe owner output is:
 
-1. Post-merge handoff generator.
+1. Owner queue post-handoff audit packet.
 
-The TB-110 private beta owner action packet was already merged in PR #147 and
-must not be selected again. The remaining output is handoff work only. It is not
-a runtime implementation task and it does not permit live GitHub mutations.
+The post-merge handoff generator was already merged in PR #150 and must not be
+selected again. The remaining output is owner-only audit work. It is not a
+runtime implementation task and it does not permit live GitHub mutations.
 
 ## Blocked-Human Decisions
 
@@ -109,11 +119,11 @@ Workers, R2 production objects, production data, and roadmap status.
 
 ## Required Validation
 
-Run the targeted packet spec:
+Run the targeted packet specs:
 
 ```powershell
-npm.cmd run test -- tests/factory-owner-minimal-intervention-queue.spec.ts tests/factory-tb-110-private-beta-owner-action-packet.spec.ts --workers=1
-npm.cmd run test -- tests/factory-tb-110-owner-action-packet-outcome.spec.ts --workers=1
+npm.cmd run test -- tests/factory-post-merge-handoff-generator-outcome.spec.ts tests/factory-owner-minimal-intervention-queue.spec.ts --workers=1
+npm.cmd run test -- tests/factory-post-merge-handoff-generator.spec.ts tests/factory-ci-failure-triage-seed.spec.ts tests/factory-post-merge-handoff-generator-outcome.spec.ts --workers=1
 ```
 
 Before finishing, run:
@@ -128,29 +138,32 @@ npm.cmd run test -- --workers=1
 ## Codex Prompt Draft
 
 ```txt
-You are working in C:\Users\jmg91\Desktop\visual-lexicon-app-post-merge-handoff on chachathecat/visual-lexicon-app.
-Goal: create a docs/tests-only post-merge handoff generator packet.
-Use the post-PR #147 owner minimal-intervention queue as input evidence.
+You are working in C:\Users\jmg91\Desktop\visual-lexicon-app-post-merge-handoff-outcome on chachathecat/visual-lexicon-app.
+Goal: create a docs/tests-only owner queue post-handoff audit packet.
+Use the post-PR #150 owner minimal-intervention queue, post-merge handoff generator, CI failure triage seed, and generator outcome packet as input evidence.
+PR #150 is merged at 96d53a7bd3f054aaa9b2af43f04feab43b97304c, so POST-MERGE-HANDOFF-GENERATOR must not be selected again.
 PR #147 is merged at b4dd352f8ece4a660d983365ae60169b4c83566d, so the TB-110 owner action packet must not be selected again.
 Do not reopen, close, merge, label, comment on, or otherwise mutate GitHub from implementation code.
 Do not implement account sync, route skeletons, API routes, auth/session behavior, middleware, DB/schema/RLS/migrations/account data, entitlements, payments, billing, runtime UI, workflows, CODEOWNERS, AGENTS.md, DNS, deployment, secrets, Webflow, Cloudflare Workers, R2 production objects, production data, or roadmap status changes.
 Public paid beta remains blocked. Private/manual beta remains gated. Owner approval is required for blocked-human tasks.
-Add targeted tests proving PR #147 merged evidence is represented, PR #121 is closed/stale/superseded/not auto-selectable, TB-110 owner action packet work is not selected again, `POST-MERGE-HANDOFF-GENERATOR` is rank 1, and no live mutation or auto-merge is enabled.
+Add targeted tests proving PR #150 merged evidence is represented, POST-MERGE-HANDOFF-GENERATOR is not selected again, protected surfaces remain untouched, and no live mutation or auto-merge is enabled.
 ```
 
 ## Merge Recommendation
 
 Merge this docs/tests packet only after required validation passes. Do not
-auto-merge it. Do not merge PR #121 automatically. Do not merge any packet that
-touches protected surfaces or treats missing, stale, unknown, failed, or
-no-op-only validation as ready.
+auto-merge it. Do not merge PR #121 automatically. Do not reselect
+`POST-MERGE-HANDOFF-GENERATOR`. Do not merge any packet that touches protected
+surfaces or treats missing, stale, unknown, failed, or no-op-only validation as
+ready.
 
 ## Post-Merge Next Action
 
-After this packet merges, prepare the post-merge handoff generator.
+After this packet merges, prepare the owner queue post-handoff audit packet.
 
 Do not reselect TB-090, do not reselect TB-090 owner-decision-packet work, do
-not reselect the TB-110 owner action packet, do not implement account sync, do
-not add API routes, do not enable public paid beta, do not launch private/manual
-beta, do not enable auto-merge, and do not perform live GitHub mutations from
+not reselect the TB-110 owner action packet, do not reselect
+`POST-MERGE-HANDOFF-GENERATOR`, do not implement account sync, do not add API
+routes, do not enable public paid beta, do not launch private/manual beta, do
+not enable auto-merge, and do not perform live GitHub mutations from
 implementation code.

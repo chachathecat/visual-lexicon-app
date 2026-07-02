@@ -99,6 +99,7 @@ type OwnerQueue = {
     selected_implementation: null;
     selected_runtime_task: null;
     tb_110_owner_action_packet_selected: boolean;
+    post_merge_handoff_generator_selected: boolean;
   };
   next_safe_task: {
     rank: number;
@@ -249,7 +250,7 @@ test.describe("post-merge handoff generator packet", () => {
     });
   });
 
-  test("POST-MERGE-HANDOFF-GENERATOR is rank 1 and no implementation task is selected", () => {
+  test("packet selected the generator historically and the current queue moved on", () => {
     const packet = readPacket();
     const queue = readQueue();
 
@@ -281,18 +282,22 @@ test.describe("post-merge handoff generator packet", () => {
     });
     expect(queue.next_safe_task).toMatchObject({
       rank: 1,
-      id: "POST-MERGE-HANDOFF-GENERATOR",
+      id: "OWNER-QUEUE-POST-HANDOFF-AUDIT",
       implementation_allowed: false,
       live_mutation_allowed: false,
       auto_mergeable: false
     });
     expect(queue.recommended_next_outputs.map((output) => output.id)).toEqual([
-      "POST-MERGE-HANDOFF-GENERATOR"
+      "OWNER-QUEUE-POST-HANDOFF-AUDIT"
     ]);
+    expect(queue.recommended_next_outputs.map((output) => output.id)).not.toContain(
+      "POST-MERGE-HANDOFF-GENERATOR"
+    );
     expect(queue.selection_result).toMatchObject({
       selected_implementation: null,
       selected_runtime_task: null,
-      tb_110_owner_action_packet_selected: false
+      tb_110_owner_action_packet_selected: false,
+      post_merge_handoff_generator_selected: false
     });
   });
 
