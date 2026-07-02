@@ -1832,6 +1832,29 @@ select {
   line-height: 1.5;
 }
 
+.review-v2-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.review-v2-summary-stats .track-b-metric-pill {
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+  min-height: 74px;
+  padding: 10px 12px;
+  border-radius: var(--vlx-track-b-radius-md);
+}
+
+.review-v2-summary-stats .track-b-metric-pill__value {
+  font-size: 1.25rem;
+}
+
+.review-v2-summary-stats .track-b-metric-pill__detail {
+  line-height: 1.25;
+}
+
 .review-results {
   display: grid;
   gap: 8px;
