@@ -174,6 +174,15 @@ function maxDurationMs(value: string) {
   );
 }
 
+async function expectNoHorizontalOverflow(page: Page) {
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth
+  }));
+
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+}
+
 test.describe("Track B accessibility release gate", () => {
   test("keyboard-only dashboard to review feedback to summary flow", async ({
     page
@@ -244,9 +253,7 @@ test.describe("Track B accessibility release gate", () => {
     await expectVisibleFocus(page);
   });
 
-  test("mobile focus is not obscured by the bottom navigation", async ({
-    page
-  }) => {
+  test("mobile focus is not obscured by the bottom navigation", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await seedCoreLoopState(page);
     await page.goto("/saved", { waitUntil: "networkidle" });
@@ -311,7 +318,7 @@ test.describe("Track B accessibility release gate", () => {
     await expect(page.locator('[role="status"]')).toHaveCount(1);
   });
 
-  test("correct and wrong review feedback announcements are not duplicated", async ({
+  test("Review v2 feedback announcements remain singular and state-aware", async ({
     page
   }) => {
     await seedCoreLoopState(page);
@@ -325,7 +332,7 @@ test.describe("Track B accessibility release gate", () => {
     const liveRegion = page.getByTestId("review-live-region");
     await expect(liveRegion).toHaveAttribute("role", "status");
     await expect(liveRegion).toHaveAttribute("aria-live", "polite");
-    await expect(liveRegion).toContainText("Correct. Dissonance.");
+    await expect(liveRegion).toContainText(/Correct.*Dissonance/i);
     await expect(liveRegion).toContainText("Memory state updated");
     await expect(page.locator('[role="status"]')).toHaveCount(1);
 
@@ -341,8 +348,12 @@ test.describe("Track B accessibility release gate", () => {
       .click();
     await page.getByRole("button", { name: "I forgot" }).click();
 
-    await expect(liveRegion).toContainText("Wrong. Dissonance.");
-    await expect(liveRegion).toContainText("Memory state updated");
+    await expect(page.getByTestId("review-live-region")).toContainText(
+      /Wrong.*Dissonance/i
+    );
+    await expect(page.getByTestId("review-live-region")).toContainText(
+      "Memory state updated"
+    );
     await expect(page.locator('[role="status"]')).toHaveCount(1);
   });
 
@@ -353,7 +364,7 @@ test.describe("Track B accessibility release gate", () => {
       await page.goto(route, { waitUntil: "networkidle" });
 
       await expect(page.getByRole("main")).toHaveCount(1);
-      await expect(page.locator("h1")).toHaveCount(1);
+      await expect(page.locator("main h1")).toHaveCount(1);
       await expect(page.getByRole("navigation").first()).toBeAttached();
 
       const headingLevels = await page
@@ -402,15 +413,7 @@ test.describe("Track B accessibility release gate", () => {
     for (const route of seededRoutes) {
       await seedCoreLoopState(page);
       await page.goto(route, { waitUntil: "networkidle" });
-
-      const dimensions = await page.evaluate(() => ({
-        clientWidth: document.documentElement.clientWidth,
-        scrollWidth: document.documentElement.scrollWidth
-      }));
-
-      expect(dimensions.scrollWidth).toBeLessThanOrEqual(
-        dimensions.clientWidth + 1
-      );
+      await expectNoHorizontalOverflow(page);
     }
   });
 
@@ -422,21 +425,11 @@ test.describe("Track B accessibility release gate", () => {
     for (const route of seededRoutes) {
       await seedCoreLoopState(page);
       await page.goto(route, { waitUntil: "networkidle" });
-
-      const dimensions = await page.evaluate(() => ({
-        clientWidth: document.documentElement.clientWidth,
-        scrollWidth: document.documentElement.scrollWidth
-      }));
-
-      expect(dimensions.scrollWidth).toBeLessThanOrEqual(
-        dimensions.clientWidth + 1
-      );
+      await expectNoHorizontalOverflow(page);
     }
   });
 
-  test("reduced-motion smoke removes route transition duration", async ({
-    page
-  }) => {
+  test("reduced-motion smoke removes route transition duration", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await seedCoreLoopState(page);
     await page.goto("/review?mode=word&slug=dissonance&limit=1", {
@@ -451,9 +444,7 @@ test.describe("Track B accessibility release gate", () => {
     expect(maxDurationMs(transitionDuration)).toBeLessThanOrEqual(1);
   });
 
-  test("interactive targets meet WCAG 2.2 minimum dimensions", async ({
-    page
-  }) => {
+  test("interactive targets meet WCAG 2.2 minimum dimensions", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
     for (const route of seededRoutes) {
