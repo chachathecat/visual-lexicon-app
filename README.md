@@ -119,6 +119,8 @@ docs/TRACK_B_REVIEW_RELIABILITY_GATE.md
 docs/TRACK_B_ANALYTICS_RETENTION_GATE.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
 docs/TRACK_B_PACKS_V2.md
+docs/PACKS_V2_CONTRACT.md
+docs/PACKS_V2_IMPLEMENTATION_SEQUENCE.md
 docs/TRACK_B_PRICING_PAYWALL_V2.md
 docs/TRACK_B_OWNER_LOCAL_SMOKE_AFTER_SIMPLIFICATION.md
 docs/PAID_BETA_READINESS_AUDIT.md
@@ -156,6 +158,8 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B Analytics & Retention Gate](docs/TRACK_B_ANALYTICS_RETENTION_GATE.md) - test: `tests/track-b-analytics-retention-gate.spec.ts`
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)
+- [Packs v2 Contract](docs/PACKS_V2_CONTRACT.md)
+- [Packs v2 Implementation Sequence](docs/PACKS_V2_IMPLEMENTATION_SEQUENCE.md)
 - [Track B Pricing / Paywall V2](docs/TRACK_B_PRICING_PAYWALL_V2.md)
 - [Track B Owner Local Smoke After Simplification](docs/TRACK_B_OWNER_LOCAL_SMOKE_AFTER_SIMPLIFICATION.md)
 - [Paid Beta Readiness Audit](docs/PAID_BETA_READINESS_AUDIT.md)
