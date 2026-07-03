@@ -3830,13 +3830,15 @@ select {
 .saved-v2-queue {
   display: grid;
   gap: 28px;
-  width: min(100%, 620px);
+  width: min(100%, 860px);
   margin: 0 auto;
   padding: 32px 0 48px;
 }
 
 .saved-v2-queue-hero {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: flex-end;
   gap: 14px;
   padding: 0;
   border: 0;
@@ -3867,8 +3869,31 @@ select {
 }
 
 .saved-v2-queue-hero .track-b-button {
-  width: fit-content;
   gap: 8px;
+}
+
+.saved-v2-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.saved-v2-bulk-actions .track-b-button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.saved-v2-bulk-actions strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  font-size: 0.76rem;
 }
 
 .saved-v2-section__header {
@@ -3936,6 +3961,66 @@ select {
   gap: var(--vlx-track-b-space-sm);
 }
 
+.saved-v2-state-card {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  min-height: 102px;
+  padding: 14px;
+  border: 1px solid rgba(105, 78, 65, 0.1);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 8px rgba(44, 24, 16, 0.05);
+}
+
+.saved-v2-state-card strong {
+  color: var(--vlx-track-b-ink);
+  font-size: 1.55rem;
+  font-weight: 780;
+  line-height: 1;
+}
+
+.saved-v2-state-card span {
+  color: var(--vlx-track-b-ink);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.saved-v2-state-card p {
+  margin: 0;
+  color: var(--vlx-track-b-ink-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.saved-v2-state-card--due strong,
+.saved-v2-state-card--due span {
+  color: #a9342b;
+}
+
+.saved-v2-state-card--weak strong,
+.saved-v2-state-card--weak span {
+  color: #79500f;
+}
+
+.saved-v2-state-card--new strong,
+.saved-v2-state-card--new span {
+  color: #2f6f99;
+}
+
+.saved-v2-state-card--learning strong,
+.saved-v2-state-card--learning span {
+  color: #6b5b1f;
+}
+
+.saved-v2-state-card--mastered strong,
+.saved-v2-state-card--mastered span {
+  color: #2a6645;
+}
+
 .saved-v2-tabs {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -3992,7 +4077,35 @@ select {
 }
 
 .saved-v2-panel {
+  display: grid;
+  gap: 14px;
   min-width: 0;
+}
+
+.saved-v2-panel__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.saved-v2-panel__header h2 {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: 1rem;
+  font-weight: 780;
+}
+
+.saved-v2-panel__header span {
+  color: var(--vlx-track-b-ink-muted);
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.saved-v2-tab-panel {
+  min-width: 0;
+  padding-top: 2px;
 }
 
 .saved-v2-section-list {
@@ -4007,13 +4120,13 @@ select {
 
 .saved-v2-word-card {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 36px;
-  gap: 16px;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 14px;
   align-items: center;
   min-width: 0;
   padding: 16px 18px;
   border: 1px solid rgba(105, 78, 65, 0.1);
-  border-radius: 16px;
+  border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 8px rgba(44, 24, 16, 0.05);
 }
@@ -4022,10 +4135,10 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  min-height: 56px;
+  width: 64px;
+  min-height: 64px;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 8px;
   background:
     linear-gradient(145deg, rgba(253, 226, 216, 0.76), rgba(95, 122, 104, 0.12)),
     var(--vlx-track-b-surface-muted);
@@ -4082,6 +4195,18 @@ select {
   overflow-wrap: anywhere;
 }
 
+.saved-v2-token--weak {
+  border-color: rgba(121, 80, 15, 0.22);
+  background: #fdf5e8;
+  color: #79500f;
+}
+
+.saved-v2-token--warning {
+  border-color: rgba(169, 52, 43, 0.24);
+  background: #fef0ec;
+  color: #a9342b;
+}
+
 .saved-v2-word-card__actions {
   margin-top: var(--vlx-track-b-space-xs);
 }
@@ -4136,6 +4261,14 @@ select {
   color: #fff;
 }
 
+.saved-v2-word-card__review {
+  gap: 6px;
+  justify-self: end;
+  min-width: 116px;
+  min-height: 38px;
+  padding-inline: 12px;
+}
+
 .saved-v2-memory-pill {
   display: inline-flex;
   align-items: center;
@@ -4171,15 +4304,27 @@ select {
   color: #2f6f99;
 }
 
+.saved-v2-memory-pill--learning,
+.saved-v2-memory-pill--strong {
+  background: #f5f0d9;
+  color: #6b5b1f;
+}
+
 .saved-v2-memory-pill--mastered {
   background: #eaf4ee;
   color: #2a6645;
 }
 
+.saved-v2-memory-pill--unknown {
+  background: #f2ede7;
+  color: #66564d;
+}
+
 .saved-v2-section a:focus-visible,
 .saved-v2-word-card a:focus-visible,
 .saved-v2-tab:focus-visible,
-.saved-v2-panel:focus-visible {
+.saved-v2-panel:focus-visible,
+.saved-v2-tab-panel:focus-visible {
   outline: var(--vlx-track-b-focus-outline);
   outline-offset: 3px;
   box-shadow: var(--vlx-track-b-focus-shadow);
@@ -4701,7 +4846,6 @@ select {
   .dashboard-v2-status-grid,
   .dashboard-v2-word-grid,
   .dashboard-v2-pack-grid,
-  .saved-v2-status-grid,
   .save-panel__handoff,
   .packs-v2-grid,
   .packs-v2-word-grid,
@@ -4894,10 +5038,8 @@ select {
   .dashboard-v2-status-grid,
   .dashboard-v2-word-grid,
   .dashboard-v2-pack-grid,
-  .saved-v2-status-grid,
   .saved-v2-queue-hero,
   .saved-v2-queue-hero__stats,
-  .saved-v2-tabs,
   .packs-v2-grid,
   .packs-v2-word-grid,
   .packs-v2-detail-metrics,
@@ -4909,6 +5051,11 @@ select {
   .pricing-v2-faq-list,
   .save-panel__primary-handoff {
     grid-template-columns: 1fr;
+  }
+
+  .saved-v2-status-grid,
+  .saved-v2-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .dashboard-v2-word-card {
@@ -4953,12 +5100,34 @@ select {
   }
 
   .saved-v2-word-card {
-    grid-template-columns: 56px minmax(0, 1fr) 36px;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
   }
 
   .saved-v2-word-card__image {
     width: 56px;
     min-height: 56px;
+  }
+
+  .saved-v2-word-card__review {
+    grid-column: 2;
+    justify-self: start;
+    min-width: 0;
+    min-height: 36px;
+  }
+
+  .saved-v2-state-card {
+    min-height: 78px;
+    padding: 10px 8px;
+  }
+
+  .saved-v2-state-card strong {
+    font-size: 1.45rem;
+  }
+
+  .saved-v2-state-card p {
+    display: none;
   }
 
   .packs-v2-word-card {
