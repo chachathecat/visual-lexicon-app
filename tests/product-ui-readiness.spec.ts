@@ -807,8 +807,8 @@ test.describe("Track B product/UI readiness rendered audit", () => {
 
     const bodyText = await page.locator("body").innerText();
 
-    expect(bodyText).toMatch(/1\s+DUE NOW/);
-    expect(bodyText).toMatch(/1\s+NEEDS WORK/);
+    expect(bodyText).toMatch(/1\s+DUE/);
+    expect(bodyText).toMatch(/1\s+WEAK/);
     expect(bodyText).toMatch(/1\s+MASTERED/);
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "domcontentloaded" });

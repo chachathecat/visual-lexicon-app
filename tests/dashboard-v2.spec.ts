@@ -2,6 +2,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
+import {
+  buildDashboardV2ReadModel
+} from "../src/lib/dashboard-v2/read-model";
+import { getPublicBetaOpsVerdict } from "../src/lib/beta-ops-gate/beta-ops-gate";
+
 const baseUrl =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.NEXT_PUBLIC_APP_URL ??
@@ -21,6 +26,7 @@ const storageKeys = [
 
 const oneHourAgo = () => new Date(Date.now() - 60 * 60_000).toISOString();
 const oneMinuteAgo = () => new Date(Date.now() - 60_000).toISOString();
+const fixedNow = "2026-06-15T12:00:00.000Z";
 
 function makeSavedWord(overrides: Record<string, unknown> = {}) {
   return {
@@ -191,6 +197,148 @@ async function seedDashboardMission(page: Page) {
   });
 }
 
+test.describe("Dashboard v2 read model", () => {
+  test("derives due words from nextDueAt less than or equal to now", () => {
+    const reviewState = {
+      duePast: makeReviewStateItem({
+        slug: "duePast",
+        word: "Due Past",
+        nextDueAt: "2026-06-15T11:59:00.000Z"
+      }),
+      dueNow: makeReviewStateItem({
+        slug: "dueNow",
+        word: "Due Now",
+        nextDueAt: fixedNow
+      }),
+      future: makeReviewStateItem({
+        slug: "future",
+        word: "Future",
+        nextDueAt: "2026-06-15T12:01:00.000Z"
+      })
+    };
+
+    const model = buildDashboardV2ReadModel({
+      now: fixedNow,
+      reviewState
+    });
+
+    expect(model.dueWords.map((item) => item.slug)).toEqual([
+      "duePast",
+      "dueNow"
+    ]);
+  });
+
+  test("does not treat missing nextDueAt as dashboard due state", () => {
+    const model = buildDashboardV2ReadModel({
+      now: fixedNow,
+      reviewState: {
+        missingDueAt: {
+          ...makeReviewStateItem({
+            slug: "missingDueAt",
+            word: "Missing Due At"
+          }),
+          nextDueAt: undefined
+        }
+      }
+    });
+
+    expect(model.dueWords).toHaveLength(0);
+    expect(model.hasAnyLocalData).toBe(true);
+  });
+
+  test("derives weak words from weakScore and wrong review state", () => {
+    const model = buildDashboardV2ReadModel({
+      now: fixedNow,
+      reviewState: {
+        weakScore: makeReviewStateItem({
+          slug: "weakScore",
+          word: "Weak Score",
+          correct: 4,
+          wrong: 0,
+          weakScore: 0.7
+        }),
+        wrongCount: makeReviewStateItem({
+          slug: "wrongCount",
+          word: "Wrong Count",
+          correct: 1,
+          wrong: 3,
+          weakScore: 0.2
+        }),
+        stable: makeReviewStateItem({
+          slug: "stable",
+          word: "Stable",
+          box: 3,
+          mastery: "Strong",
+          correct: 4,
+          wrong: 0,
+          weakScore: 0
+        })
+      }
+    });
+
+    expect(model.weakWords.map((item) => item.slug)).toEqual([
+      "weakScore",
+      "wrongCount"
+    ]);
+  });
+
+  test("derives mastered words only from real Mastered mastery and box 5 state", () => {
+    const model = buildDashboardV2ReadModel({
+      now: fixedNow,
+      reviewState: {
+        mastered: makeReviewStateItem({
+          slug: "mastered",
+          word: "Mastered",
+          box: 5,
+          mastery: "Mastered",
+          correct: 6,
+          wrong: 1,
+          weakScore: 0
+        }),
+        labelOnly: makeReviewStateItem({
+          slug: "labelOnly",
+          word: "Label Only",
+          box: 4,
+          mastery: "Mastered",
+          correct: 5,
+          wrong: 0,
+          weakScore: 0
+        }),
+        boxOnly: makeReviewStateItem({
+          slug: "boxOnly",
+          word: "Box Only",
+          box: 5,
+          mastery: "Strong",
+          correct: 5,
+          wrong: 0,
+          weakScore: 0
+        })
+      }
+    });
+
+    expect(model.masteredWords.map((item) => item.slug)).toEqual(["mastered"]);
+  });
+
+  test("empty dashboard read model does not fake progress", () => {
+    const model = buildDashboardV2ReadModel({
+      now: fixedNow,
+      savedWords: {},
+      reviewState: {},
+      reviewEvents: [],
+      dailyStats: {},
+      packProgress: {}
+    });
+
+    expect(model.hasAnyLocalData).toBe(false);
+    expect(model.dueWords).toHaveLength(0);
+    expect(model.weakWords).toHaveLength(0);
+    expect(model.newSaved).toHaveLength(0);
+    expect(model.masteredWords).toHaveLength(0);
+    expect(model.visiblePackProgress).toHaveLength(0);
+    expect(model.upgradePrompt).toBeNull();
+  });
+});
+
 test.describe("Dashboard Figma source parity", () => {
   test("uses /dashboard as the canonical Track B app entry", async ({
     page,
@@ -262,7 +410,9 @@ test.describe("Dashboard Figma source parity", () => {
     const mission = page.locator(".dashboard-v2-mission-card");
     await expect(mission).toBeVisible();
     await expect(mission).toContainText("Today's Memory Mission");
-    await expect(mission.getByRole("heading", { name: "Review 5 words before they fade" })).toBeVisible();
+    await expect(
+      mission.getByRole("heading", { name: "Review 3 words before they fade." })
+    ).toBeVisible();
     await expect(mission.locator(".dashboard-v2-due-row")).toHaveCount(3);
     await expect(mission.getByRole("link", { name: "Start review" })).toHaveAttribute(
       "href",
@@ -277,7 +427,7 @@ test.describe("Dashboard Figma source parity", () => {
     const labels = await stateCards.evaluateAll((cards) =>
       cards.map((card) => card.querySelector("span")?.textContent?.trim() ?? "")
     );
-    expect(labels).toEqual(["Due now", "Needs work", "New", "Mastered"]);
+    expect(labels).toEqual(["Due", "Weak", "New", "Mastered"]);
 
     const secondaryActions = page.locator(".dashboard-v2-secondary-actions");
     await expect(
@@ -334,11 +484,32 @@ test.describe("Dashboard Figma source parity", () => {
     );
 
     await expect(primaryActions).toHaveCount(1);
-    await expect(primaryActions).toContainText("Start today's review");
+    await expect(primaryActions).toContainText("Start due review");
   });
 });
 
 test.describe("Dashboard v2 static contract", () => {
+  test("keeps public paid beta blocked", () => {
+    expect(getPublicBetaOpsVerdict()).toBe("No-Go");
+  });
+
+  test("does not introduce billing or payment routes", () => {
+    const disallowedRoutePaths = [
+      "src/app/payment",
+      "src/app/payments",
+      "src/app/billing",
+      "src/app/checkout",
+      "src/app/api/payment",
+      "src/app/api/payments",
+      "src/app/api/billing",
+      "src/app/api/checkout"
+    ];
+
+    for (const routePath of disallowedRoutePaths) {
+      expect(existsSync(join(workspaceRoot, routePath)), routePath).toBe(false);
+    }
+  });
+
   test("documents dashboard v2 and links it from README", () => {
     const docPath = join(workspaceRoot, "docs", "TRACK_B_DASHBOARD_V2.md");
     const readme = readFileSync(join(workspaceRoot, "README.md"), "utf8");
@@ -353,7 +524,8 @@ test.describe("Dashboard v2 static contract", () => {
   test("does not introduce forbidden dashboard integrations", () => {
     const dashboardFiles = [
       "src/app/dashboard/page.tsx",
-      "src/components/views/dashboard-v2-view.tsx"
+      "src/components/views/dashboard-v2-view.tsx",
+      "src/lib/dashboard-v2/read-model.ts"
     ];
     const forbiddenPatterns = [
       /\bNextRequest\b/,

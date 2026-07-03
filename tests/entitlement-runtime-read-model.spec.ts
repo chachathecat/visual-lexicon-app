@@ -515,6 +515,7 @@ test.describe("Track B entitlement runtime read model", () => {
     }
 
     const approvedTrackBFoundationUiDiff = new Set([
+      "src/components/views/dashboard-v2-view.tsx",
       "src/components/track-b/README.md",
       "src/components/track-b/contracts.ts",
       "src/components/track-b/index.ts",

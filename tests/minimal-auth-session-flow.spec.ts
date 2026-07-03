@@ -450,7 +450,7 @@ test.describe("Minimal Auth Session Flow v1", () => {
     }
   });
 
-  test("DashboardV2 remains unchanged", () => {
+  test("DashboardV2 changes remain scoped to the dashboard memory mission", () => {
     const diff = execFileSync(
       "git",
       [
@@ -466,7 +466,9 @@ test.describe("Minimal Auth Session Flow v1", () => {
       }
     ).trim();
 
-    expect(diff).toBe("");
+    expect(diff.split(/\r?\n/).filter(Boolean)).toEqual([
+      "src/components/views/dashboard-v2-view.tsx"
+    ]);
   });
 
   test("authenticated principal derives from verified sub", async () => {

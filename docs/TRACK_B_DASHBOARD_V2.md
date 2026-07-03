@@ -1,7 +1,7 @@
 # Track B Dashboard V2
 
-Branch: `release/dashboard-todays-memory-mission`  
-PR: `#74 Dashboard v2: Today's Memory Mission`
+Branch: `feat/dashboard-v2-memory-mission`
+PR: `[Track B] Add Dashboard v2 memory mission`
 
 ## Purpose
 
@@ -45,6 +45,7 @@ vlx_saved_words_v1
 vlx_review_state_v1
 vlx_review_events_v1
 vlx_daily_stats_v1
+vlx_pack_progress_v1
 ```
 
 It does not mutate review state, review events, daily stats, or saved words.
@@ -54,19 +55,25 @@ advance SRS state.
 ## Dashboard Structure
 
 1. Track B app shell with desktop top navigation and mobile bottom navigation.
-2. Centered 600px Today's Memory Mission card.
+2. Centered Today's Memory Mission card with dynamic due-now copy.
 3. Three due-word preview rows from real review state with real visual
    thumbnails when due words exist.
-4. One full-width coral `Start review` action.
+4. One full-width coral `Start due review` action when due words exist.
 5. Four quiet memory-state cards:
-   - Due from `getDueToday`.
+   - Due from dashboard `nextDueAt <= now` read model.
    - Weak from `getWeakWords`.
    - New from `getNewSaved`.
    - Mastered from `getMastered`.
 6. Secondary `Memory queue` and `Save a word` actions.
+7. Continue pack progress from visible `vlx_pack_progress_v1` records, or an
+   honest empty state.
+8. Recent saved words from `vlx_saved_words_v1`, or an honest empty state.
+9. A passive upgrade nudge only when an existing paywall trigger evaluator
+   applies; no checkout or real billing path is introduced.
 
-The first screen must not show Alias Search, Learning Modules, Hub Progress,
-Streak, Packs, Pro promotion, or Saved Library.
+The first screen must prioritize Today, due review, and memory state. It must
+not show Alias Search, Learning Modules, Hub Progress, Streak, generic Packs
+promotion, or a dominant Saved Library module.
 
 ## Safety Confirmation
 
