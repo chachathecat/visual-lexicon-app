@@ -141,6 +141,31 @@ async function answerFirstCard(page: Page, confidence = /I knew it/i) {
   await expect(page.locator('.review-feedback')).toBeVisible();
 }
 
+async function answerCurrentCard(
+  page: Page,
+  result: 'correct' | 'wrong',
+  confidence = /I knew it/i,
+) {
+  await expect(page.locator('.review-session')).toBeVisible({ timeout: 15000 });
+
+  const answer = (await page.locator('#review-session-title').innerText()).trim();
+  const optionLabels = (await page.locator('.review-option').allInnerTexts()).map(
+    (label) => label.trim(),
+  );
+  const selected =
+    result === 'correct'
+      ? answer
+      : optionLabels.find((label) => label !== answer) ?? optionLabels[0];
+
+  expect(selected).toBeTruthy();
+  await page.getByRole('button', { name: selected, exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'How did that recall feel?' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: confidence }).click();
+  await expect(page.locator('.review-feedback')).toBeVisible();
+}
+
 async function expectLastReviewEvent(page: Page) {
   await expect
     .poll(async () => {
@@ -660,6 +685,86 @@ test.describe('Visual Lexicon review route mode contract', () => {
     });
     expect(reviewState?.dissonance?.box).toBe(2);
     expect(reviewState?.dissonance?.mastery).not.toBe('Mastered');
+  });
+
+  test('session summary reflects committed answers and updated review state', async ({
+    page,
+  }) => {
+    const initialDissonanceDueAt = new Date(Date.now() - 2 * 60_000).toISOString();
+    const initialObfuscateDueAt = oneMinuteAgo();
+
+    await seedVlxLocalStorage(page, {
+      reviewState: {
+        dissonance: makeReviewStateItem({
+          slug: 'dissonance',
+          word: 'Dissonance',
+          definition: 'A clash between sounds, ideas, or feelings.',
+          box: 1,
+          mastery: 'Learning',
+          correct: 1,
+          wrong: 0,
+          weakScore: 0.2,
+          nextDueAt: initialDissonanceDueAt,
+        }),
+        obfuscate: makeReviewStateItem({
+          slug: 'obfuscate',
+          word: 'Obfuscate',
+          definition: 'To make something unclear or difficult to understand.',
+          box: 1,
+          mastery: 'Learning',
+          correct: 1,
+          wrong: 0,
+          weakScore: 0.2,
+          nextDueAt: initialObfuscateDueAt,
+        }),
+      },
+    });
+
+    await page.goto(`${baseUrl}/review/due?limit=2`, {
+      waitUntil: 'networkidle',
+    });
+
+    await answerCurrentCard(page, 'correct', /I knew it/i);
+    await expect(page.locator('.review-feedback')).toContainText(/Correct/);
+    await page.getByRole('button', { name: 'Next card' }).click();
+
+    await answerCurrentCard(page, 'wrong', /I forgot/i);
+    await expect(page.locator('.review-feedback')).toContainText('Wrong');
+
+    const events = await readLocalJson<Record<string, unknown>[]>(
+      page,
+      'vlx_review_events_v1',
+    );
+    const reviewState = await readLocalJson<
+      Record<string, Record<string, unknown>>
+    >(page, 'vlx_review_state_v1');
+
+    expect(events).toHaveLength(2);
+    expect(events?.[1]).toMatchObject({
+      slug: 'obfuscate',
+      result: 'wrong',
+      confidence: 'forgot',
+      questionType: 'due_review',
+    });
+    expect(reviewState?.dissonance?.correct).toBe(2);
+    expect(Number(reviewState?.obfuscate?.weakScore)).toBeGreaterThan(0.2);
+    expect(reviewState?.obfuscate?.nextDueAt).not.toBe(initialObfuscateDueAt);
+
+    await page.getByRole('button', { name: 'View summary' }).click();
+    await expect(page.locator('.review-v2-summary')).toBeVisible();
+
+    const summaryStats = page.getByTestId('review-summary-stats');
+
+    await expect(summaryStats).toContainText('Reviewed');
+    await expect(summaryStats).toContainText('2');
+    await expect(summaryStats).toContainText('Correct');
+    await expect(summaryStats).toContainText('1');
+    await expect(summaryStats).toContainText('Wrong');
+    await expect(summaryStats).toContainText('Improved');
+    await expect(summaryStats).toContainText('Still weak');
+    await expect(page.locator('.review-v2-summary__header')).toContainText(
+      /Obfuscate is next due|Next review is due/,
+    );
   });
 
   test('fallback distractors are labeled when no confusable data exists', async ({
