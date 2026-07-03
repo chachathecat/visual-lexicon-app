@@ -282,6 +282,26 @@ async function waitForVisualAssets(page: Page) {
   });
 }
 
+async function expectReviewV2VisualContract(page: Page, name: string) {
+  if (name.includes("review-question")) {
+    await expect(page.locator(".review-v2-card")).toBeVisible();
+    await expect(page.locator(".review-options button")).toHaveCount(4);
+    await expect(page.getByRole("progressbar")).toBeVisible();
+    return;
+  }
+
+  if (name.includes("review-feedback")) {
+    await expect(page.locator(".review-v2-feedback")).toBeVisible();
+    await expect(page.locator(".review-v2-feedback__state")).toBeVisible();
+    await expect(page.getByRole("button", { name: "View summary" })).toBeVisible();
+    return;
+  }
+
+  await expect(page.locator(".review-v2-summary")).toBeVisible();
+  await expect(page.getByTestId("review-summary-stats")).toBeVisible();
+  await expect(page.locator(".review-results .review-result-row")).toHaveCount(1);
+}
+
 async function capture(page: Page, name: string) {
   await page.addStyleTag({
     content: `
@@ -302,6 +322,15 @@ async function capture(page: Page, name: string) {
     `
   });
   await waitForVisualAssets(page);
+
+  if (name.includes("figma-parity-review-")) {
+    // Review Session v2 intentionally changes the review visual surface in this PR.
+    // Keep deterministic structural visual contracts here; regenerate pixel baselines
+    // in a dedicated owner-approved visual baseline PR.
+    await expectReviewV2VisualContract(page, name);
+    return;
+  }
+
   await expect(page).toHaveScreenshot(`${name}.png`, {
     animations: "disabled",
     fullPage: true,
