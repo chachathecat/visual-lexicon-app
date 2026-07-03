@@ -1,28 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent
+} from "react";
 
 import { TrackBAppShell, TrackBEmptyState } from "@/components/track-b";
 import { ArrowRightIcon, ChevronRightIcon } from "@/components/track-b/icons";
 import { WordVisualImage } from "@/components/word-visual-image";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import {
-  getDueToday,
-  getMastered,
-  getNewSaved,
-  getSavedLibrary,
-  getWeakWords
-} from "@/lib/srs/selectors";
-import {
+  readDailyStats,
   readReviewEvents,
   readReviewState,
   readSavedWords
 } from "@/lib/srs/storage";
 import type {
+  VlxDailyStatsStore,
+  VlxMasteryLabel,
   VlxReviewStateItem,
   VlxReviewStateStore,
-  VlxSavedWord,
   VlxSavedWordsStore
 } from "@/lib/srs/types";
 import {
@@ -30,66 +33,490 @@ import {
   getWordVisualImage
 } from "@/lib/word-visuals";
 
-type QueueMemoryState = "due" | "weak" | "new" | "mastered";
+const savedLibraryTabs = [
+  {
+    id: "due",
+    label: "Due",
+    description: "ready now",
+    emptyTitle: "No due words",
+    emptyBody:
+      "No saved words have a valid nextDueAt at or before now in local review state."
+  },
+  {
+    id: "weak",
+    label: "Weak",
+    description: "needs repair",
+    emptyTitle: "No weak words",
+    emptyBody:
+      "Weak words appear here only from Weak mastery, weakScore, or stored wrong-answer evidence."
+  },
+  {
+    id: "new",
+    label: "New",
+    description: "not reviewed",
+    emptyTitle: "No new saved words",
+    emptyBody:
+      "Saved words appear here when they have no review state yet or still carry New mastery."
+  },
+  {
+    id: "learning",
+    label: "Learning",
+    description: "in progress",
+    emptyTitle: "No learning words",
+    emptyBody:
+      "Learning words appear after local review state marks a saved word Learning or Strong."
+  },
+  {
+    id: "mastered",
+    label: "Mastered",
+    description: "box 5",
+    emptyTitle: "No mastered words",
+    emptyBody:
+      "Mastered words require both Mastered mastery and box 5 from real review state."
+  },
+  {
+    id: "all",
+    label: "All",
+    description: "saved cards",
+    emptyTitle: "No saved words",
+    emptyBody:
+      "No saved words were found in local storage. Save a word to create the first review card."
+  }
+] as const;
 
-type SavedLibrarySnapshot = {
-  savedWords: VlxSavedWordsStore;
-  reviewState: VlxReviewStateStore;
-  savedLibrary: VlxSavedWord[];
-  dueItems: VlxReviewStateItem[];
-  weakItems: VlxReviewStateItem[];
-  newSaved: VlxSavedWord[];
-  masteredItems: VlxReviewStateItem[];
-  reviewEventCount: number;
+type SavedLibraryTabId = (typeof savedLibraryTabs)[number]["id"];
+type ReviewStateStatus = "valid" | "missing" | "stale";
+type MasteryDisplay = VlxMasteryLabel | "Unknown state";
+type MemoryTone =
+  | "due"
+  | "weak"
+  | "new"
+  | "learning"
+  | "strong"
+  | "mastered"
+  | "unknown";
+
+type SavedWordEvidence = {
+  slug: string;
+  word: string;
+  image?: string;
+  definition?: string;
+  hub?: string;
+  source?: string;
+  savedAt?: string;
 };
 
-type QueueWord = {
+type ReviewStateEvidence = Pick<
+  VlxReviewStateItem,
+  | "slug"
+  | "word"
+  | "image"
+  | "definition"
+  | "hub"
+  | "box"
+  | "mastery"
+  | "correct"
+  | "wrong"
+  | "streakCorrect"
+  | "lastReviewedAt"
+  | "nextDueAt"
+  | "weakScore"
+  | "avgResponseMs"
+  | "lastQuestionType"
+  | "createdAt"
+  | "updatedAt"
+>;
+
+type SavedLibraryCard = {
   slug: string;
   word: string;
   definition?: string;
   image?: string;
   hub?: string;
+  source?: string;
   savedAt?: string;
-  lastReviewedAt?: string;
-  nextDueAt?: string;
+  reviewState?: ReviewStateEvidence;
+  reviewStateStatus: ReviewStateStatus;
+  masteryLabel: MasteryDisplay;
+  memoryTone: MemoryTone;
   reviewCount: number;
-  state: QueueMemoryState;
+  isDue: boolean;
+  isWeak: boolean;
 };
 
-type QueueSection = {
-  state: QueueMemoryState;
-  heading: string;
-  subcopy: string;
-  words: QueueWord[];
+type SavedLibrarySnapshot = {
+  tabs: Record<SavedLibraryTabId, SavedLibraryCard[]>;
+  reviewEventCount: number;
+  reviewedCount: number;
+  hasLocalReviewState: boolean;
+  hasLocalSavedWord: boolean;
 };
+
+const masteryLabels = new Set<VlxMasteryLabel>([
+  "New",
+  "Learning",
+  "Weak",
+  "Strong",
+  "Mastered"
+]);
+
+const tabIndexById = new Map(
+  savedLibraryTabs.map((tab, index) => [tab.id, index])
+);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getTrimmedString(value: unknown) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed || undefined;
+}
+
+function getValidDateString(value: unknown) {
+  const stringValue = getTrimmedString(value);
+
+  if (!stringValue || Number.isNaN(Date.parse(stringValue))) {
+    return undefined;
+  }
+
+  return stringValue;
+}
+
+function getNonNegativeInteger(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : 0;
+}
+
+function getOptionalNonNegativeNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : undefined;
+}
+
+function getWeakScore(value: unknown) {
+  const number = getOptionalNonNegativeNumber(value);
+
+  if (number === undefined) {
+    return 0;
+  }
+
+  return Math.min(1, number);
+}
+
+function getSrsBox(value: unknown) {
+  return typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 5
+    ? (value as ReviewStateEvidence["box"])
+    : undefined;
+}
+
+function getMastery(value: unknown) {
+  const stringValue = getTrimmedString(value);
+
+  return stringValue && masteryLabels.has(stringValue as VlxMasteryLabel)
+    ? (stringValue as VlxMasteryLabel)
+    : undefined;
+}
+
+function normalizeSavedWord(
+  rawSavedWord: unknown,
+  fallbackSlug: string
+): SavedWordEvidence | null {
+  if (!isRecord(rawSavedWord)) {
+    return null;
+  }
+
+  const slug = getTrimmedString(rawSavedWord.slug) ?? fallbackSlug;
+  const word = getTrimmedString(rawSavedWord.word) ?? slug;
+
+  if (!slug) {
+    return null;
+  }
+
+  return {
+    slug,
+    word,
+    image: getTrimmedString(rawSavedWord.image),
+    definition: getTrimmedString(rawSavedWord.definition),
+    hub: getTrimmedString(rawSavedWord.hub),
+    source: getTrimmedString(rawSavedWord.source),
+    savedAt: getValidDateString(rawSavedWord.savedAt)
+  };
+}
+
+function normalizeReviewStateItem(
+  rawStateItem: unknown,
+  fallbackSlug: string
+): ReviewStateEvidence | null {
+  if (!isRecord(rawStateItem)) {
+    return null;
+  }
+
+  const slug = getTrimmedString(rawStateItem.slug) ?? fallbackSlug;
+  const mastery = getMastery(rawStateItem.mastery);
+  const box = getSrsBox(rawStateItem.box);
+
+  if (!slug || !mastery || box === undefined) {
+    return null;
+  }
+
+  const word = getTrimmedString(rawStateItem.word) ?? slug;
+
+  return {
+    slug,
+    word,
+    image: getTrimmedString(rawStateItem.image),
+    definition: getTrimmedString(rawStateItem.definition),
+    hub: getTrimmedString(rawStateItem.hub),
+    box,
+    mastery,
+    correct: getNonNegativeInteger(rawStateItem.correct),
+    wrong: getNonNegativeInteger(rawStateItem.wrong),
+    streakCorrect: getNonNegativeInteger(rawStateItem.streakCorrect),
+    lastReviewedAt: getValidDateString(rawStateItem.lastReviewedAt),
+    nextDueAt: getValidDateString(rawStateItem.nextDueAt),
+    weakScore: getWeakScore(rawStateItem.weakScore),
+    avgResponseMs: getOptionalNonNegativeNumber(rawStateItem.avgResponseMs),
+    lastQuestionType: getTrimmedString(rawStateItem.lastQuestionType) as
+      | ReviewStateEvidence["lastQuestionType"]
+      | undefined,
+    createdAt: getValidDateString(rawStateItem.createdAt) ?? "",
+    updatedAt: getValidDateString(rawStateItem.updatedAt) ?? ""
+  };
+}
+
+function getSavedWords(savedWords: VlxSavedWordsStore) {
+  return Object.entries(savedWords)
+    .map(([slug, savedWord]) => normalizeSavedWord(savedWord, slug))
+    .filter((savedWord): savedWord is SavedWordEvidence => Boolean(savedWord))
+    .sort(sortSavedCardsBySavedAtDesc);
+}
+
+function getReviewStateMap(reviewState: VlxReviewStateStore) {
+  const normalized = new Map<string, ReviewStateEvidence>();
+
+  Object.entries(reviewState).forEach(([slug, stateItem]) => {
+    const normalizedItem = normalizeReviewStateItem(stateItem, slug);
+
+    if (normalizedItem) {
+      normalized.set(normalizedItem.slug, normalizedItem);
+    }
+  });
+
+  return normalized;
+}
+
+function getDailyReviewedTotal(dailyStats: VlxDailyStatsStore) {
+  return Object.values(dailyStats).reduce((total, item) => {
+    if (!isRecord(item)) {
+      return total;
+    }
+
+    const reviewed = item.reviewed;
+
+    return typeof reviewed === "number" && Number.isFinite(reviewed) && reviewed > 0
+      ? total + reviewed
+      : total;
+  }, 0);
+}
+
+function isDueNow(state: ReviewStateEvidence, now: Date) {
+  if (state.mastery === "Mastered" || !state.nextDueAt) {
+    return false;
+  }
+
+  const nextDueAt = Date.parse(state.nextDueAt);
+
+  return Number.isFinite(nextDueAt) && nextDueAt <= now.getTime();
+}
+
+function isWeakState(state: ReviewStateEvidence) {
+  return state.mastery === "Weak" || state.weakScore > 0 || state.wrong > 0;
+}
+
+function getMemoryTone(
+  state: ReviewStateEvidence | undefined,
+  status: ReviewStateStatus,
+  isDue: boolean,
+  isWeak: boolean
+): MemoryTone {
+  if (status === "stale") {
+    return "unknown";
+  }
+
+  if (isDue) {
+    return "due";
+  }
+
+  if (isWeak) {
+    return "weak";
+  }
+
+  if (!state || state.mastery === "New") {
+    return "new";
+  }
+
+  if (state.mastery === "Mastered" && state.box === 5) {
+    return "mastered";
+  }
+
+  if (state.mastery === "Strong") {
+    return "strong";
+  }
+
+  return "learning";
+}
+
+function toSavedLibraryCard(
+  savedWord: SavedWordEvidence,
+  reviewState: ReviewStateEvidence | undefined,
+  reviewStateStatus: ReviewStateStatus,
+  now: Date
+): SavedLibraryCard {
+  const isDue = reviewState ? isDueNow(reviewState, now) : false;
+  const isWeak = reviewState ? isWeakState(reviewState) : false;
+  const masteryLabel: MasteryDisplay =
+    reviewStateStatus === "stale"
+      ? "Unknown state"
+      : reviewState?.mastery ?? "New";
+
+  return {
+    slug: savedWord.slug,
+    word: reviewState?.word || savedWord.word,
+    definition: reviewState?.definition ?? savedWord.definition,
+    image: reviewState?.image ?? savedWord.image,
+    hub: reviewState?.hub ?? savedWord.hub,
+    source: savedWord.source,
+    savedAt: savedWord.savedAt,
+    reviewState,
+    reviewStateStatus,
+    masteryLabel,
+    memoryTone: getMemoryTone(reviewState, reviewStateStatus, isDue, isWeak),
+    reviewCount: reviewState ? reviewState.correct + reviewState.wrong : 0,
+    isDue,
+    isWeak
+  };
+}
+
+function compareDateAsc(first?: string, second?: string) {
+  const firstTime = first ? Date.parse(first) : Number.POSITIVE_INFINITY;
+  const secondTime = second ? Date.parse(second) : Number.POSITIVE_INFINITY;
+
+  if (firstTime !== secondTime) {
+    return firstTime - secondTime;
+  }
+
+  return 0;
+}
+
+function compareDateDesc(first?: string, second?: string) {
+  const firstTime = first ? Date.parse(first) : Number.NEGATIVE_INFINITY;
+  const secondTime = second ? Date.parse(second) : Number.NEGATIVE_INFINITY;
+
+  if (firstTime !== secondTime) {
+    return secondTime - firstTime;
+  }
+
+  return 0;
+}
+
+function sortSavedCardsBySavedAtDesc(
+  first: SavedWordEvidence | SavedLibraryCard,
+  second: SavedWordEvidence | SavedLibraryCard
+) {
+  return compareDateDesc(first.savedAt, second.savedAt) || first.slug.localeCompare(second.slug);
+}
+
+function sortDueCards(first: SavedLibraryCard, second: SavedLibraryCard) {
+  return (
+    compareDateAsc(first.reviewState?.nextDueAt, second.reviewState?.nextDueAt) ||
+    (second.reviewState?.weakScore ?? 0) - (first.reviewState?.weakScore ?? 0) ||
+    first.slug.localeCompare(second.slug)
+  );
+}
+
+function sortWeakCards(first: SavedLibraryCard, second: SavedLibraryCard) {
+  return (
+    (second.reviewState?.weakScore ?? 0) - (first.reviewState?.weakScore ?? 0) ||
+    (second.reviewState?.wrong ?? 0) - (first.reviewState?.wrong ?? 0) ||
+    (first.reviewState?.box ?? 5) - (second.reviewState?.box ?? 5) ||
+    first.slug.localeCompare(second.slug)
+  );
+}
+
+function sortReviewedCards(first: SavedLibraryCard, second: SavedLibraryCard) {
+  return (
+    compareDateDesc(first.reviewState?.updatedAt, second.reviewState?.updatedAt) ||
+    sortSavedCardsBySavedAtDesc(first, second)
+  );
+}
+
+function buildTabs(cards: SavedLibraryCard[]) {
+  return {
+    due: cards.filter((card) => card.isDue).sort(sortDueCards),
+    weak: cards.filter((card) => card.isWeak).sort(sortWeakCards),
+    new: cards
+      .filter(
+        (card) =>
+          card.reviewStateStatus === "missing" ||
+          card.reviewState?.mastery === "New"
+      )
+      .sort(sortSavedCardsBySavedAtDesc),
+    learning: cards
+      .filter(
+        (card) =>
+          card.reviewState?.mastery === "Learning" ||
+          card.reviewState?.mastery === "Strong"
+      )
+      .sort(sortReviewedCards),
+    mastered: cards
+      .filter(
+        (card) =>
+          card.reviewState?.mastery === "Mastered" && card.reviewState.box === 5
+      )
+      .sort(sortReviewedCards),
+    all: [...cards].sort(sortSavedCardsBySavedAtDesc)
+  } satisfies Record<SavedLibraryTabId, SavedLibraryCard[]>;
+}
 
 function readSavedLibrarySnapshot(): SavedLibrarySnapshot {
   const now = new Date();
-  const savedWords = readSavedWords();
-  const reviewState = readReviewState();
+  const savedWordsStore = readSavedWords();
+  const reviewStateStore = readReviewState();
   const reviewEvents = readReviewEvents();
-  const savedLibrary = getSavedLibrary(savedWords);
-  const masteredItems = getMastered(reviewState).filter((item) =>
-    Boolean(savedWords[item.slug])
-  );
-  const masteredSlugs = new Set(masteredItems.map((item) => item.slug));
-  const dueItems = getDueToday(reviewState, now).filter((item) =>
-    Boolean(savedWords[item.slug])
-  );
-  const weakItems = getWeakWords(reviewState).filter(
-    (item) => Boolean(savedWords[item.slug]) && !masteredSlugs.has(item.slug)
-  );
-  const newSaved = getNewSaved(savedWords, reviewState);
+  const dailyStats = readDailyStats();
+  const savedWords = getSavedWords(savedWordsStore);
+  const reviewState = getReviewStateMap(reviewStateStore);
+  const cards = savedWords.map((savedWord) => {
+    const rawStateExists = Object.prototype.hasOwnProperty.call(
+      reviewStateStore,
+      savedWord.slug
+    );
+    const state = reviewState.get(savedWord.slug);
+    const stateStatus: ReviewStateStatus = state
+      ? "valid"
+      : rawStateExists
+        ? "stale"
+        : "missing";
+
+    return toSavedLibraryCard(savedWord, state, stateStatus, now);
+  });
 
   return {
-    savedWords,
-    reviewState,
-    savedLibrary,
-    dueItems,
-    weakItems,
-    newSaved,
-    masteredItems,
-    reviewEventCount: reviewEvents.length
+    tabs: buildTabs(cards),
+    reviewEventCount: reviewEvents.length,
+    reviewedCount: getDailyReviewedTotal(dailyStats),
+    hasLocalReviewState: Object.keys(reviewStateStore).length > 0,
+    hasLocalSavedWord: savedWords.length > 0
   };
 }
 
@@ -110,114 +537,51 @@ function formatShortDate(value?: string) {
   }).format(date);
 }
 
-function toQueueWordFromState(
-  item: VlxReviewStateItem,
-  savedWord: VlxSavedWord,
-  state: QueueMemoryState
-): QueueWord {
-  return {
-    slug: item.slug,
-    word: item.word || savedWord.word || item.slug,
-    definition: item.definition ?? savedWord.definition,
-    image: item.image ?? savedWord.image,
-    hub: item.hub ?? savedWord.hub,
-    savedAt: savedWord.savedAt,
-    lastReviewedAt: item.lastReviewedAt,
-    nextDueAt: item.nextDueAt,
-    reviewCount: item.correct + item.wrong,
-    state
-  };
+function formatHubLabel(hub?: string) {
+  if (!hub) {
+    return "Unsorted";
+  }
+
+  return hub
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
-function toQueueWordFromSaved(savedWord: VlxSavedWord): QueueWord {
-  return {
-    slug: savedWord.slug,
-    word: savedWord.word || savedWord.slug,
-    definition: savedWord.definition,
-    image: savedWord.image,
-    hub: savedWord.hub,
-    savedAt: savedWord.savedAt,
-    reviewCount: 0,
-    state: "new"
-  };
+function formatSourceLabel(source?: string) {
+  if (!source) {
+    return undefined;
+  }
+
+  return source
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
-function dedupeBySlug(words: QueueWord[]) {
-  const seen = new Set<string>();
-
-  return words.filter((word) => {
-    if (seen.has(word.slug)) {
-      return false;
-    }
-
-    seen.add(word.slug);
-    return true;
-  });
+function formatWeakScore(value: number) {
+  return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
-function getQueueSections(snapshot: SavedLibrarySnapshot): QueueSection[] {
-  const weakSlugs = new Set(snapshot.weakItems.map((item) => item.slug));
-  const dueSlugs = new Set(snapshot.dueItems.map((item) => item.slug));
-  const masteredSlugs = new Set(snapshot.masteredItems.map((item) => item.slug));
-  const dueWords = snapshot.dueItems
-    .filter((item) => !weakSlugs.has(item.slug))
-    .map((item) =>
-      toQueueWordFromState(item, snapshot.savedWords[item.slug], "due")
-    );
-  const weakWords = snapshot.weakItems.map((item) =>
-    toQueueWordFromState(item, snapshot.savedWords[item.slug], "weak")
-  );
-  const masteredWords = snapshot.masteredItems.map((item) =>
-    toQueueWordFromState(item, snapshot.savedWords[item.slug], "mastered")
-  );
-  const newWords = snapshot.newSaved.filter(
-    (word) =>
-      !dueSlugs.has(word.slug) &&
-      !weakSlugs.has(word.slug) &&
-      !masteredSlugs.has(word.slug)
-  );
-  const sections: QueueSection[] = [
-    {
-      state: "due",
-      heading: "Review now",
-      subcopy: "These words are fading. A quick review brings them back.",
-      words: dedupeBySlug(dueWords)
-    },
-    {
-      state: "weak",
-      heading: "Needs another pass",
-      subcopy: "You have seen these, but they are not solid yet.",
-      words: dedupeBySlug(weakWords)
-    },
-    {
-      state: "new",
-      heading: "Saved and waiting",
-      subcopy: "Not yet reviewed. Your first look builds the foundation.",
-      words: newWords.map(toQueueWordFromSaved)
-    },
-    {
-      state: "mastered",
-      heading: "Held in memory",
-      subcopy: "These words are moving into long-term retention.",
-      words: dedupeBySlug(masteredWords)
-    }
-  ];
+function getReviewHref(card: SavedLibraryCard) {
+  if (card.isDue) {
+    return "/review/due";
+  }
 
-  return sections.filter((section) => section.words.length > 0);
+  if (card.isWeak) {
+    return "/review/weak-sprint";
+  }
+
+  return "/review?mode=saved";
 }
 
-function getReviewableCount(snapshot: SavedLibrarySnapshot) {
-  return new Set([
-    ...snapshot.dueItems.map((item) => item.slug),
-    ...snapshot.weakItems.map((item) => item.slug)
-  ]).size;
+function getReviewAriaLabel(card: SavedLibraryCard) {
+  return `Review ${card.word}`;
 }
 
-function getQueueReviewHref(snapshot: SavedLibrarySnapshot) {
-  return snapshot.dueItems.length > 0 ? "/review/due" : "/review?mode=saved";
-}
-
-function SavedQueueVisual({ word }: { word: QueueWord }) {
+function SavedQueueVisual({ word }: { word: SavedLibraryCard }) {
   const visualImage = getWordVisualImage(word.slug);
   const externalImage = visualImage ? undefined : word.image;
   const visualClass = visualImage
@@ -239,77 +603,144 @@ function SavedQueueVisual({ word }: { word: QueueWord }) {
       style={style}
     >
       {visualImage ? (
-        <WordVisualImage sizes="72px" src={visualImage} />
+        <WordVisualImage sizes="64px" src={visualImage} />
       ) : (
-        !externalImage ? <span aria-hidden="true">{word.word.slice(0, 1)}</span> : null
+        !externalImage ? (
+          <span aria-hidden="true">{word.word.slice(0, 1).toUpperCase()}</span>
+        ) : null
       )}
     </div>
   );
 }
 
-function QueueMemoryPill({ state }: { state: QueueMemoryState }) {
-  const label =
-    state === "weak"
-      ? "Needs work"
-      : state === "new"
-        ? "New"
-        : state === "mastered"
-          ? "Mastered"
-          : "Due now";
-
+function MasteryPill({ label, tone }: { label: MasteryDisplay; tone: MemoryTone }) {
   return (
-    <span className={`saved-v2-memory-pill saved-v2-memory-pill--${state}`}>
+    <span className={`saved-v2-memory-pill saved-v2-memory-pill--${tone}`}>
       <span aria-hidden="true" />
       {label}
     </span>
   );
 }
 
-function QueueWordCard({ word }: { word: QueueWord }) {
-  const dueLabel = word.nextDueAt
-    ? `Due ${formatShortDate(word.nextDueAt) ?? "soon"}`
-    : word.state === "new"
-      ? "First review"
-      : "Due now";
-  const reviewedLabel =
+function CardMeta({ word }: { word: SavedLibraryCard }) {
+  const state = word.reviewState;
+  const savedDate = formatShortDate(word.savedAt);
+  const dueDate = formatShortDate(state?.nextDueAt);
+  const sourceLabel = formatSourceLabel(word.source);
+  const reviewCountLabel =
     word.reviewCount === 1
-      ? "1x reviewed"
-      : `${word.reviewCount.toLocaleString()}x reviewed`;
-  const actionHref =
-    word.state === "weak"
-      ? "/review/weak"
-      : word.state === "mastered"
-        ? `/word/${word.slug}`
-        : "/review/due";
-  const actionLabel =
-    word.state === "mastered" ? `Open ${word.word}` : `Review ${word.word}`;
+      ? "1 review"
+      : `${word.reviewCount.toLocaleString()} reviews`;
 
   return (
-    <article className="saved-v2-word-card">
+    <div className="saved-v2-token-row" aria-label={`${word.word} memory details`}>
+      <span className="saved-v2-token">{formatHubLabel(word.hub)}</span>
+      {state ? (
+        <span className="saved-v2-token">Box {state.box}</span>
+      ) : word.reviewStateStatus === "stale" ? (
+        <span className="saved-v2-token saved-v2-token--warning">
+          Stale review state
+        </span>
+      ) : (
+        <span className="saved-v2-token">No review state yet</span>
+      )}
+      <span className="saved-v2-token">{reviewCountLabel}</span>
+      {dueDate ? <span className="saved-v2-token">Next due {dueDate}</span> : null}
+      {state && state.wrong > 0 ? (
+        <span className="saved-v2-token saved-v2-token--weak">
+          {state.wrong} wrong
+        </span>
+      ) : null}
+      {state && state.weakScore > 0 ? (
+        <span className="saved-v2-token saved-v2-token--weak">
+          Weak score {formatWeakScore(state.weakScore)}
+        </span>
+      ) : null}
+      {savedDate ? <span className="saved-v2-token">Saved {savedDate}</span> : null}
+      {sourceLabel ? <span className="saved-v2-token">{sourceLabel}</span> : null}
+    </div>
+  );
+}
+
+function SavedWordCard({ word }: { word: SavedLibraryCard }) {
+  const reviewHref = getReviewHref(word);
+
+  return (
+    <article className="saved-v2-word-card" data-saved-word={word.slug}>
       <SavedQueueVisual word={word} />
       <div className="saved-v2-word-card__body">
         <div className="saved-v2-word-card__topline">
           <h3>{word.word}</h3>
-          <QueueMemoryPill state={word.state} />
+          <MasteryPill label={word.masteryLabel} tone={word.memoryTone} />
         </div>
         {word.definition ? (
           <p className="saved-v2-word-card__definition">{word.definition}</p>
-        ) : null}
-        <div className="saved-v2-word-card__meta">
-          <span>{dueLabel}</span>
-          <span aria-hidden="true">/</span>
-          <span>{reviewedLabel}</span>
-        </div>
+        ) : (
+          <p className="saved-v2-word-card__definition">
+            No definition saved for this word.
+          </p>
+        )}
+        <CardMeta word={word} />
       </div>
       <Link
-        aria-label={actionLabel}
-        className="saved-v2-word-card__action"
-        href={actionHref}
+        aria-label={getReviewAriaLabel(word)}
+        className="track-b-button track-b-button--quiet saved-v2-word-card__review"
+        href={reviewHref}
         prefetch={false}
       >
+        <span>Review now</span>
         <ChevronRightIcon size={15} />
       </Link>
     </article>
+  );
+}
+
+function SavedQueueStatCard({
+  count,
+  label,
+  note,
+  state
+}: {
+  count: number;
+  label: string;
+  note: string;
+  state: "due" | "weak" | "new" | "learning" | "mastered";
+}) {
+  return (
+    <article className={`saved-v2-state-card saved-v2-state-card--${state}`}>
+      <strong>{count.toLocaleString()}</strong>
+      <span>{label}</span>
+      <p>{note}</p>
+    </article>
+  );
+}
+
+function BulkReviewActions({ snapshot }: { snapshot: SavedLibrarySnapshot }) {
+  const dueCount = snapshot.tabs.due.length;
+  const weakCount = snapshot.tabs.weak.length;
+
+  return (
+    <div className="saved-v2-bulk-actions" aria-label="Bulk review actions">
+      <Link
+        aria-label={`Review due words, ${dueCount} available`}
+        className="track-b-button track-b-button--primary"
+        href="/review/due"
+        prefetch={false}
+      >
+        <span>Review due words</span>
+        <strong>{dueCount.toLocaleString()}</strong>
+        <ArrowRightIcon size={15} />
+      </Link>
+      <Link
+        aria-label={`Practice weak words, ${weakCount} available`}
+        className="track-b-button track-b-button--quiet"
+        href="/review/weak-sprint"
+        prefetch={false}
+      >
+        <span>Practice weak words</span>
+        <strong>{weakCount.toLocaleString()}</strong>
+      </Link>
+    </div>
   );
 }
 
@@ -318,7 +749,7 @@ function SavedLibraryLoading() {
     <TrackBAppShell activeItemId="saved" currentPath="/saved">
       <div className="saved-v2-queue">
         <TrackBEmptyState
-          body="Reading local saved words, review state, and review events without writing to them."
+          body="Reading saved words, review state, review events, and daily stats from local storage."
           title="Loading memory queue"
         />
       </div>
@@ -326,8 +757,18 @@ function SavedLibraryLoading() {
   );
 }
 
+function getTabPanelId(tabId: SavedLibraryTabId) {
+  return `saved-v2-panel-${tabId}`;
+}
+
+function getTabButtonId(tabId: SavedLibraryTabId) {
+  return `saved-v2-tab-${tabId}`;
+}
+
 export function SavedLibraryView() {
   const [snapshot, setSnapshot] = useState<SavedLibrarySnapshot | null>(null);
+  const [activeTab, setActiveTab] = useState<SavedLibraryTabId>("due");
+  const tabButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     const nextSnapshot = readSavedLibrarySnapshot();
@@ -335,85 +776,189 @@ export function SavedLibraryView() {
     setSnapshot(nextSnapshot);
     emitVlxEvent(VLX_ANALYTICS_EVENTS.savedLibraryView, {
       source: "saved_library",
-      savedCount: nextSnapshot.savedLibrary.length,
-      dueCount: nextSnapshot.dueItems.length,
-      weakCount: nextSnapshot.weakItems.length,
+      savedCount: nextSnapshot.tabs.all.length,
+      dueCount: nextSnapshot.tabs.due.length,
+      weakCount: nextSnapshot.tabs.weak.length,
+      reviewedCount: nextSnapshot.reviewedCount,
       reviewEventCount: nextSnapshot.reviewEventCount,
-      hasLocalReviewState: Object.keys(nextSnapshot.reviewState).length > 0,
-      hasLocalSavedWord: nextSnapshot.savedLibrary.length > 0
+      queueSize: nextSnapshot.tabs.all.length,
+      hasLocalReviewState: nextSnapshot.hasLocalReviewState,
+      hasLocalSavedWord: nextSnapshot.hasLocalSavedWord
     });
   }, []);
 
-  const sections = useMemo(
-    () => (snapshot ? getQueueSections(snapshot) : []),
-    [snapshot]
+  const activeTabConfig = useMemo(
+    () => savedLibraryTabs.find((tab) => tab.id === activeTab) ?? savedLibraryTabs[0],
+    [activeTab]
+  );
+  const activeWords = snapshot?.tabs[activeTab] ?? [];
+  const activeTabIndex = tabIndexById.get(activeTab) ?? 0;
+
+  const focusTab = useCallback((index: number) => {
+    tabButtonRefs.current[index]?.focus();
+  }, []);
+
+  const selectTabByIndex = useCallback(
+    (index: number) => {
+      const nextTab = savedLibraryTabs[index];
+
+      if (!nextTab) {
+        return;
+      }
+
+      setActiveTab(nextTab.id);
+      window.requestAnimationFrame(() => focusTab(index));
+    },
+    [focusTab]
+  );
+
+  const handleTabKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>) => {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        selectTabByIndex((activeTabIndex + 1) % savedLibraryTabs.length);
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        selectTabByIndex(
+          (activeTabIndex - 1 + savedLibraryTabs.length) %
+            savedLibraryTabs.length
+        );
+        return;
+      }
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        selectTabByIndex(0);
+        return;
+      }
+
+      if (event.key === "End") {
+        event.preventDefault();
+        selectTabByIndex(savedLibraryTabs.length - 1);
+      }
+    },
+    [activeTabIndex, selectTabByIndex]
   );
 
   if (!snapshot) {
     return <SavedLibraryLoading />;
   }
 
-  const reviewableCount = getReviewableCount(snapshot);
-  const reviewHref = getQueueReviewHref(snapshot);
-
   return (
     <TrackBAppShell activeItemId="saved" currentPath="/saved">
       <div className="saved-v2-queue">
         <header className="saved-v2-queue-hero">
           <div className="saved-v2-queue-hero__copy">
-            <h1>Your memory queue</h1>
+            <p className="track-b-eyebrow">Today&apos;s Memory Queue</p>
+            <h1>Saved words that are ready to become memory.</h1>
             <p>
-              These words are working their way into memory. Each review moves
-              them forward.
+              Due, weak, new, learning, and mastered counts come from local
+              saved-word and review-state evidence.
             </p>
           </div>
-          {reviewableCount > 0 ? (
-            <Link
-              className="track-b-button track-b-button--primary"
-              href={reviewHref}
-              prefetch={false}
-            >
-              <span>
-                Review {reviewableCount} ready{" "}
-                {reviewableCount === 1 ? "word" : "words"}
-              </span>
-              <ArrowRightIcon size={15} />
-            </Link>
-          ) : null}
+          <BulkReviewActions snapshot={snapshot} />
         </header>
 
-        {sections.length > 0 ? (
-          <div className="saved-v2-section-list">
-            {sections.map((section) => (
-              <section className="saved-v2-section" key={section.state}>
-                <div className="saved-v2-section__header">
-                  <span
-                    aria-hidden="true"
-                    className={`saved-v2-section__dot saved-v2-section__dot--${section.state}`}
-                  />
-                  <h2>{section.heading}</h2>
-                  <span>{section.words.length}</span>
-                </div>
-                <p className="saved-v2-section__description">
-                  {section.subcopy}
-                </p>
-                <div className="saved-v2-word-list" role="list">
-                  {section.words.map((word) => (
-                    <div key={word.slug} role="listitem">
-                      <QueueWordCard word={word} />
-                    </div>
-                  ))}
-                </div>
-              </section>
+        <section
+          aria-label="Saved memory queue counts"
+          className="saved-v2-status-grid"
+        >
+          <SavedQueueStatCard
+            count={snapshot.tabs.due.length}
+            label="Due"
+            note="nextDueAt is ready"
+            state="due"
+          />
+          <SavedQueueStatCard
+            count={snapshot.tabs.weak.length}
+            label="Weak"
+            note="mistake evidence"
+            state="weak"
+          />
+          <SavedQueueStatCard
+            count={snapshot.tabs.new.length}
+            label="New"
+            note="not reviewed yet"
+            state="new"
+          />
+          <SavedQueueStatCard
+            count={snapshot.tabs.learning.length}
+            label="Learning"
+            note="in progress"
+            state="learning"
+          />
+          <SavedQueueStatCard
+            count={snapshot.tabs.mastered.length}
+            label="Mastered"
+            note="box 5 only"
+            state="mastered"
+          />
+        </section>
+
+        <section className="saved-v2-panel" aria-labelledby="saved-v2-tabs-heading">
+          <div className="saved-v2-panel__header">
+            <h2 id="saved-v2-tabs-heading">Saved Library</h2>
+            <span>{snapshot.tabs.all.length.toLocaleString()} saved</span>
+          </div>
+          <div
+            aria-label="Saved library filters"
+            className="saved-v2-tabs"
+            role="tablist"
+          >
+            {savedLibraryTabs.map((tab, index) => (
+              <button
+                aria-controls={getTabPanelId(tab.id)}
+                aria-selected={activeTab === tab.id}
+                className="saved-v2-tab"
+                id={getTabButtonId(tab.id)}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={handleTabKeyDown}
+                ref={(button) => {
+                  tabButtonRefs.current[index] = button;
+                }}
+                role="tab"
+                tabIndex={activeTab === tab.id ? 0 : -1}
+                type="button"
+              >
+                <span className="saved-v2-tab__label">{tab.label}</span>
+                <span className="saved-v2-tab__count">
+                  {snapshot.tabs[tab.id].length.toLocaleString()}
+                </span>
+                <span className="saved-v2-tab__description">
+                  {tab.description}
+                </span>
+              </button>
             ))}
           </div>
-        ) : (
-          <TrackBEmptyState
-            action={{ href: "/dashboard", label: "Back to dashboard" }}
-            body="No saved words were found in local storage. Save a word to create the first review card."
-            title="No words in queue"
-          />
-        )}
+
+          <div
+            aria-labelledby={getTabButtonId(activeTab)}
+            className="saved-v2-tab-panel"
+            id={getTabPanelId(activeTab)}
+            role="tabpanel"
+            tabIndex={0}
+          >
+            {activeWords.length > 0 ? (
+              <div className="saved-v2-word-list" role="list">
+                {activeWords.map((word) => (
+                  <div key={word.slug} role="listitem">
+                    <SavedWordCard word={word} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <TrackBEmptyState
+                body={activeTabConfig.emptyBody}
+                headingLevel={3}
+                title={activeTabConfig.emptyTitle}
+              />
+            )}
+          </div>
+        </section>
       </div>
     </TrackBAppShell>
   );

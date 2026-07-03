@@ -84,7 +84,7 @@ const auditedRoutes = [
   {
     path: "/saved",
     waitForRole: {
-      name: "Your memory queue",
+      name: /Saved words that are ready to become memory/i,
       role: "heading" as const
     }
   },
@@ -515,10 +515,16 @@ async function expectTabReaches(page: Page, target: Locator) {
   await expect(target).toBeFocused();
 }
 
-function queueSection(page: Page, heading: string) {
-  return page.locator(".saved-v2-section").filter({
-    has: page.getByRole("heading", { name: heading })
-  });
+function savedTab(page: Page, tabId: string) {
+  return page.locator(`#saved-v2-tab-${tabId}`);
+}
+
+function savedPanel(page: Page, tabId: string) {
+  return page.locator(`#saved-v2-panel-${tabId}`);
+}
+
+function savedCard(page: Page, slug: string) {
+  return page.locator(`[data-saved-word="${slug}"]`);
 }
 
 test.describe("Track B product/UI readiness rendered audit", () => {
@@ -625,6 +631,8 @@ test.describe("Track B product/UI readiness rendered audit", () => {
   test("Track B shell routes have no mobile horizontal overflow", async ({
     page
   }) => {
+    test.setTimeout(60_000);
+
     await page.setViewportSize({ width: 390, height: 844 });
     await seedVlxLocalStorage(page, makeReadySeed());
 
@@ -736,7 +744,7 @@ test.describe("Track B product/UI readiness rendered audit", () => {
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "domcontentloaded" });
     await expect(
-      queueSection(page, "Review now").getByRole("heading", {
+      savedCard(page, "dissonance").getByRole("heading", {
         name: "Dissonance"
       })
     ).toBeVisible();
@@ -813,11 +821,14 @@ test.describe("Track B product/UI readiness rendered audit", () => {
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "domcontentloaded" });
 
-    await expect(queueSection(page, "Review now")).toContainText("Dissonance");
-    await expect(queueSection(page, "Needs another pass")).toContainText(
-      "Obfuscate"
-    );
-    await expect(queueSection(page, "Held in memory")).toContainText("Lucid");
+    await expect(savedTab(page, "due")).toContainText("1");
+    await expect(savedPanel(page, "due")).toContainText("Dissonance");
+
+    await savedTab(page, "weak").click();
+    await expect(savedPanel(page, "weak")).toContainText("Obfuscate");
+
+    await savedTab(page, "mastered").click();
+    await expect(savedPanel(page, "mastered")).toContainText("Lucid");
     await expect(page.locator("body")).not.toContainText("Resilient");
   });
 

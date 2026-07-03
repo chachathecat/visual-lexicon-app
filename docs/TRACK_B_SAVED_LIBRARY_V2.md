@@ -1,7 +1,6 @@
 # Track B Saved Library v2
 
-Branch: `release/saved-library-v2`  
-PR: `#76 Saved Library v2`
+Branch: `feat/saved-library-v2`
 
 ## Purpose
 
@@ -36,8 +35,8 @@ This PR changes the Saved Library surface only:
 src/components/views/saved-library-view.tsx
 ```
 
-It reuses the Track B app shell, status badges, metric cards, empty state, and
-visual-only upgrade nudge. Dashboard v2, Review Session v2, Packs, Pricing,
+It reuses the Track B app shell, buttons, empty state, and visual word assets.
+Dashboard v2, Review Session v2, Packs, Pricing,
 SRS engine behavior, local storage key names, route handlers, middleware, auth,
 billing, payments, provider SDKs, and production infrastructure are unchanged.
 
@@ -49,6 +48,7 @@ Saved Library v2 reads existing local state:
 vlx_saved_words_v1
 vlx_review_state_v1
 vlx_review_events_v1
+vlx_daily_stats_v1
 ```
 
 It does not write saved words, review state, review events, daily stats, pack
@@ -59,8 +59,8 @@ that should write review events and advance SRS state.
 
 1. Track B app shell with Saved active.
 2. Page header:
-   - `Memory queue`
-   - `Saved is a review queue, not bookmarks.`
+   - `Today's Memory Queue`
+   - saved words positioned as review-ready memory cards
 3. Summary cards:
    - Due now
    - Weak words
@@ -80,31 +80,28 @@ that should write review events and advance SRS state.
    - status badge with text, not color alone
    - box, weak score, next due, source, saved date, and review counts only when
      available from local state
-   - safe links to existing review routes or the word detail route
+   - safe links to existing review routes
 6. Empty states for no saved words, no due words, no weak words, no new saved
    words, no learning words, and no mastered words.
-7. Contextual upgrade nudge:
-   - visual only
-   - links to existing `/pricing`
-   - does not grant paid access or add entitlement logic
 
 ## Queue Rules
 
 Due, Weak, New, Learning, Mastered, and All are derived without fake state.
 
-- Due uses `getDueToday(review_state)` and only shows saved words.
-- Weak uses `getWeakWords(review_state)` and only shows saved words that are not
-  already mastered.
-- New uses `getNewSaved(saved_words, review_state)`.
-- Learning shows saved words with existing review state that are not new, weak,
-  or mastered and have `Learning` or `Strong` mastery.
-- Mastered uses `getMastered(review_state)` and requires both `box === 5` and
-  `mastery === "Mastered"`.
+- Due uses saved words whose valid `review_state.nextDueAt <= now` and whose
+  mastery is not `Mastered`.
+- Weak uses saved words with valid review state where `mastery === "Weak"`,
+  `weakScore > 0`, or `wrong > 0`.
+- New uses saved words with no review state or valid `mastery === "New"`.
+- Learning shows saved words with valid `Learning` or `Strong` review state.
+- Mastered requires both `box === 5` and `mastery === "Mastered"` from valid
+  review state.
 - All uses saved words sorted by saved date when available.
 
 Saved-only words never receive a fake box, weak score, due date, or Mastered
 label. If a field is unavailable, the UI omits it or shows an honest neutral
-state such as `No review state yet`.
+state such as `No review state yet`. Stale or unknown review state does not make
+a word Due, Weak, Learning, or Mastered.
 
 ## Accessibility
 
@@ -121,7 +118,7 @@ state such as `No review state yet`.
 Saved Library v2 does not add payment, checkout, subscription, invoice, billing
 portal, auth, API routes, route handlers, middleware, database/provider SDKs,
 environment variables, production data writes, Webflow, Cloudflare, Vercel, DNS,
-AI calls, or deployment changes.
+AI calls, upgrade nudges, or deployment changes.
 
 It does not fake due counts, weak counts, mastered counts, streaks, paid access,
 or pack progress.
@@ -145,8 +142,8 @@ Golden checks:
 - Mastered cards require box 5 and Mastered state.
 - Saved-only cards show `No review state yet` and no box, weak score, due date,
   or Mastered label.
-- Card CTAs link to `/review/due`, `/review/weak`, `/review?mode=saved`, or
-  `/word/[slug]`.
+- Card CTAs link to `/review/due`, `/review/weak-sprint`, or
+  `/review?mode=saved`.
 - Opening `/saved` does not mutate `vlx_review_state_v1` or
   `vlx_review_events_v1`.
 
