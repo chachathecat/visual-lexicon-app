@@ -4356,7 +4356,7 @@ select {
 }
 
 .packs-v2-detail-metrics {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .packs-v2-card,
@@ -4470,6 +4470,7 @@ select {
 
 .packs-v2-state-strip dt,
 .packs-v2-progress-note small,
+.packs-v2-progress-facts dt,
 .packs-v2-detail-facts dt,
 .packs-v2-queue-list small {
   color: var(--vlx-track-b-ink-muted);
@@ -4503,6 +4504,54 @@ select {
 .packs-v2-progress-note span {
   color: var(--vlx-track-b-ink);
   font-weight: 760;
+}
+
+.packs-v2-access-note,
+.packs-v2-weak-note {
+  margin: 0;
+  color: var(--vlx-track-b-ink-soft);
+  font-size: var(--vlx-track-b-type-small);
+  line-height: 1.5;
+}
+
+.packs-v2-access-note {
+  padding: var(--vlx-track-b-space-sm);
+  border: var(--vlx-track-b-border-subtle);
+  border-radius: var(--vlx-track-b-radius-sm);
+  background: rgba(159, 59, 49, 0.07);
+}
+
+.packs-v2-weak-note {
+  padding: 0 var(--vlx-track-b-space-xs);
+}
+
+.packs-v2-weak-note--detail {
+  grid-column: 1 / -1;
+}
+
+.packs-v2-progress-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--vlx-track-b-space-xs);
+  margin: var(--vlx-track-b-space-xs) 0 0;
+}
+
+.packs-v2-progress-facts--detail {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.packs-v2-progress-facts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.packs-v2-progress-facts dd {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: var(--vlx-track-b-type-small);
+  font-weight: 760;
+  overflow-wrap: anywhere;
 }
 
 .packs-v2-detail-hero {
@@ -4864,6 +4913,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .packs-v2-progress-facts--detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .pricing-v2-beta-hero,
   .saved-v2-queue-hero {
     grid-template-columns: 1fr;
@@ -5044,6 +5097,7 @@ select {
   .packs-v2-word-grid,
   .packs-v2-detail-metrics,
   .packs-v2-state-strip,
+  .packs-v2-progress-facts,
   .pricing-v2-beta-hero,
   .pricing-v2-plan-grid,
   .pricing-v2-pack-grid,

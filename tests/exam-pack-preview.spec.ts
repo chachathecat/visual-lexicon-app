@@ -233,9 +233,21 @@ test.describe("Packs v2 learning-plan surface", () => {
     await expect(academicCard).toContainText("3 words");
     await expect(academicCard).toContainText("Free preview: 3 cards");
     await expect(academicCard).toContainText("14-day plan");
+    await expect(academicCard).toContainText(
+      "Full pack access is planned for Pro. Payment is not connected in this beta."
+    );
+    await expect(academicCard).toContainText("Billing is not connected");
+    await expect(academicCard).toContainText(
+      "Public paid beta remains blocked"
+    );
+    await expect(academicCard).toContainText(
+      "Private/manual beta remains gated"
+    );
     await expect(academicCard).toContainText("No local pack progress yet");
     await expect(
-      academicCard.getByRole("link", { name: "Preview Academic Vocabulary" })
+      academicCard.getByRole("link", {
+        name: "Start preview Academic Vocabulary"
+      })
     ).toHaveAttribute("href", academicPreviewReviewHref);
 
     for (const title of ["IELTS Writing Vocabulary", "GRE Visual Verbal"]) {
@@ -247,6 +259,12 @@ test.describe("Packs v2 learning-plan surface", () => {
       await expect(card).toContainText(
         "Progress cannot be computed until this pack has word data."
       );
+      await expect(card).toContainText(
+        "Preview review is unavailable until preview words exist."
+      );
+      await expect(card).toContainText(
+        "Full IELTS/GRE content is not implied unless actual data exists."
+      );
       await expect(
         card.getByRole("link", { name: /Preview|Start review|Continue/ })
       ).toHaveCount(0);
@@ -256,13 +274,81 @@ test.describe("Packs v2 learning-plan surface", () => {
     }
   });
 
+  test("pack progress is derived from vlx_pack_progress_v1 without fake percentages", async ({
+    page
+  }) => {
+    await seedVlxLocalStorage(page, {
+      packProgress: {
+        "academic-vocabulary": {
+          packId: "academic-vocabulary",
+          startedAt: "2026-06-28T10:00:00.000Z",
+          previewStartedAt: "2026-06-28T10:00:00.000Z",
+          previewCompletedAt: "2026-06-29T10:00:00.000Z",
+          lastReviewedAt: "2026-06-29T10:00:00.000Z",
+          reviewedCount: 4,
+          correctCount: 3,
+          source: "review"
+        }
+      }
+    });
+
+    await page.goto(`${baseUrl}/packs`, { waitUntil: "networkidle" });
+
+    const academicCard = featuredCard(page, "Academic Vocabulary");
+
+    await expect(academicCard).toContainText("Preview completed");
+    await expect(academicCard).toContainText("Reviewed count");
+    await expect(academicCard).toContainText("4");
+    await expect(academicCard).toContainText("Correct count");
+    await expect(academicCard).toContainText("3");
+    await expect(
+      academicCard.getByRole("link", { name: "Continue Academic Vocabulary" })
+    ).toHaveAttribute("href", academicPreviewReviewHref);
+    await expect(academicCard.getByRole("progressbar")).toHaveCount(0);
+    await expect(academicCard).not.toContainText(/complete pack|completion/i);
+  });
+
+  test("preview completed state can exist without invented review counts", async ({
+    page
+  }) => {
+    await seedVlxLocalStorage(page, {
+      packProgress: {
+        "academic-vocabulary": {
+          packId: "academic-vocabulary",
+          startedAt: "2026-06-28T10:00:00.000Z",
+          previewStartedAt: "2026-06-28T10:00:00.000Z",
+          previewCompletedAt: "2026-06-28T10:05:00.000Z",
+          reviewedCount: 0,
+          correctCount: 0,
+          source: "pack_detail"
+        }
+      }
+    });
+
+    await page.goto(`${baseUrl}/packs/academic-vocabulary`, {
+      waitUntil: "networkidle"
+    });
+
+    await expect(page.getByText("Preview completed").first()).toBeVisible();
+    await expect(page.getByText("Reviewed count").first()).toBeVisible();
+    await expect(page.getByText("Correct count").first()).toBeVisible();
+    await expect(page.getByText("Last reviewed").first()).toBeVisible();
+    await expect(page.getByText("Not reviewed yet").first()).toBeVisible();
+    await expect(page.locator("#pack-memory-state")).not.toContainText(
+      /complete pack|completion/i
+    );
+    await expect(page.locator("#pack-memory-state").getByRole("progressbar")).toHaveCount(
+      0
+    );
+  });
+
   test("Academic CTA links to the existing safe review route and records pack progress only", async ({
     page
   }) => {
     await page.goto(`${baseUrl}/packs`, { waitUntil: "networkidle" });
 
     await featuredCard(page, "Academic Vocabulary")
-      .getByRole("link", { name: "Preview Academic Vocabulary" })
+      .getByRole("link", { name: "Start preview Academic Vocabulary" })
       .click();
 
     await expect(page).toHaveURL(
@@ -368,6 +454,9 @@ test.describe("Packs v2 learning-plan surface", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Academic Vocabulary" })
     ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Start preview Academic Vocabulary" })
+    ).toHaveAttribute("href", academicPreviewReviewHref);
     await expect(page.getByRole("heading", { name: "Progress summary" })).toBeVisible();
     await expect(page.getByLabel("Due: 1")).toBeVisible();
     await expect(page.getByLabel("Weak: 1")).toBeVisible();
@@ -403,8 +492,12 @@ test.describe("Packs v2 learning-plan surface", () => {
       "/review/due"
     );
     await expect(
-      page.getByRole("link", { exact: true, name: "Practice weak" })
+      page.getByRole("link", { name: "Practice weak Academic Vocabulary" })
     ).toHaveAttribute("href", "/review/weak");
+    await expect(page.getByText("filtered pack-only weak practice")).toBeVisible();
+    await expect(page.locator("#pack-memory-state").getByRole("progressbar")).toHaveCount(
+      0
+    );
     expect(await readLocalJson(page, "vlx_review_state_v1")).toEqual(reviewState);
     expect(await readLocalJson(page, "vlx_review_events_v1")).toEqual(
       reviewEvents
@@ -419,7 +512,7 @@ test.describe("Packs v2 learning-plan surface", () => {
     });
 
     await page
-      .getByRole("link", { name: "Preview Academic Vocabulary" })
+      .getByRole("link", { name: "Start preview Academic Vocabulary" })
       .click();
 
     await expect(page).toHaveURL(
@@ -464,6 +557,15 @@ test.describe("Packs v2 learning-plan surface", () => {
       await expect(
         page.getByRole("heading", { name: route.emptyHeading })
       ).toBeVisible();
+      await expect(page.locator("body")).toContainText(
+        "Billing is not connected"
+      );
+      await expect(page.locator("body")).toContainText(
+        "Public paid beta remains blocked"
+      );
+      await expect(page.locator("body")).toContainText(
+        "Private/manual beta remains gated"
+      );
       await expect(
         page.getByRole("link", { name: /Preview|Start review|Continue/ })
       ).toHaveCount(0);

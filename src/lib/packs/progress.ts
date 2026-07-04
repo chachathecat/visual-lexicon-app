@@ -136,10 +136,11 @@ export function hasVisiblePackProgress(
 ): progress is VlxPackProgress {
   return Boolean(
     progress &&
-      (progress.previewStartedAt ||
+      (progress.startedAt ||
+        progress.previewStartedAt ||
         progress.previewCompletedAt ||
         progress.reviewedCount > 0 ||
-        progress.correctCount > 0)
+        progress.lastReviewedAt)
   );
 }
 

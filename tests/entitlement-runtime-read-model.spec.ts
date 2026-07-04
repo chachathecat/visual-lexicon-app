@@ -521,6 +521,7 @@ test.describe("Track B entitlement runtime read model", () => {
       "src/components/track-b/layout-primitives.tsx",
       "src/components/track-b/learning-primitives.tsx",
       "src/components/track-b/tokens.ts",
+      "src/components/views/packs-v2-view.tsx",
       "src/components/views/saved-library-view.tsx",
     ]);
 

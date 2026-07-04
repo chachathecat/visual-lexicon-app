@@ -225,7 +225,7 @@ function mergeQuizPackPreview(
 ): VlxPackPreview {
   const base = buildBasePreview(definition, pack?.words ?? [], Boolean(pack));
   const previewCount = pack?.words.length
-    ? Math.min(pack.words.length, PREVIEW_LIMIT)
+    ? Math.min(base.previewWords.length, pack.words.length, PREVIEW_LIMIT)
     : undefined;
 
   return {
@@ -252,9 +252,13 @@ async function getAcademicPreview(
     ...base,
     description: examPack?.subtitle ?? hubPack?.description ?? base.description,
     wordCount: examPack?.wordCount ?? hubPack?.words.length,
-    previewCount:
-      examPack?.freePreviewCount ??
-      (words.length ? Math.min(words.length, PREVIEW_LIMIT) : undefined),
+    previewCount: words.length
+      ? Math.min(
+          examPack?.freePreviewCount ?? words.length,
+          base.previewWords.length,
+          PREVIEW_LIMIT
+        )
+      : undefined,
     planDays: examPack?.days,
     priceTier: examPack?.priceTier,
     updatedAt: examPack?.updatedAt ?? hubPack?.updatedAt
