@@ -1,12 +1,18 @@
-# Paid Beta Readiness Audit
+# Track B Private/Manual Paid Beta Readiness Audit
 
-Audit date: 2026-06-09
+Audit date: 2026-07-04
 
 Repository branch audited: `release/beta-readiness-audit`
 
 Scope: Track B learning app only. This audit does not include Webflow,
 Cloudflare production Workers, auth, DNS, billing, payment settings, secrets,
 production data, or deployment settings.
+
+Baseline: this private/manual paid beta audit is written after the merged
+Review v2, Saved Library v2, Packs v2, and Pricing / Paywall v2 contracts. It
+is a docs/tests-only readiness artifact. It does not implement runtime UI,
+enable real checkout, add payment SDKs, change authentication, or unblock public
+paid beta.
 
 ## Current Product Status
 
@@ -63,8 +69,8 @@ readiness.
 | `/save?slug=dissonance&source=alias_search` | Same save flow with accepted `alias_search` source. Duplicate saves preserve existing review progress and do not duplicate queue entries. | P0 if alias source creates fake or unsafe save behavior. |
 | `/save?slug=dissonance&source=extension` | Same save flow with normalized extension source. Extension helper also builds this URL. | P0 if extension source cannot create review state. |
 | `/review` | Mixed local review session from due, weak, and new saved candidates; can start starter deck if no local candidates exist. Answers update SRS state/events/stats. | OK for beta. P0 if answer writes fail. |
-| `/review?mode=due` | Query-mode due review contract. Selects due items by `nextDueAt` and SRS state. | OK for beta. `/review/due` also exists as a route alias. |
-| `/review?mode=weak` | Query-mode weak review contract. Selects weak words by `Weak` mastery or `weakScore > 0`. | OK for beta. `/review/weak` also exists as a route alias. |
+| `/review/due` | Route alias for due review. Selects due items by `nextDueAt` and SRS state. | OK for private/manual beta if it is derived only from real review state. |
+| `/review/weak` | Route alias for weak review. Selects weak words by `Weak` mastery or `weakScore > 0`. | OK for private/manual beta if it is derived only from real review state. |
 | `/review/weak-sprint` | Five-card weak sprint using only real local weak state. Empty state appears when no weak words exist. | OK for beta. P0 if it does not update review state/events. |
 | `/packs` | Pack preview catalog with available starter packs and honest planned placeholders. Pack cards can record preview start. | OK for beta with mock/R2 caveat. |
 | `/packs/academic-vocabulary` | Academic pack detail from exam pack or academic hub pack data. Start preview review routes to `/review?mode=hub&hub=academic-vocabulary&limit=10&packId=academic-vocabulary&source=pack_preview`. | OK for beta if manual preview completion writes pack progress. |
@@ -80,9 +86,9 @@ readiness.
 | `vlx_review_state_v1` | SRS storage | Record keyed by slug with box, mastery, counts, weak score, due date, and response metadata. | `/save` creates initial item; `/review` updates after answers. | P0 if missing or fake. |
 | `vlx_review_events_v1` | SRS storage | Array of review answer events with session, question, answer, result, response time, box, and weak score data. | `/review` via `appendReviewEvent`. | P0 if answer events are not appended. |
 | `vlx_daily_stats_v1` | SRS storage | Daily stats record with reviewed, correct, wrong, mastered, weak added, minutes, sessions. | `/review` via `writeDailyStats`. | OK for local weekly reviewed words; analytics pipeline remains P1. |
-| `vlx_pack_progress_v1` | Pack progress | Record keyed by pack ID with preview start/completion, last review, reviewed/correct counts, and source. | Pack cards/detail and review completion. | P0 if pack progress shows fake completion or fake counts. |
-| `vlx_plan_state_v1` | Entitlements | Local plan state only. Defaults to guest. | Manual/local state only; no billing writer. | OK for local gating previews. Not a subscription record. |
-| `vlx_upgrade_interest_v1` | Upgrade interest | Array of local interest records with plan, source, trigger, timestamp, and page path. | Pricing and paywall prompts. | P0 if pricing/paywall CTA does not record interest in no-payment mode. |
+| `vlx_pack_progress_v1` | Pack progress | Record keyed by pack ID with preview start/completion, last review, reviewed/correct counts, and source. | Pack cards/detail and review completion. | P0 if pack progress shows fake completion or fake counts. Auxiliary beta key; not an SRS/mastery key. |
+| `vlx_plan_state_v1` | Entitlements | Local plan state only. Defaults to guest. | Manual/local state only; no billing writer. | OK for local gating previews. Not a subscription, receipt, or entitlement record. |
+| `vlx_upgrade_interest_v1` | Upgrade interest | Array of local interest records with plan, source, trigger, timestamp, and page path. | Pricing and paywall prompts. | P0 if pricing/paywall CTA does not record interest in no-payment mode. Attribution only; never grants paid access. |
 
 ## Local Analytics Event Contract
 
@@ -121,7 +127,7 @@ Required validation commands for this audit PR:
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run build
-npm.cmd run test -- --workers=1
+npm.cmd run test -- tests/beta-readiness-audit.spec.ts --workers=1
 ```
 
 The Playwright browser suites expect the app at `http://127.0.0.1:3006` unless
@@ -146,6 +152,7 @@ Current Playwright suites:
 Focused commands for narrow regression runs:
 
 ```powershell
+npm.cmd run test -- tests/beta-readiness-audit.spec.ts --workers=1
 npm.cmd run test -- tests/mvp-smoke.spec.ts --workers=1
 npm.cmd run test -- tests/word-detail-memory-state.spec.ts --workers=1
 npm.cmd run test -- tests/review-state-regression.spec.ts tests/review-mode-routes.spec.ts --workers=1
@@ -164,7 +171,9 @@ Use `docs/PAID_BETA_MANUAL_QA.md` for the step-by-step browser script.
 
 Minimum manual pass before any paid beta invite:
 
-- [ ] Clear all seven approved local storage keys.
+- [ ] Clear all seven Track B local beta keys listed in this audit.
+- [ ] Open `/dashboard` and confirm Today's Memory Mission uses real local SRS
+      state.
 - [ ] Save a `word_page` source word and confirm saved word plus review item.
 - [ ] Open `/word/dissonance` after saving and confirm saved status, source,
       mastery, box, weak score, recall counts, due date, and review event count
@@ -172,9 +181,16 @@ Minimum manual pass before any paid beta invite:
 - [ ] Open `/saved` and confirm the saved library shows only local saved words.
 - [ ] Save an `alias_search` source word and confirm source tagging.
 - [ ] Save an `extension` source word and confirm source tagging.
-- [ ] Complete a review card and confirm event/state/stats mutation.
+- [ ] Open `/review`, complete a review card, and confirm event/state/stats
+      mutation.
+- [ ] Open `/review/due` and confirm due cards come from `nextDueAt` and SRS
+      state, or show an honest empty state.
+- [ ] Open `/review/weak` and confirm weak cards come from `Weak` mastery or
+      `weakScore > 0`, or show an honest empty state.
 - [ ] Create a weak word from a wrong answer and confirm weak score/miss state.
 - [ ] Run `/review/weak-sprint` and confirm weak review events/state updates.
+- [ ] Open `/packs` and confirm pack cards do not show fake word counts or fake
+      progress.
 - [ ] Start Academic Vocabulary preview and confirm pack progress start.
 - [ ] Complete Academic preview and confirm pack progress completion from real answers.
 - [ ] Click Lite and Pro pricing CTAs and confirm local upgrade interest records.
@@ -262,6 +278,11 @@ No `TODO` or `FIXME` matches were found in the searched code/docs.
 
 ## P0/P1/P2 Risk List
 
+This is a readiness audit, not launch signoff. The private/manual beta gate can
+move forward only after the owner-run manual QA checklist passes without P0
+findings. Any P0 finding blocks even a private/manual paid beta invite until it
+is fixed and rechecked.
+
 ### P0
 
 No active P0 blocker was identified in the code scan. The following are P0
@@ -285,8 +306,8 @@ manual QA:
 
 - Missing real IELTS/GRE paid pack content.
 - Placeholder copy that could confuse users around Lite/Pro entitlements.
-- Missing manual QA docs before this audit PR. This PR adds the docs, but the
-  QA run still must be performed before beta invite.
+- Owner-run manual QA evidence is not recorded by this audit. The QA run still
+  must be performed before any beta invite.
 - Production analytics pipeline is not connected. Local dataLayer beta events
   exist and are tested, but backend/reporting readiness remains P1.
 - Lack of a launch checklist covering support, data reset disclosure, beta
@@ -302,10 +323,37 @@ manual QA:
 - Future AI mistake explanation.
 - Future Chrome extension full integration beyond route helpers.
 
+## Private/Manual Beta Gate
+
+Private/manual paid beta gate: Conditional candidate only. An owner may run a
+small, manually invited, no-real-payment paid beta after the required validation
+commands pass and `docs/PAID_BETA_MANUAL_QA.md` is executed with no P0 failures.
+The beta must use manual invitation, manual support, local-only learning state,
+local-only upgrade interest, and explicit no-checkout copy.
+
+This gate does not approve public signup, self-serve checkout, paid entitlement
+granting, production account sync, production learning-data migration, or
+production analytics reporting.
+
+## Public Paid Beta No-Go
+
+Public paid beta remains **No-Go**. Public paid beta is blocked until account
+sync, server-side SRS persistence, production monitoring, privacy/support
+operations, accessibility evidence, content readiness, billing/entitlement
+architecture, refund/support policy, and rollback gates have passed.
+
+## No-Real-Payment Safety Statement
+
+No real payment is added, approved, or recommended by this audit. Do not add
+checkout routes, billing portal routes, subscription flows, invoice flows,
+payment provider SDKs, real paid entitlements, payment environment variables, or
+production payment callbacks as part of this PR.
+
 ## Go/No-Go Recommendation
 
-Recommendation: conditional Go for a limited no-payment beta readiness PR and
-internal/manual QA. No-Go for real paid launch or real checkout.
+Recommendation: conditional Go for a limited private/manual no-real-payment beta
+readiness audit and owner-run manual QA. No-Go for public paid beta, real paid
+launch, or real checkout.
 
 The memory loop is far enough along to audit because Save -> Review ->
 review_state/events -> Due/Weak/Mastered is represented locally and covered by

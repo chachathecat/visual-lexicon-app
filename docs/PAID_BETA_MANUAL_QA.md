@@ -15,6 +15,24 @@ Open:
 http://127.0.0.1:3006/dashboard
 ```
 
+## Required Surface Coverage
+
+This manual run must cover these Track B surfaces exactly:
+
+```txt
+/dashboard
+/saved
+/review
+/review/due
+/review/weak
+/review/weak-sprint
+/packs
+/packs/academic-vocabulary
+/pricing
+/save?slug=dissonance&source=word_page
+/word/dissonance
+```
+
 ## 1. Clear Local Storage
 
 In the browser console, run:
@@ -85,6 +103,21 @@ Expected values:
 - `state.dissonance.weakScore` is `0`.
 - `state.dissonance.correct` is `0`.
 - `state.dissonance.wrong` is `0`.
+
+## 2A. Confirm Dashboard And Saved Library State
+
+Visit:
+
+```txt
+http://127.0.0.1:3006/dashboard
+http://127.0.0.1:3006/saved
+```
+
+Expected:
+
+- `/dashboard` shows Today Memory Mission values from local SRS state.
+- `/saved` shows `Dissonance` from local saved/review state.
+- Neither page shows fake due, weak, mastered, saved, or streak values.
 
 ## 3. Save Alias Search Word
 
@@ -171,6 +204,23 @@ Expected:
 - Summary shows reviewed, correct, wrong, weak, and moved-forward counts from
   actual answers.
 
+## 5A. Check Due And Weak Routes
+
+Visit:
+
+```txt
+http://127.0.0.1:3006/review/due
+http://127.0.0.1:3006/review/weak
+```
+
+Expected:
+
+- `/review/due` renders due words from `nextDueAt` and SRS state, or an honest
+  empty state when no due words exist.
+- `/review/weak` renders weak words from `Weak` mastery or `weakScore > 0`, or
+  an honest empty state when no weak words exist.
+- Neither route creates fake due, weak, mastered, or review-event state.
+
 Console check:
 
 ```js
@@ -248,6 +298,17 @@ Expected:
   sprint store.
 
 ## 8. Start Academic Pack Preview
+
+First visit:
+
+```txt
+http://127.0.0.1:3006/packs
+```
+
+Expected:
+
+- Pack cards do not show fake progress or fake paid access.
+- Planned or locked pack states are honest about unavailable content/payment.
 
 Visit:
 
@@ -354,6 +415,7 @@ Expected:
 - These routes are not app payment or billing flows.
 - There is no payment SDK, checkout page, subscription page, billing portal, or
   production payment action.
+- No real payment route or production payment behavior exists.
 
 Optional filesystem check:
 
