@@ -14,7 +14,6 @@ import {
   TrackBEmptyState,
   TrackBMetricCard,
   TrackBPageHeader,
-  TrackBProgressBadge,
   TrackBSection,
   TrackBUpgradeNudge
 } from "@/components/track-b";
@@ -65,6 +64,17 @@ const visualCueSlugs = new Set([
   "obfuscate",
   "lucid"
 ]);
+
+const fullPackLockedCopy =
+  "Full pack access is planned for Pro. Payment is not connected in this beta.";
+const betaGateCopy =
+  "Billing is not connected. Public paid beta remains blocked. Private/manual beta remains gated.";
+const placeholderPackCopy =
+  "Pack data is not available yet. Word count pending. Free preview pending. Progress cannot be computed until this pack has word data. Preview review is unavailable until preview words exist.";
+const fullExamContentCopy =
+  "Full IELTS/GRE content is not implied unless actual data exists.";
+const weakReviewRouteNote =
+  "Uses the existing weak review route; filtered pack-only weak practice is not connected yet.";
 
 type PacksV2Snapshot = {
   savedWords: VlxSavedWordsStore;
@@ -214,18 +224,27 @@ function getPackLocalSummary(
 }
 
 function getProgressLabel(progress: VlxPackProgressItem) {
-  if (progress.reviewedCount > 0) {
-    return `${formatCount(progress.reviewedCount, "card")} reviewed`;
-  }
-
   if (progress.previewCompletedAt) {
     return "Preview completed";
+  }
+
+  if (progress.reviewedCount > 0) {
+    return `${formatCount(progress.reviewedCount, "card")} reviewed`;
   }
 
   return "Preview started";
 }
 
 function getProgressDetail(progress: VlxPackProgressItem) {
+  if (progress.previewCompletedAt) {
+    return progress.reviewedCount > 0
+      ? `${formatCount(progress.reviewedCount, "card")} reviewed; ${formatCount(
+          progress.correctCount,
+          "correct answer"
+        )} recorded`
+      : "Preview completion recorded without review counts.";
+  }
+
   if (progress.reviewedCount > 0) {
     return `${formatCount(progress.correctCount, "correct answer")} recorded`;
   }
@@ -259,23 +278,12 @@ function getPlanLengthLabel(pack: VlxPackPreview) {
     : undefined;
 }
 
-function getPrimaryActionLabel(
-  pack: VlxPackPreview,
-  summary: PackLocalSummary
-) {
+function getPrimaryActionLabel(summary: PackLocalSummary) {
   if (summary.hasVisibleProgress) {
     return "Continue";
   }
 
-  if (summary.dueWords.length > 0 || summary.weakWords.length > 0) {
-    return "Start review";
-  }
-
-  if (pack.priceTier && pack.priceTier !== "free") {
-    return "Preview";
-  }
-
-  return "Start review";
+  return "Start preview";
 }
 
 function getVisualClass(slug: string) {
@@ -304,6 +312,73 @@ function PacksV2Token({ children }: { children: ReactNode }) {
   return <span className="packs-v2-token">{children}</span>;
 }
 
+function getPackAccessCopy(pack: VlxPackPreview) {
+  if (pack.status !== "available") {
+    return `${placeholderPackCopy} ${betaGateCopy} ${fullExamContentCopy}`;
+  }
+
+  if (isPremiumPack(pack)) {
+    return `${fullPackLockedCopy} ${betaGateCopy}`;
+  }
+
+  return null;
+}
+
+function PackAccessNote({ pack }: { pack: VlxPackPreview }) {
+  const copy = getPackAccessCopy(pack);
+
+  return copy ? <p className="packs-v2-access-note">{copy}</p> : null;
+}
+
+function PackProgressFacts({
+  progress,
+  variant = "card"
+}: {
+  progress?: VlxPackProgressItem;
+  variant?: "card" | "detail";
+}) {
+  if (!hasVisiblePackProgress(progress)) {
+    return null;
+  }
+
+  const rows = [
+    {
+      label: "Started",
+      value: formatShortDate(progress.startedAt) ?? "Not recorded"
+    },
+    {
+      label: "Preview completed",
+      value: progress.previewCompletedAt ? "Yes" : "No"
+    },
+    {
+      label: "Reviewed count",
+      value: progress.reviewedCount
+    },
+    {
+      label: "Correct count",
+      value: progress.correctCount
+    }
+  ];
+
+  if (variant === "detail") {
+    rows.push({
+      label: "Last reviewed",
+      value: formatShortDate(progress.lastReviewedAt) ?? "Not reviewed yet"
+    });
+  }
+
+  return (
+    <dl className={`packs-v2-progress-facts packs-v2-progress-facts--${variant}`}>
+      {rows.map((row) => (
+        <div key={row.label}>
+          <dt>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function PackProgressNote({
   summary,
   variant = "card"
@@ -316,6 +391,7 @@ function PackProgressNote({
       <div className={`packs-v2-progress-note packs-v2-progress-note--${variant}`}>
         <span>{getProgressLabel(summary.progress)}</span>
         <small>{getProgressDetail(summary.progress)}</small>
+        <PackProgressFacts progress={summary.progress} variant={variant} />
       </div>
     );
   }
@@ -386,12 +462,12 @@ function PackPrimaryAction({
 
   return (
     <Link
-      aria-label={`${getPrimaryActionLabel(pack, summary)} ${pack.title}`}
+      aria-label={`${getPrimaryActionLabel(summary)} ${pack.title}`}
       className="track-b-button track-b-button--primary"
       href={pack.reviewHref}
       onClick={handleStartPack}
     >
-      {getPrimaryActionLabel(pack, summary)}
+      {getPrimaryActionLabel(summary)}
     </Link>
   );
 }
@@ -438,6 +514,7 @@ function PackCard({
         {planLengthLabel ? <PacksV2Token>{planLengthLabel}</PacksV2Token> : null}
         <PacksV2Token>{getPreviewAccessLabel(pack)}</PacksV2Token>
       </PacksV2TokenRow>
+      <PackAccessNote pack={pack} />
       <PackStateStrip summary={summary} />
       <PackProgressNote summary={summary} />
       <div className="track-b-action-row">
@@ -454,7 +531,19 @@ function PackCard({
         >
           View plan
         </Link>
+        {summary.weakWords.length > 0 ? (
+          <Link
+            aria-label={`Practice weak ${pack.title}`}
+            className="track-b-button track-b-button--quiet"
+            href="/review/weak"
+          >
+            Practice weak
+          </Link>
+        ) : null}
       </div>
+      {summary.weakWords.length > 0 ? (
+        <p className="packs-v2-weak-note">{weakReviewRouteNote}</p>
+      ) : null}
     </article>
   );
 }
@@ -565,7 +654,7 @@ export function PacksV2View({ packs }: { packs: VlxPackPreview[] }) {
           label: "View pricing"
         }}
         badgeLabel="Pro preview"
-        body="This is a visual-only upgrade note. It links to the existing pricing page and does not grant paid access or change entitlements from Packs."
+        body={`${fullPackLockedCopy} ${betaGateCopy} This visual-only note links to the existing pricing page and does not grant paid access or change entitlements from Packs.`}
         title="Want longer guided plans later?"
       />
     </TrackBAppShell>
@@ -614,7 +703,11 @@ function PackDetailActions({
         </Link>
       ) : null}
       {summary.weakWords.length > 0 ? (
-        <Link className="track-b-button track-b-button--quiet" href="/review/weak">
+        <Link
+          aria-label={`Practice weak ${pack.title}`}
+          className="track-b-button track-b-button--quiet"
+          href="/review/weak"
+        >
           Practice weak
         </Link>
       ) : null}
@@ -647,8 +740,11 @@ function PackDetailHero({
         <PacksV2TokenRow>
           <PacksV2Token>{getStatusLabel(pack.status)}</PacksV2Token>
           <PacksV2Token>{getPreviewAccessLabel(pack)}</PacksV2Token>
-          {isPremiumPack(pack) ? <PacksV2Token>Pro visual preview</PacksV2Token> : null}
+          {isPremiumPack(pack) ? (
+            <PacksV2Token>Pro visual preview</PacksV2Token>
+          ) : null}
         </PacksV2TokenRow>
+        <PackAccessNote pack={pack} />
       </div>
       <dl className="packs-v2-detail-facts">
         <DetailFact label="Words" value={wordCountLabel} />
@@ -717,10 +813,9 @@ function PackDetailMetrics({
         label="Review events"
         value={summary.reviewEvents.length}
       />
-      <TrackBProgressBadge
-        detail={`${summary.savedWords.length} saved locally in this pack`}
-        label="Known pack coverage"
-        max={typeof pack.wordCount === "number" ? pack.wordCount : knownMax}
+      <TrackBMetricCard
+        description={`${summary.savedWords.length} saved locally in this pack. This is a factual slug count, not learning progress.`}
+        label="Known slugs"
         value={knownMax}
       />
     </div>
@@ -790,6 +885,11 @@ function PackQueues({ summary }: { summary: PackLocalSummary }) {
         title="Weak within this pack"
         words={summary.weakWords}
       />
+      {summary.weakWords.length > 0 ? (
+        <p className="packs-v2-weak-note packs-v2-weak-note--detail">
+          {weakReviewRouteNote}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -946,7 +1046,7 @@ export function PackDetailV2View({ pack }: { pack: VlxPackPreview }) {
             label: "View pricing"
           }}
           badgeLabel="Pro preview"
-          body="This is a visual-only Pro note for the existing premium pack model. It links to pricing and does not grant paid access, checkout, or subscription behavior."
+          body={`${fullPackLockedCopy} ${betaGateCopy} This visual-only Pro note links to pricing and does not grant paid access, checkout, or subscription behavior.`}
           title="Pro can support larger guided packs later"
         />
       ) : null}
