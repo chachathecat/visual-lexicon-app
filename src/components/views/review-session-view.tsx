@@ -1089,7 +1089,7 @@ function getReviewSummaryPaywallSurface({
       plan: userState,
       packId,
       previewCompleted: true,
-      source: "review_exam_pack_preview_end"
+      source: "review_pack_preview_end"
     });
 
     if (prompt) {

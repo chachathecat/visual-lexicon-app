@@ -926,7 +926,11 @@ test.describe("browser runtime analytics gate", () => {
       localStorage.getItem("vlx_plan_state_v1")
     );
 
-    await page.getByRole("button", { name: "Request early access" }).click();
+    await page
+      .getByRole("button", {
+        name: "Note Pro interest - billing not connected yet"
+      })
+      .click();
     await waitForDataLayerEvent(page, "vlx_pricing_interest");
 
     const events = await getDataLayerEvents(page, "vlx_pricing_interest");
@@ -950,7 +954,11 @@ test.describe("browser runtime analytics gate", () => {
     await waitForEventResult(page, "vlx_save_word", "saved");
 
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: "Request early access" }).click();
+    await page
+      .getByRole("button", {
+        name: "Note Pro interest - billing not connected yet"
+      })
+      .click();
     await waitForDataLayerEvent(page, "vlx_pricing_interest");
 
     const keys = await page.evaluate(() => {

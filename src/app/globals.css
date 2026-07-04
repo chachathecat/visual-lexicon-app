@@ -4679,14 +4679,16 @@ select {
 }
 
 .pricing-v2-page,
-.pricing-v2-plan-grid {
+.pricing-v2-plan-grid,
+.pricing-v2-trigger-panel,
+.pricing-v2-trigger-grid {
   display: grid;
   min-width: 0;
 }
 
 .pricing-v2-page {
   gap: 32px;
-  width: min(100%, 720px);
+  width: min(100%, 1040px);
   margin: 0 auto;
   padding: 32px 0 48px;
 }
@@ -4729,7 +4731,7 @@ select {
 }
 
 .pricing-v2-beta-hero p {
-  max-width: 340px;
+  max-width: 520px;
   margin: 0;
   color: var(--vlx-track-b-ink-soft);
   font-size: 0.88rem;
@@ -4737,7 +4739,7 @@ select {
 }
 
 .pricing-v2-plan-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -4791,6 +4793,13 @@ select {
   line-height: 1.4;
 }
 
+.pricing-v2-plan-card__detail {
+  margin: 0;
+  color: var(--vlx-track-b-ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .pricing-v2-feature-list {
   display: grid;
   gap: 10px;
@@ -4823,6 +4832,43 @@ select {
 
 .pricing-v2-plan-card .track-b-button {
   width: 100%;
+}
+
+.pricing-v2-trigger-panel {
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(44, 24, 16, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.7);
+}
+
+.pricing-v2-trigger-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pricing-v2-trigger-grid article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(44, 24, 16, 0.08);
+  border-radius: 8px;
+  background: var(--vlx-track-b-surface);
+}
+
+.pricing-v2-trigger-grid h3 {
+  margin: 0;
+  color: var(--vlx-track-b-ink);
+  font-size: 0.86rem;
+}
+
+.pricing-v2-trigger-grid p,
+.paywall-prompt__gate {
+  margin: 0;
+  color: #7a6b5d;
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .pricing-v2-note {

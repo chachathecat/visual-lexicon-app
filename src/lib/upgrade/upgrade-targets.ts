@@ -1,6 +1,6 @@
 import type { VlxPlanId } from "@/lib/entitlements";
 
-export type VlxUpgradePlan = Extract<VlxPlanId, "lite" | "pro">;
+export type VlxUpgradePlan = Extract<VlxPlanId, "lite" | "pro"> | "exam_pack";
 
 const UNKNOWN_UPGRADE_SOURCE = "unknown";
 
@@ -8,7 +8,9 @@ function getConfiguredUpgradeUrl(plan: VlxUpgradePlan) {
   const planUrl =
     plan === "lite"
       ? process.env.NEXT_PUBLIC_LITE_PAYMENT_URL
-      : process.env.NEXT_PUBLIC_PRO_PAYMENT_URL;
+      : plan === "pro"
+        ? process.env.NEXT_PUBLIC_PRO_PAYMENT_URL
+        : undefined;
 
   return planUrl?.trim() || process.env.NEXT_PUBLIC_PAID_BETA_FORM_URL?.trim();
 }

@@ -105,7 +105,7 @@ const auditedRoutes = [
   {
     path: "/pricing",
     waitForRole: {
-      name: "Early access",
+      name: "Pricing",
       role: "heading" as const
     }
   },
@@ -700,7 +700,9 @@ test.describe("Track B product/UI readiness rendered audit", () => {
     await expectTabReaches(page, answerButton);
 
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "domcontentloaded" });
-    const pricingButton = page.getByRole("button", { name: "Join paid beta" });
+    const pricingButton = page.getByRole("button", {
+      name: "Note Lite interest - billing not connected yet"
+    });
 
     await pricingButton.waitFor({ state: "visible" });
     await expectTabReaches(page, pricingButton);

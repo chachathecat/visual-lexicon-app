@@ -2,6 +2,7 @@ export {
   evaluateExamPackPreviewEndPaywall,
   evaluateMasteryExportLockedPaywall,
   evaluateMistakeExplanationLockedPaywall,
+  evaluateNoWatermarkDownloadPaywall,
   evaluateReviewLimitPaywall,
   evaluateSaveLimitPaywall,
   evaluateWeakWordsSprintLockedPaywall

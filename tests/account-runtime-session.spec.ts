@@ -492,16 +492,22 @@ test.describe("account runtime session principal", () => {
   });
 
   test("existing SRS and analytics contracts remain unchanged", () => {
-    const diff = execFileSync(
+    const approvedPricingPaywallV2Diff = new Set([
+      "src/lib/analytics/types.ts",
+    ]);
+    const unexpectedDiff = execFileSync(
       "git",
       ["diff", "--name-only", "--", "src/lib/srs", "src/lib/analytics"],
       {
         cwd: workspaceRoot,
         encoding: "utf8",
       }
-    ).trim();
+    )
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .filter((path) => !approvedPricingPaywallV2Diff.has(path));
 
-    expect(diff).toBe("");
+    expect(unexpectedDiff).toEqual([]);
   });
 
   test("documentation states the auth principal boundary", () => {

@@ -23,6 +23,7 @@ The page sells outcomes, not quotas:
 - Free: Start remembering your first words.
 - Lite: Build a daily visual memory habit.
 - Pro: Fix weak words and prepare for exams.
+- Exam Pack: Follow a guided visual vocabulary plan.
 
 The north-star behavior remains Weekly Reviewed Words. Saved words, pack
 previews, downloads, exports, and upgrade interest matter only when they support
@@ -32,8 +33,8 @@ repeat review behavior.
 
 Pricing v2 uses the Track B app shell and includes:
 
-- outcome-based Free / Lite / Pro plan cards
-- Exam Pack links for Academic Vocabulary, IELTS Writing, and GRE Visual Verbal
+- outcome-based Free / Lite / Pro / Exam Pack option cards
+- Exam Pack interest capture for guided vocabulary plan positioning
 - paywall trigger explanations for save limit, review limit, pack preview end,
   Weak Sprint tools, no-watermark download, and AI mistake explanation later
 - safety and progress copy tied to review history
@@ -89,9 +90,9 @@ Before real monetization can ship, the product still needs:
 Tests cover:
 
 - `/pricing` renders Pricing v2 in the Track B shell
-- Free / Lite / Pro outcome cards exist
-- outcome copy for Free, Lite, and Pro exists
-- Exam Pack links point to existing safe `/packs` routes
+- Free / Lite / Pro / Exam Pack outcome cards exist
+- outcome copy for Free, Lite, Pro, and Exam Pack exists
+- Exam Pack remains beta-interest-only and does not imply in-app purchase
 - payment provider SDKs and checkout/billing routes are not introduced
 - route handlers are not introduced under `src/app`
 - paywall prompts expose safe pricing comparison links

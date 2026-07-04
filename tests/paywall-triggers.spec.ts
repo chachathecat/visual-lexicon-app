@@ -6,6 +6,7 @@ import {
   evaluateExamPackPreviewEndPaywall,
   evaluateMasteryExportLockedPaywall,
   evaluateMistakeExplanationLockedPaywall,
+  evaluateNoWatermarkDownloadPaywall,
   evaluateReviewLimitPaywall,
   evaluateSaveLimitPaywall,
   evaluateWeakWordsSprintLockedPaywall,
@@ -71,15 +72,16 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
       id: 'save_limit',
       recommendedPlan: 'lite',
       title: 'Keep new saved words in review',
-      body:
-        'Free starts your first saved-word habit. Lite is for a larger daily visual memory habit with expanded review capacity.',
-      primaryCtaLabel: 'Preview Lite',
+      primaryCtaLabel: 'Note Lite interest - billing not connected yet',
       source: 'save_button',
       reasonMetrics: {
         savedCount: 50,
         savedLimit: 50,
       },
     });
+    expect(prompt?.body).toContain('free saved-word limit');
+    expect(prompt?.body).toContain('Billing is not connected yet');
+    expect(prompt?.body).toContain('beta interest only');
     expect(
       evaluateSaveLimitPaywall({
         plan: 'lite',
@@ -108,13 +110,14 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
       id: 'review_limit',
       recommendedPlan: 'lite',
       title: 'Keep reviewing before words fade',
-      body:
-        "Free previews today's review loop. Lite is for daily due and weak review when you want the habit to continue.",
+      primaryCtaLabel: 'Note Lite interest - billing not connected yet',
       reasonMetrics: {
         dailyReviewedCount: 10,
         dailyReviewLimit: 10,
       },
     });
+    expect(prompt?.body).toContain("today's free review limit");
+    expect(prompt?.body).toContain('Billing is not connected yet');
     expect(
       evaluateReviewLimitPaywall({
         plan: 'pro',
@@ -124,7 +127,7 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
     ).toBeNull();
   });
 
-  test('exam_pack_preview_end recommends Pro after a completed preview', () => {
+  test('pack_preview_end records Exam Pack interest after a completed preview', () => {
     expect(
       evaluateExamPackPreviewEndPaywall({
         plan: 'free',
@@ -142,15 +145,17 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
     });
 
     expect(prompt).toMatchObject({
-      id: 'exam_pack_preview_end',
-      recommendedPlan: 'pro',
+      id: 'pack_preview_end',
+      recommendedPlan: 'exam_pack',
       title: 'Continue the guided exam plan',
-      body:
-        'The free preview is complete. Pro is positioned for full Exam Packs like Academic Vocabulary, IELTS Writing, and GRE Visual Verbal.',
+      primaryCtaLabel: 'Note Exam Pack interest - billing not connected yet',
       reasonMetrics: {
         packId: 'academic-vocabulary',
       },
     });
+    expect(prompt?.body).toContain('real pack preview');
+    expect(prompt?.body).toContain('full-pack access remains locked');
+    expect(prompt?.body).toContain('Billing is not connected yet');
     expect(
       evaluateExamPackPreviewEndPaywall({
         plan: 'pro',
@@ -180,12 +185,13 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
       id: 'weak_words_sprint_locked',
       recommendedPlan: 'pro',
       title: 'Repair weak words with Pro tools',
-      body:
-        'Your weak words come from review misses and weakScore. Pro is positioned for Weak Sprint and advanced weak-word repair while the local sprint remains safe in this MVP.',
+      primaryCtaLabel: 'Note Pro interest - billing not connected yet',
       reasonMetrics: {
         weakCount: 4,
       },
     });
+    expect(prompt?.body).toContain('weak words from review misses or weakScore');
+    expect(prompt?.body).toContain('Billing is not connected yet');
   });
 
   test('mastery_export_locked is a Pro planning trigger', () => {
@@ -199,17 +205,46 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
       id: 'mastery_export_locked',
       recommendedPlan: 'pro',
       title: 'Use review history outside the app',
-      body:
-        'Pro export and no-watermark download support planning from real review history; they do not replace recall practice.',
+      primaryCtaLabel: 'Note Pro interest - billing not connected yet',
       reasonMetrics: {
         masteredCount: 12,
       },
     });
+    expect(prompt?.body).toContain('mastery evidence from local review state');
+    expect(prompt?.body).toContain('not for faking mastery');
     expect(
       evaluateMasteryExportLockedPaywall({
         plan: 'pro',
         masteredCount: 12,
         source: 'mastery_export',
+      }),
+    ).toBeNull();
+  });
+
+  test('no_watermark_download is a Lite planning trigger', () => {
+    const prompt = evaluateNoWatermarkDownloadPaywall({
+      plan: 'free',
+      slug: 'lucid',
+      source: 'word_download',
+    });
+
+    expect(prompt).toMatchObject({
+      id: 'no_watermark_download',
+      recommendedPlan: 'lite',
+      title: 'Clean downloads are still gated',
+      primaryCtaLabel: 'Note Lite interest - billing not connected yet',
+      reasonMetrics: {
+        slug: 'lucid',
+      },
+    });
+    expect(prompt?.body).toContain('clean visual download');
+    expect(prompt?.body).toContain('no clean asset delivery or paid access is active');
+    expect(prompt?.body).toContain('Billing is not connected yet');
+    expect(
+      evaluateNoWatermarkDownloadPaywall({
+        plan: 'lite',
+        slug: 'lucid',
+        source: 'word_download',
       }),
     ).toBeNull();
   });
@@ -226,13 +261,15 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
       id: 'mistake_explanation_locked',
       recommendedPlan: 'pro',
       title: 'Get mistake explanations later',
-      body:
-        'AI mistake explanations are planned later for Pro after the SRS loop is working. No AI is connected in this MVP.',
+      primaryCtaLabel: 'Note Pro interest - billing not connected yet',
       reasonMetrics: {
         wrongCount: 2,
         slug: 'dissonance',
       },
     });
+    expect(prompt?.body).toContain('wrong answer');
+    expect(prompt?.body).toContain('no AI is connected');
+    expect(prompt?.body).toContain('Billing is not connected yet');
     expect(
       evaluateMistakeExplanationLockedPaywall({
         plan: 'pro',
