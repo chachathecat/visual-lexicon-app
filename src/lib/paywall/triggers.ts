@@ -3,6 +3,7 @@ import type {
   VlxExamPackPreviewEndPaywallInput,
   VlxMasteryExportLockedPaywallInput,
   VlxMistakeExplanationLockedPaywallInput,
+  VlxNoWatermarkDownloadPaywallInput,
   VlxPaywallPrompt,
   VlxPaywallReasonMetrics,
   VlxPaywallRecommendedPlan,
@@ -21,43 +22,50 @@ const PAYWALL_COPY = {
     recommendedPlan: "lite",
     title: "Keep new saved words in review",
     body:
-      "Free starts your first saved-word habit. Lite is for a larger daily visual memory habit with expanded review capacity.",
-    primaryCtaLabel: "Preview Lite"
+      "You reached the free saved-word limit from local saved-word evidence. Lite is positioned to keep more new words moving into review. Billing is not connected yet; this records beta interest only.",
+    primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   review_limit: {
     recommendedPlan: "lite",
     title: "Keep reviewing before words fade",
     body:
-      "Free previews today's review loop. Lite is for daily due and weak review when you want the habit to continue.",
-    primaryCtaLabel: "Preview Lite"
+      "You reached today's free review limit from local daily review evidence. Lite supports a daily visual memory habit without pretending paid access is active. Billing is not connected yet; this records beta interest only.",
+    primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
-  exam_pack_preview_end: {
-    recommendedPlan: "pro",
+  pack_preview_end: {
+    recommendedPlan: "exam_pack",
     title: "Continue the guided exam plan",
     body:
-      "The free preview is complete. Pro is positioned for full Exam Packs like Academic Vocabulary, IELTS Writing, and GRE Visual Verbal.",
-    primaryCtaLabel: "Preview Pro"
+      "You finished a real pack preview. Exam Pack is a guided visual vocabulary plan, but full-pack access remains locked until future approved entitlements exist. Billing is not connected yet; this records beta interest only.",
+    primaryCtaLabel: "Note Exam Pack interest - billing not connected yet"
   },
   weak_words_sprint_locked: {
     recommendedPlan: "pro",
     title: "Repair weak words with Pro tools",
     body:
-      "Your weak words come from review misses and weakScore. Pro is positioned for Weak Sprint and advanced weak-word repair while the local sprint remains safe in this MVP.",
-    primaryCtaLabel: "Preview Pro"
+      "You have weak words from review misses or weakScore. Pro is positioned for Weak Sprint and advanced weak-word repair after the beta gates are cleared. Billing is not connected yet; this records beta interest only.",
+    primaryCtaLabel: "Note Pro interest - billing not connected yet"
   },
   mastery_export_locked: {
     recommendedPlan: "pro",
     title: "Use review history outside the app",
     body:
-      "Pro export and no-watermark download support planning from real review history; they do not replace recall practice.",
-    primaryCtaLabel: "Preview Pro"
+      "You have mastery evidence from local review state. Pro export is planned for using real review history outside the app, not for faking mastery. Billing is not connected yet; this records beta interest only.",
+    primaryCtaLabel: "Note Pro interest - billing not connected yet"
+  },
+  no_watermark_download: {
+    recommendedPlan: "lite",
+    title: "Clean downloads are still gated",
+    body:
+      "You asked for a clean visual download. Lite and Pro may support no-watermark downloads in a future approved implementation, but no clean asset delivery or paid access is active. Billing is not connected yet; this records beta interest only.",
+    primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   mistake_explanation_locked: {
     recommendedPlan: "pro",
     title: "Get mistake explanations later",
     body:
-      "AI mistake explanations are planned later for Pro after the SRS loop is working. No AI is connected in this MVP.",
-    primaryCtaLabel: "Preview Pro"
+      "You made a wrong answer that could support a future mistake explanation. AI mistake explanations come later after the SRS loop works; no AI is connected in this MVP. Billing is not connected yet; this records beta interest only.",
+    primaryCtaLabel: "Note Pro interest - billing not connected yet"
   }
 } as const satisfies Record<
   VlxPaywallTriggerId,
@@ -197,7 +205,7 @@ export function evaluateExamPackPreviewEndPaywall(
     return null;
   }
 
-  return createPrompt("exam_pack_preview_end", input.source, {
+  return createPrompt("pack_preview_end", input.source, {
     packId: input.packId
   });
 }
@@ -223,6 +231,18 @@ export function evaluateMasteryExportLockedPaywall(
 
   return createPrompt("mastery_export_locked", input.source, {
     masteredCount: input.masteredCount
+  });
+}
+
+export function evaluateNoWatermarkDownloadPaywall(
+  input: VlxNoWatermarkDownloadPaywallInput
+): VlxPaywallPrompt | null {
+  if (hasLiteAccess(input.plan)) {
+    return null;
+  }
+
+  return createPrompt("no_watermark_download", input.source, {
+    slug: input.slug
   });
 }
 

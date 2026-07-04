@@ -3,14 +3,14 @@
 import { useState } from "react";
 
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
-import type { VlxPlanId } from "@/lib/entitlements";
 import { appendUpgradeInterest } from "@/lib/upgrade/upgrade-interest";
-import { getUpgradeTarget } from "@/lib/upgrade/upgrade-targets";
-
-type PaidPreviewPlan = Extract<VlxPlanId, "lite" | "pro">;
+import {
+  getUpgradeTarget,
+  type VlxUpgradePlan
+} from "@/lib/upgrade/upgrade-targets";
 
 type UpgradePlaceholderButtonProps = {
-  plan: PaidPreviewPlan;
+  plan: VlxUpgradePlan;
   label: string;
   source: string;
   className?: string;
@@ -75,7 +75,7 @@ export function UpgradePlaceholderButton({
       )}
       {clicked ? (
         <p className="upgrade-placeholder__note" role="status">
-          Paid beta interest noted locally. Billing is not connected.
+          Paid beta interest noted locally. Billing is not connected yet.
         </p>
       ) : null}
     </div>

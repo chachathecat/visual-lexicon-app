@@ -61,7 +61,7 @@ function getLocalPaywallPrompts() {
           plan,
           packId: completedPreview.packId,
           previewCompleted: true,
-          source: "settings_exam_pack_preview_end"
+          source: "settings_pack_preview_end"
         })
       : null,
     evaluateWeakWordsSprintLockedPaywall({

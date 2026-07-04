@@ -64,7 +64,7 @@ export type VlxAliasSearchResult = "matched" | "no_match";
 
 export type VlxAliasSearchQueryLanguage = "ko" | "ja" | "en";
 
-export type VlxAnalyticsPlan = "lite" | "pro";
+export type VlxAnalyticsPlan = "lite" | "pro" | "exam_pack";
 
 export type VlxAnalyticsSourceOfTruth = "client" | "server" | "derived";
 

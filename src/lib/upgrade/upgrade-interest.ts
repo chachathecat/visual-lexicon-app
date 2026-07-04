@@ -54,7 +54,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function normalizePlan(value: unknown): VlxUpgradePlan | null {
-  return value === "lite" || value === "pro" ? value : null;
+  return value === "lite" || value === "pro" || value === "exam_pack"
+    ? value
+    : null;
 }
 
 function normalizeTrigger(value: unknown) {

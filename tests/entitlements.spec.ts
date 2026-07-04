@@ -138,58 +138,86 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Early access',
+        name: 'Pricing',
       }),
     ).toBeVisible();
     await expect(page.locator('body')).toContainText(
-      'Visual Lexicon is invite-only during beta.',
+      'Build a visual memory habit before words fade.',
     );
     await expect(page.locator('body')).toContainText(
-      'No checkout is live',
+      'Billing is not connected yet',
     );
 
     const freePlan = page.locator('[data-plan-id="free"]');
     const litePlan = page.locator('[data-plan-id="lite"]');
     const proPlan = page.locator('[data-plan-id="pro"]');
+    const examPackPlan = page.locator('[data-plan-id="exam_pack"]');
 
     await expect(freePlan).toBeVisible();
     await expect(litePlan).toBeVisible();
     await expect(proPlan).toBeVisible();
+    await expect(examPackPlan).toBeVisible();
     await expect(
       freePlan.getByRole('heading', {
-        name: 'Preview',
+        name: 'Free',
       }),
     ).toBeVisible();
     await expect(
       litePlan.getByRole('heading', {
-        name: 'Daily',
+        name: 'Lite',
       }),
     ).toBeVisible();
     await expect(
       proPlan.getByRole('heading', {
-        name: 'Scholar',
+        name: 'Pro',
       }),
     ).toBeVisible();
-    await expect(freePlan).toContainText('Save up to 30 words');
-    await expect(litePlan).toContainText('Priority review queue');
-    await expect(proPlan).toContainText('Exam-mode timed review');
     await expect(
-      freePlan.getByRole('link', { name: 'Request preview access' }),
+      examPackPlan.getByRole('heading', {
+        name: 'Exam Pack',
+      }),
+    ).toBeVisible();
+    await expect(freePlan).toContainText('Start remembering your first words.');
+    await expect(litePlan).toContainText('Build a daily visual memory habit.');
+    await expect(proPlan).toContainText('Fix weak words and prepare for exams.');
+    await expect(examPackPlan).toContainText(
+      'Follow a guided visual vocabulary plan.',
+    );
+    await expect(
+      freePlan.getByRole('link', { name: 'Start free review' }),
     ).toHaveAttribute('href', '/dashboard');
     await expect(
-      page.getByRole('button', { name: 'Join paid beta' }),
+      page.getByRole('button', {
+        name: 'Note Lite interest - billing not connected yet',
+      }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Request early access' }),
+      page.getByRole('button', {
+        name: 'Note Pro interest - billing not connected yet',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', {
+        name: 'Note Exam Pack interest - billing not connected yet',
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole('link', { name: /checkout|subscribe|pay/i }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Join paid beta' }),
+      page.getByRole('link', {
+        name: 'Note Lite interest - billing not connected yet',
+      }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Request early access' }),
+      page.getByRole('link', {
+        name: 'Note Pro interest - billing not connected yet',
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', {
+        name: 'Note Exam Pack interest - billing not connected yet',
+      }),
     ).toHaveCount(0);
 
     const bodyText = await page.locator('body').innerText();
@@ -198,9 +226,13 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     expect(bodyText).not.toMatch(/fake mastery/i);
     expect(bodyText).not.toMatch(/\bstreak\b/i);
 
-    await page.getByRole('button', { name: 'Request early access' }).click();
+    await page
+      .getByRole('button', {
+        name: 'Note Pro interest - billing not connected yet',
+      })
+      .click();
     await expect(
-      page.getByText('Paid beta interest noted locally. Billing is not connected.'),
+      page.getByText('Paid beta interest noted locally. Billing is not connected yet.'),
     ).toBeVisible();
     await expect
       .poll(async () => {
@@ -226,24 +258,26 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
       .toBe(true);
   });
 
-  test('pricing page keeps Early Access scoped to beta tiers', async ({
+  test('pricing page keeps paid beta options interest-only', async ({
     page,
   }) => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('heading', { name: 'Early access' }),
+      page.getByRole('heading', { name: 'Pricing' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Preview' }),
+      page.getByRole('heading', { name: 'Free' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Daily' }),
+      page.getByRole('heading', { name: 'Lite' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: 'Scholar' }),
+      page.getByRole('heading', { name: 'Pro' }),
     ).toBeVisible();
-    await expect(page.locator('body')).not.toContainText('Exam Packs');
+    await expect(
+      page.getByRole('heading', { name: 'Exam Pack' }),
+    ).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'View all packs' }),
     ).toHaveCount(0);
@@ -259,13 +293,22 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     }
 
     await expect(
-      page.getByRole('link', { name: 'Request preview access' }),
+      page.getByRole('link', { name: 'Start free review' }),
     ).toHaveAttribute('href', '/dashboard');
     await expect(
-      page.getByRole('button', { name: 'Join paid beta' }),
+      page.getByRole('button', {
+        name: 'Note Lite interest - billing not connected yet',
+      }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Request early access' }),
+      page.getByRole('button', {
+        name: 'Note Pro interest - billing not connected yet',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', {
+        name: 'Note Exam Pack interest - billing not connected yet',
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole('link', { name: /checkout|subscribe|pay/i }),

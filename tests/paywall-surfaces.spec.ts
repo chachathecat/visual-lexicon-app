@@ -202,7 +202,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     });
   });
 
-  test('review summary after pack preview shows exam_pack_preview_end prompt', async ({
+  test('review summary after pack preview shows pack_preview_end prompt', async ({
     page,
   }) => {
     await clearVlxLocalStorage(page);
@@ -213,7 +213,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     await completeReviewSession(page);
 
     await expect(
-      page.locator('[data-paywall-trigger="exam_pack_preview_end"]'),
+      page.locator('[data-paywall-trigger="pack_preview_end"]'),
     ).toBeVisible();
     await expect(page.locator('[data-paywall-trigger]')).toHaveCount(1);
     await expect(
@@ -299,11 +299,15 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     const pageUrlBeforeClick = page.url();
 
-    await prompt.getByRole('button', { name: 'Preview Lite' }).click();
+    await prompt
+      .getByRole('button', {
+        name: 'Note Lite interest - billing not connected yet',
+      })
+      .click();
 
     await expect(page).toHaveURL(pageUrlBeforeClick);
     await expect(
-      prompt.getByText('Paid beta interest noted locally. Billing is not connected.'),
+      prompt.getByText('Paid beta interest noted locally. Billing is not connected yet.'),
     ).toBeVisible();
     const interestRecords = await readLocalJson<Record<string, unknown>[]>(
       page,
@@ -342,7 +346,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
       .toBe(true);
   });
 
-  test('pricing page Lite and Pro placeholders record local paid beta interest', async ({
+  test('pricing page paid options record local paid beta interest', async ({
     page,
   }) => {
     await clearVlxLocalStorage(page);
@@ -350,20 +354,46 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     const pricingUrl = page.url();
 
-    await page.getByRole('button', { name: 'Join paid beta' }).click();
-    await page.getByRole('button', { name: 'Request early access' }).click();
+    await expect(page.locator('[data-plan-id="free"]')).toContainText(
+      'Start remembering your first words.',
+    );
+    await expect(page.locator('[data-plan-id="lite"]')).toContainText(
+      'Build a daily visual memory habit.',
+    );
+    await expect(page.locator('[data-plan-id="pro"]')).toContainText(
+      'Fix weak words and prepare for exams.',
+    );
+    await expect(page.locator('[data-plan-id="exam_pack"]')).toContainText(
+      'Follow a guided visual vocabulary plan.',
+    );
+
+    await page
+      .getByRole('button', {
+        name: 'Note Lite interest - billing not connected yet',
+      })
+      .click();
+    await page
+      .getByRole('button', {
+        name: 'Note Pro interest - billing not connected yet',
+      })
+      .click();
+    await page
+      .getByRole('button', {
+        name: 'Note Exam Pack interest - billing not connected yet',
+      })
+      .click();
 
     await expect(page).toHaveURL(pricingUrl);
     await expect(
-      page.getByText('Paid beta interest noted locally. Billing is not connected.'),
-    ).toHaveCount(2);
+      page.getByText('Paid beta interest noted locally. Billing is not connected yet.'),
+    ).toHaveCount(3);
 
     const interestRecords = await readLocalJson<Record<string, unknown>[]>(
       page,
       'vlx_upgrade_interest_v1',
     );
 
-    expect(interestRecords).toHaveLength(2);
+    expect(interestRecords).toHaveLength(3);
     expect(interestRecords).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -373,6 +403,11 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
         }),
         expect.objectContaining({
           plan: 'pro',
+          source: 'pricing_page',
+          pagePath: '/pricing',
+        }),
+        expect.objectContaining({
+          plan: 'exam_pack',
           source: 'pricing_page',
           pagePath: '/pricing',
         }),
@@ -390,19 +425,43 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('button', { name: 'Join paid beta' }),
+      page.getByRole('button', {
+        name: 'Note Lite interest - billing not connected yet',
+      }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Request early access' }),
+      page.getByRole('button', {
+        name: 'Note Pro interest - billing not connected yet',
+      }),
     ).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'Join paid beta' }),
+      page.getByRole('button', {
+        name: 'Note Exam Pack interest - billing not connected yet',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', {
+        name: 'Note Lite interest - billing not connected yet',
+      }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: 'Request early access' }),
+      page.getByRole('link', {
+        name: 'Note Pro interest - billing not connected yet',
+      }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', {
+        name: 'Note Exam Pack interest - billing not connected yet',
+      }),
     ).toHaveCount(0);
     await expect(page.locator('body')).toContainText(
       'Visual Lexicon is collecting paid beta interest only.',
+    );
+    await expect(page.locator('body')).toContainText(
+      'Billing is not connected yet.',
+    );
+    await expect(page.locator('body')).toContainText(
+      'public paid beta remains blocked',
     );
   });
 

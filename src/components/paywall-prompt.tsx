@@ -10,12 +10,15 @@ import {
 } from "@/lib/analytics";
 import type { VlxPaywallPrompt } from "@/lib/paywall";
 import { appendUpgradeInterest } from "@/lib/upgrade/upgrade-interest";
-import { getUpgradeTarget } from "@/lib/upgrade/upgrade-targets";
 
 function formatMetricLabel(key: string) {
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function formatPlanLabel(plan: VlxPaywallPrompt["recommendedPlan"]) {
+  return plan === "exam_pack" ? "Exam Pack" : plan;
 }
 
 type PaywallPromptProps = {
@@ -30,7 +33,6 @@ export function PaywallPrompt({
   const titleId = useId();
   const [clicked, setClicked] = useState(false);
   const metrics = Object.entries(prompt.reasonMetrics ?? {});
-  const upgradeTarget = getUpgradeTarget(prompt.recommendedPlan, prompt.source);
 
   useEffect(() => {
     emitVlxEvent(VLX_ANALYTICS_EVENTS.paywallView, {
@@ -65,11 +67,14 @@ export function PaywallPrompt({
       data-paywall-trigger={prompt.id}
     >
       <div className="paywall-prompt__body">
-        <span className="eyebrow">{prompt.recommendedPlan}</span>
+        <span className="eyebrow">{formatPlanLabel(prompt.recommendedPlan)}</span>
         <h2 className="section-title" id={titleId}>
           {prompt.title}
         </h2>
         <p>{prompt.body}</p>
+        <p className="paywall-prompt__gate">
+          Public paid beta remains blocked. Private/manual beta remains gated.
+        </p>
         {metrics.length > 0 ? (
           <dl className="paywall-prompt__metrics" aria-label="Trigger reason">
             {metrics.map(([key, value]) => (
@@ -82,28 +87,16 @@ export function PaywallPrompt({
         ) : null}
       </div>
       <div className="paywall-prompt__action">
-        {upgradeTarget ? (
-          <a
-            className="button button--primary"
-            href={upgradeTarget}
-            onClick={recordUpgradeClick}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {prompt.primaryCtaLabel}
-          </a>
-        ) : (
-          <button
-            className="button button--primary"
-            onClick={handleUpgradeClick}
-            type="button"
-          >
-            {prompt.primaryCtaLabel}
-          </button>
-        )}
+        <button
+          className="button button--primary"
+          onClick={handleUpgradeClick}
+          type="button"
+        >
+          {prompt.primaryCtaLabel}
+        </button>
         {clicked ? (
           <p className="upgrade-placeholder__note" role="status">
-            Paid beta interest noted locally. Billing is not connected.
+            Paid beta interest noted locally. Billing is not connected yet.
           </p>
         ) : null}
         <Link className="button button--quiet" href="/pricing" prefetch={false}>

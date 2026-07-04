@@ -3,12 +3,15 @@ import type { VlxPlanId, VlxPlanLimit } from "@/lib/entitlements";
 export type VlxPaywallTriggerId =
   | "save_limit"
   | "review_limit"
-  | "exam_pack_preview_end"
+  | "pack_preview_end"
   | "weak_words_sprint_locked"
   | "mastery_export_locked"
+  | "no_watermark_download"
   | "mistake_explanation_locked";
 
-export type VlxPaywallRecommendedPlan = Extract<VlxPlanId, "lite" | "pro">;
+export type VlxPaywallRecommendedPlan =
+  | Extract<VlxPlanId, "lite" | "pro">
+  | "exam_pack";
 
 export type VlxPaywallReasonMetrics = {
   savedCount?: number;
@@ -58,6 +61,10 @@ export type VlxWeakWordsSprintLockedPaywallInput = VlxPaywallEvaluationBase & {
 
 export type VlxMasteryExportLockedPaywallInput = VlxPaywallEvaluationBase & {
   masteredCount?: number;
+};
+
+export type VlxNoWatermarkDownloadPaywallInput = VlxPaywallEvaluationBase & {
+  slug?: string;
 };
 
 export type VlxMistakeExplanationLockedPaywallInput = VlxPaywallEvaluationBase & {
