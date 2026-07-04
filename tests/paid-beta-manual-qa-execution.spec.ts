@@ -5,36 +5,47 @@ import {
   statSync
 } from "node:fs";
 import { basename, join } from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import {
-  PAID_BETA_MANUAL_QA_EXECUTION_BROWSER_SMOKE_SUMMARY,
   PAID_BETA_MANUAL_QA_EXECUTION_FINDINGS,
+  PAID_BETA_MANUAL_QA_EXECUTION_LOCAL_STORAGE_PROBES,
   PAID_BETA_MANUAL_QA_EXECUTION_PRIVATE_VERDICT,
   PAID_BETA_MANUAL_QA_EXECUTION_PUBLIC_VERDICT,
+  PAID_BETA_MANUAL_QA_EXECUTION_QA_RESULT_SECTIONS,
+  PAID_BETA_MANUAL_QA_EXECUTION_QA_SECTION_TITLES,
   PAID_BETA_MANUAL_QA_EXECUTION_REPORT,
   PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_CHECKS,
+  PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_PATHS,
   PAID_BETA_MANUAL_QA_EXECUTION_SAFETY_POLICY,
+  PAID_BETA_MANUAL_QA_EXECUTION_STORAGE_KEYS,
   PAID_BETA_MANUAL_QA_EXECUTION_VALIDATION_COMMANDS,
   VISUAL_LEXICON_PAID_BETA_MANUAL_QA_EXECUTION_VERSION,
   getFindingsBySeverity,
   getManualQaRouteCheckByPath,
   getManualQaRouteChecks,
-  getP0Blockers,
+  getManualQaStorageProbe,
+  getP0FindingCount,
+  getP0Findings,
   getPaidBetaManualQaExecutionReport,
   getPrivateBetaVerdict,
   getPublicBetaVerdict,
-  getRecommendedNextPr,
+  getQaResultSection,
   type PaidBetaManualQaExecutionFinding,
+  type PaidBetaManualQaExecutionQaResultSection,
+  type PaidBetaManualQaExecutionQaSectionTitle,
   type PaidBetaManualQaExecutionReport,
   type PaidBetaManualQaExecutionRouteCheck,
   type PaidBetaManualQaExecutionRoutePath,
   type PaidBetaManualQaExecutionSeverity,
   type PaidBetaManualQaExecutionStatus,
+  type PaidBetaManualQaExecutionStorageKey,
+  type PaidBetaManualQaExecutionStorageProbe,
   type PaidBetaManualQaExecutionVerdict,
   type PaidBetaManualQaExecutionVersion
 } from "../src/lib/paid-beta-manual-qa-execution/paid-beta-manual-qa-execution";
 import {
+  PAID_BETA_MANUAL_QA_EXECUTION_ALLOWED_ROUTE_HANDLERS,
   PAID_BETA_MANUAL_QA_EXECUTION_DOC_FILES,
   PAID_BETA_MANUAL_QA_EXECUTION_FORBIDDEN_ACTUAL_PATHS,
   PAID_BETA_MANUAL_QA_EXECUTION_FORBIDDEN_DIRECT_DEPENDENCIES,
@@ -43,6 +54,7 @@ import {
   PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P0_IDS,
   PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P1_IDS,
   PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P2_IDS,
+  PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_QA_SECTION_TITLES,
   PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_ROUTES,
   PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_SAFETY_FIELDS,
   PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_STORAGE_KEYS,
@@ -51,6 +63,11 @@ import {
   PAID_BETA_MANUAL_QA_EXECUTION_SEVERITIES
 } from "../src/lib/paid-beta-manual-qa-execution/fixtures";
 
+const baseUrl =
+  process.env.PLAYWRIGHT_BASE_URL ??
+  process.env.NEXT_PUBLIC_APP_URL ??
+  "http://127.0.0.1:3006";
+
 const workspaceRoot = process.cwd();
 
 type ManualQaExecutionTypeSurface = {
@@ -58,6 +75,10 @@ type ManualQaExecutionTypeSurface = {
   report: PaidBetaManualQaExecutionReport;
   routePath: PaidBetaManualQaExecutionRoutePath;
   routeCheck: PaidBetaManualQaExecutionRouteCheck;
+  storageKey: PaidBetaManualQaExecutionStorageKey;
+  storageProbe: PaidBetaManualQaExecutionStorageProbe;
+  sectionTitle: PaidBetaManualQaExecutionQaSectionTitle;
+  resultSection: PaidBetaManualQaExecutionQaResultSection;
   severity: PaidBetaManualQaExecutionSeverity;
   status: PaidBetaManualQaExecutionStatus;
   verdict: PaidBetaManualQaExecutionVerdict;
@@ -67,16 +88,38 @@ type ManualQaExecutionTypeSurface = {
 const typeSmoke: ManualQaExecutionTypeSurface = {
   version: VISUAL_LEXICON_PAID_BETA_MANUAL_QA_EXECUTION_VERSION,
   report: PAID_BETA_MANUAL_QA_EXECUTION_REPORT,
-  routePath: PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_ROUTES[0],
+  routePath: PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_PATHS[0],
   routeCheck: PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_CHECKS[0],
+  storageKey: PAID_BETA_MANUAL_QA_EXECUTION_STORAGE_KEYS[0],
+  storageProbe: PAID_BETA_MANUAL_QA_EXECUTION_LOCAL_STORAGE_PROBES[0],
+  sectionTitle: PAID_BETA_MANUAL_QA_EXECUTION_QA_SECTION_TITLES[0],
+  resultSection: PAID_BETA_MANUAL_QA_EXECUTION_QA_RESULT_SECTIONS[0],
   severity: PAID_BETA_MANUAL_QA_EXECUTION_SEVERITIES[0],
-  status: PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_CHECKS[0].betaDisposition,
+  status: PAID_BETA_MANUAL_QA_EXECUTION_QA_RESULT_SECTIONS[0].status,
   verdict: PAID_BETA_MANUAL_QA_EXECUTION_PRIVATE_VERDICT,
   finding: PAID_BETA_MANUAL_QA_EXECUTION_FINDINGS[0]
 };
 
+type SavedWordStore = Record<string, Record<string, unknown>>;
+type ReviewStateStore = Record<string, Record<string, unknown>>;
+type ReviewEvent = Record<string, unknown>;
+type DailyStatsStore = Record<string, { reviewed?: number }>;
+type PackProgressStore = Record<string, Record<string, unknown>>;
+
 function routePaths() {
   return PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_CHECKS.map((route) => route.path);
+}
+
+function storageKeys() {
+  return PAID_BETA_MANUAL_QA_EXECUTION_LOCAL_STORAGE_PROBES.map(
+    (probe) => probe.key
+  );
+}
+
+function sectionTitles() {
+  return PAID_BETA_MANUAL_QA_EXECUTION_QA_RESULT_SECTIONS.map(
+    (section) => section.title
+  );
 }
 
 function findingIdsBySeverity(severity: PaidBetaManualQaExecutionSeverity) {
@@ -131,6 +174,133 @@ function collectFiles(relativeDir: string): string[] {
     }
 
     return [relativePath];
+  });
+}
+
+async function clearVlxLocalStorage(page: Page) {
+  await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+
+  await page.evaluate((keys) => {
+    for (const key of keys) {
+      localStorage.removeItem(key);
+    }
+
+    (window as Window & { dataLayer?: unknown[] }).dataLayer = [];
+  }, PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_STORAGE_KEYS);
+}
+
+async function readLocalJson<T = unknown>(
+  page: Page,
+  key: string
+): Promise<T | null> {
+  return await page.evaluate((storageKey) => {
+    const raw = localStorage.getItem(storageKey);
+
+    if (!raw) return null;
+
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }, key);
+}
+
+async function answerCurrentCard(page: Page, result: "correct" | "wrong") {
+  await expect(page.locator(".review-session")).toBeVisible({ timeout: 15000 });
+
+  const answer = (await page.locator("#review-session-title").innerText()).trim();
+  const optionLabels = (await page.locator(".review-option").allInnerTexts()).map(
+    (label) => label.trim()
+  );
+  const selected =
+    result === "correct"
+      ? answer
+      : optionLabels.find((label) => label !== answer) ?? optionLabels[0];
+
+  expect(selected).toBeTruthy();
+  await page.getByRole("button", { name: selected, exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "How did that recall feel?" })
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: result === "correct" ? /I knew it/i : /I forgot/i })
+    .click();
+  await expect(page.locator(".review-feedback")).toBeVisible();
+}
+
+async function completeReviewSession(page: Page) {
+  let answeredCards = 0;
+
+  for (let index = 0; index < 20; index += 1) {
+    await answerCurrentCard(page, "correct");
+    answeredCards += 1;
+
+    const nextButton = page.getByRole("button", {
+      name: /Next card|View summary/i
+    });
+
+    await expect(nextButton).toBeVisible();
+
+    const buttonLabel = await nextButton.innerText();
+
+    await nextButton.click();
+
+    if (/View summary/i.test(buttonLabel)) {
+      break;
+    }
+  }
+
+  await expect(
+    page.getByRole("heading", { name: "Session summary" })
+  ).toBeVisible();
+
+  return answeredCards;
+}
+
+async function expectSaveCreatesReviewItem(
+  page: Page,
+  source: "word_page" | "alias_search" | "extension"
+) {
+  await clearVlxLocalStorage(page);
+  await page.goto(`${baseUrl}/save?slug=dissonance&source=${source}`, {
+    waitUntil: "networkidle"
+  });
+
+  await expect(page.getByRole("heading", { name: "Dissonance" })).toBeVisible();
+  await expect
+    .poll(async () => {
+      const reviewState = await readLocalJson<ReviewStateStore>(
+        page,
+        "vlx_review_state_v1"
+      );
+
+      return Boolean(reviewState?.dissonance);
+    })
+    .toBe(true);
+
+  const savedWords = await readLocalJson<SavedWordStore>(
+    page,
+    "vlx_saved_words_v1"
+  );
+  const reviewState = await readLocalJson<ReviewStateStore>(
+    page,
+    "vlx_review_state_v1"
+  );
+
+  expect(savedWords?.dissonance).toMatchObject({
+    slug: "dissonance",
+    word: "Dissonance",
+    source
+  });
+  expect(reviewState?.dissonance).toMatchObject({
+    slug: "dissonance",
+    word: "Dissonance",
+    box: 0,
+    mastery: "New",
+    correct: 0,
+    wrong: 0,
+    weakScore: 0
   });
 }
 
@@ -225,42 +395,48 @@ function withNoRuntimeSurfaceAccess<TValue>(callback: () => TValue) {
   }
 }
 
-test.describe("paid beta manual QA execution report", () => {
+test.describe("paid beta manual QA execution report contract", () => {
   test("exports the required typed execution report surface", () => {
     expect(typeSmoke).toMatchObject({
-      version: 1,
+      version: 2,
       report: {
-        branch: "release/manual-qa-execution-report",
-        pullRequest: "#79 Manual QA execution report",
-        reportDateKst: "2026-06-15",
-        northStarMetric: "Weekly Reviewed Words"
+        branch: "release/paid-beta-manual-qa-execution",
+        draftPullRequestTitle:
+          "[Track B] Add paid beta manual QA execution report",
+        reportDateKst: "2026-07-04",
+        northStarMetric: "Weekly Reviewed Words",
+        p0FindingCount: 0
       },
-      routePath: "/",
+      routePath: "/dashboard",
+      storageKey: "vlx_saved_words_v1",
+      sectionTitle: "Save creates review item",
       severity: "P0",
-      verdict: "conditional_manual_only_private_paid_beta"
+      verdict: "move_to_private_beta_gate"
     });
   });
 
-  test("sets private beta to Conditional / Manual-only and public beta to No-Go", () => {
+  test("sets P0 to zero, recommends Private Beta Gate, and keeps public beta No-Go", () => {
     expect(getPaidBetaManualQaExecutionReport()).toBe(
       PAID_BETA_MANUAL_QA_EXECUTION_REPORT
     );
-    expect(getPrivateBetaVerdict()).toBe(
-      "conditional_manual_only_private_paid_beta"
-    );
+    expect(getPrivateBetaVerdict()).toBe("move_to_private_beta_gate");
     expect(getPublicBetaVerdict()).toBe("no_go_public_paid_beta");
+    expect(getP0Findings()).toEqual([]);
+    expect(getP0FindingCount()).toBe(0);
     expect(PAID_BETA_MANUAL_QA_EXECUTION_REPORT).toMatchObject({
       privateBetaVerdict: PAID_BETA_MANUAL_QA_EXECUTION_PRIVATE_VERDICT,
       publicBetaVerdict: PAID_BETA_MANUAL_QA_EXECUTION_PUBLIC_VERDICT,
-      privateBetaRecommendation: "Conditional / Manual-only",
+      privateBetaRecommendation: "Move to Private Beta Gate",
+      p0FallbackRecommendation: "Targeted hotfix PRs required",
       publicBetaRecommendation: "No-Go"
     });
   });
 
-  test("covers every requested manual QA route", () => {
-    expect(routePaths()).toEqual([
-      ...PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_ROUTES
-    ]);
+  test("covers every requested manual QA route exactly", () => {
+    expect(PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_PATHS).toEqual(
+      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_ROUTES
+    );
+    expect(routePaths()).toEqual([...PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_ROUTES]);
     expect(getManualQaRouteChecks()).toBe(
       PAID_BETA_MANUAL_QA_EXECUTION_ROUTE_CHECKS
     );
@@ -270,40 +446,75 @@ test.describe("paid beta manual QA execution report", () => {
 
       expect(check, route).toBeDefined();
       expect(check).toMatchObject({
-        routeExistsInRepo: true,
-        betaDisposition: "conditional_manual_only"
+        path: route,
+        result: "pass"
       });
-      expect(check?.expectedEvidence.length, route).toBeGreaterThan(0);
-      expect(check?.mustNotFake.length, route).toBeGreaterThan(0);
+      expect(check?.evidence.length, route).toBeGreaterThan(0);
+      expect(check?.mustRemainHonest.length, route).toBeGreaterThan(0);
     }
   });
 
-  test("requested dynamic word routes exist in the repo", () => {
-    expect(existsSync(join(workspaceRoot, "src/app/word/[slug]/page.tsx"))).toBe(
-      true
+  test("includes required localStorage probes and grants no paid entitlement", () => {
+    expect(PAID_BETA_MANUAL_QA_EXECUTION_STORAGE_KEYS).toEqual(
+      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_STORAGE_KEYS
     );
-    const wordData = readFileSync(join(workspaceRoot, "src/lib/mock-data.ts"), "utf8");
+    expect(storageKeys()).toEqual([
+      ...PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_STORAGE_KEYS
+    ]);
 
-    expect(wordData).toContain('slug: "dissonance"');
-    expect(wordData).toContain('slug: "obfuscate"');
+    for (const key of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_STORAGE_KEYS) {
+      const probe = getManualQaStorageProbe(key);
+
+      expect(probe, key).toBeDefined();
+      expect(probe).toMatchObject({
+        key,
+        productionSourceOfTruth: false,
+        grantsPaidEntitlement: false
+      });
+      expect(probe?.mustNotContain.length, key).toBeGreaterThan(0);
+    }
   });
 
-  test("records tested environment, clean local port, and browser smoke target", () => {
-    expect(PAID_BETA_MANUAL_QA_EXECUTION_REPORT.testedEnvironment).toEqual({
-      localServerPortUsed: 3021,
-      localBaseUrl: "http://127.0.0.1:3021",
-      dataBoundary: "local browser storage only",
-      productionDataUsed: false
+  test("includes every required QA result section", () => {
+    expect(PAID_BETA_MANUAL_QA_EXECUTION_QA_SECTION_TITLES).toEqual(
+      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_QA_SECTION_TITLES
+    );
+    expect(sectionTitles()).toEqual([
+      ...PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_QA_SECTION_TITLES
+    ]);
+
+    for (const title of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_QA_SECTION_TITLES) {
+      const section = getQaResultSection(title);
+
+      expect(section, title).toBeDefined();
+      expect(section?.evidence.length, title).toBeGreaterThan(0);
+      expect(section?.releaseMeaning, title).toBeTruthy();
+    }
+
+    expect(getQaResultSection("Public paid beta remains No-Go")).toMatchObject({
+      status: "no_go"
     });
-    expect(PAID_BETA_MANUAL_QA_EXECUTION_BROWSER_SMOKE_SUMMARY).toMatchObject({
-      cleanPort: 3021,
-      baseUrl: "http://127.0.0.1:3021",
-      routesSelected: ["/dashboard", "/review", "/saved", "/packs", "/pricing"],
-      status: "pass",
-      routeLoadStatus: "pass",
-      consoleErrorCount: 0,
-      hydrationWarningCount: 0
+    expect(getQaResultSection("Private/manual paid beta is gated")).toMatchObject({
+      status: "gated"
     });
+  });
+
+  test("classifies P0 P1 and P2 findings for this execution scope", () => {
+    expect(findingIdsBySeverity("P0")).toEqual(
+      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P0_IDS
+    );
+    expect(findingIdsBySeverity("P1")).toEqual(
+      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P1_IDS
+    );
+    expect(findingIdsBySeverity("P2")).toEqual(
+      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P2_IDS
+    );
+
+    for (const finding of PAID_BETA_MANUAL_QA_EXECUTION_FINDINGS) {
+      expect(finding.blocksPrivateBetaGate, finding.id).toBe(false);
+      expect(finding.evidence, finding.id).toBeTruthy();
+      expect(finding.recommendedAction, finding.id).toBeTruthy();
+    }
   });
 
   test("includes required validation commands", () => {
@@ -316,51 +527,8 @@ test.describe("paid beta manual QA execution report", () => {
     }
   });
 
-  test("classifies required P0 P1 and P2 findings", () => {
-    expect(findingIdsBySeverity("P0")).toEqual(
-      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P0_IDS
-    );
-    expect(findingIdsBySeverity("P1")).toEqual(
-      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P1_IDS
-    );
-    expect(findingIdsBySeverity("P2")).toEqual(
-      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P2_IDS
-    );
-    expect(getP0Blockers().map((finding) => finding.id)).toEqual(
-      PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P0_IDS
-    );
-
-    for (const findingId of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P0_IDS) {
-      expect(
-        PAID_BETA_MANUAL_QA_EXECUTION_FINDINGS.find(
-          (finding) => finding.id === findingId
-        ),
-        findingId
-      ).toMatchObject({
-        severity: "P0",
-        blocksPublicPaidBeta: true
-      });
-    }
-  });
-
-  test("includes required localStorage probes and grants no paid entitlement", () => {
-    expect(
-      PAID_BETA_MANUAL_QA_EXECUTION_REPORT.localStorageProbes.map(
-        (probe) => probe.key
-      )
-    ).toEqual([...PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_STORAGE_KEYS]);
-
-    for (const probe of PAID_BETA_MANUAL_QA_EXECUTION_REPORT.localStorageProbes) {
-      expect(probe.productionSourceOfTruth, probe.key).toBe(false);
-      expect(probe.grantsPaidEntitlement, probe.key).toBe(false);
-      expect(probe.mustNotContain.length, probe.key).toBeGreaterThan(0);
-    }
-  });
-
   test("keeps safety boundaries explicit and closed", () => {
-    expect(PAID_BETA_MANUAL_QA_EXECUTION_SAFETY_POLICY.docsContractsTestsOnly).toBe(
-      true
-    );
+    expect(PAID_BETA_MANUAL_QA_EXECUTION_SAFETY_POLICY.docsTestsOnly).toBe(true);
 
     for (const field of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_SAFETY_FIELDS) {
       expect(PAID_BETA_MANUAL_QA_EXECUTION_SAFETY_POLICY[field], field).toBe(
@@ -369,7 +537,321 @@ test.describe("paid beta manual QA execution report", () => {
     }
   });
 
-  test("no forbidden runtime paths or route handlers are created", () => {
+  test("helpers are pure static reads", () => {
+    const { sideEffects, value } = withNoRuntimeSurfaceAccess(() => ({
+      privateVerdict: getPrivateBetaVerdict(),
+      publicVerdict: getPublicBetaVerdict(),
+      p0Count: getP0FindingCount(),
+      pricingDisposition: getManualQaRouteCheckByPath("/pricing")?.result,
+      pricingInterestSection: getQaResultSection(
+        "Pricing upgrade interest records local beta interest only"
+      )?.status
+    }));
+
+    expect(value).toEqual({
+      privateVerdict: "move_to_private_beta_gate",
+      publicVerdict: "no_go_public_paid_beta",
+      p0Count: 0,
+      pricingDisposition: "pass",
+      pricingInterestSection: "pass"
+    });
+    expect(sideEffects).toEqual({
+      fetchAccessed: false,
+      windowAccessed: false,
+      localStorageAccessed: false,
+      processEnvAccessed: false
+    });
+  });
+
+  test("README and execution docs are linked and explicit", () => {
+    const readme = readFileSync(join(workspaceRoot, "README.md"), "utf8");
+    const doc = readFileSync(
+      join(workspaceRoot, "docs", "PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md"),
+      "utf8"
+    );
+    const moduleReadme = readFileSync(
+      join(
+        workspaceRoot,
+        "src",
+        "lib",
+        "paid-beta-manual-qa-execution",
+        "README.md"
+      ),
+      "utf8"
+    );
+
+    expect(PAID_BETA_MANUAL_QA_EXECUTION_DOC_FILES).toEqual([
+      "docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md",
+      "README.md"
+    ]);
+    expect(readme).toContain("docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md");
+
+    for (const section of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_DOC_SECTIONS) {
+      expect(doc, section).toContain(section);
+    }
+
+    for (const title of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_QA_SECTION_TITLES) {
+      expect(doc, title).toContain(title);
+    }
+
+    expect(doc).toContain("P0 count: `0`");
+    expect(doc).toContain("Private paid beta: **Move to Private Beta Gate**");
+    expect(doc).toContain("Public paid beta: **No-Go**");
+    expect(doc).toContain("If P0 rises above zero, replace this recommendation with targeted hotfix PRs.");
+    expect(moduleReadme).toContain("pure static TypeScript data");
+    expect(moduleReadme).toContain("does not execute browser probes");
+  });
+});
+
+test.describe("paid beta manual QA browser execution", () => {
+  test.setTimeout(120000);
+
+  test("requested routes load without visible app 404s", async ({ page }) => {
+    for (const route of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_ROUTES) {
+      if (route.startsWith("/save?")) {
+        await clearVlxLocalStorage(page);
+      }
+
+      const response = await page.goto(`${baseUrl}${route}`, {
+        waitUntil: "domcontentloaded"
+      });
+
+      expect(response?.status(), route).toBeLessThan(400);
+      await expect(page.locator("body"), route).not.toContainText(
+        "This page could not be found"
+      );
+    }
+  });
+
+  test("save routes create review items for word_page alias_search and extension sources", async ({
+    page
+  }) => {
+    await expectSaveCreatesReviewItem(page, "word_page");
+    await expectSaveCreatesReviewItem(page, "alias_search");
+    await expectSaveCreatesReviewItem(page, "extension");
+  });
+
+  test("review updates state events daily stats and honest due weak mastered state", async ({
+    page
+  }) => {
+    await expectSaveCreatesReviewItem(page, "word_page");
+
+    await page.goto(`${baseUrl}/review`, { waitUntil: "networkidle" });
+    await answerCurrentCard(page, "correct");
+
+    let events = await readLocalJson<ReviewEvent[]>(page, "vlx_review_events_v1");
+    let reviewState = await readLocalJson<ReviewStateStore>(
+      page,
+      "vlx_review_state_v1"
+    );
+    let dailyStats = await readLocalJson<DailyStatsStore>(
+      page,
+      "vlx_daily_stats_v1"
+    );
+    let reviewedCount = Object.values(dailyStats ?? {}).reduce(
+      (sum, item) => sum + (typeof item.reviewed === "number" ? item.reviewed : 0),
+      0
+    );
+
+    expect(events).toHaveLength(1);
+    expect(events?.[0]).toMatchObject({
+      slug: "dissonance",
+      result: "correct"
+    });
+    expect(typeof events?.[0]?.responseMs).toBe("number");
+    expect(reviewState?.dissonance?.correct).toBe(1);
+    expect(reviewState?.dissonance?.mastery).not.toBe("Mastered");
+    expect(reviewedCount).toBeGreaterThan(0);
+
+    await page.goto(`${baseUrl}/review/due`, { waitUntil: "networkidle" });
+    await expect(page.locator("body")).not.toContainText("fake");
+
+    await page.goto(`${baseUrl}/review?mode=word&slug=dissonance&limit=1`, {
+      waitUntil: "networkidle"
+    });
+    await answerCurrentCard(page, "wrong");
+
+    events = await readLocalJson<ReviewEvent[]>(page, "vlx_review_events_v1");
+    reviewState = await readLocalJson<ReviewStateStore>(
+      page,
+      "vlx_review_state_v1"
+    );
+    dailyStats = await readLocalJson<DailyStatsStore>(
+      page,
+      "vlx_daily_stats_v1"
+    );
+    reviewedCount = Object.values(dailyStats ?? {}).reduce(
+      (sum, item) => sum + (typeof item.reviewed === "number" ? item.reviewed : 0),
+      0
+    );
+
+    expect(events).toHaveLength(2);
+    expect(reviewState?.dissonance?.wrong).toBe(1);
+    expect(Number(reviewState?.dissonance?.weakScore)).toBeGreaterThan(0);
+    expect(reviewState?.dissonance?.mastery).not.toBe("Mastered");
+    expect(reviewedCount).toBeGreaterThan(1);
+
+    await page.goto(`${baseUrl}/review/weak`, { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".review-session")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Dissonance" })).toBeVisible();
+
+    await page.goto(`${baseUrl}/word/dissonance`, { waitUntil: "networkidle" });
+    await expect(page.locator("body")).toContainText("Weak");
+    await expect(page.locator("body")).not.toContainText("paid access granted");
+  });
+
+  test("weak sprint uses real weak evidence and writes weak review events", async ({
+    page
+  }) => {
+    await expectSaveCreatesReviewItem(page, "word_page");
+
+    await page.goto(`${baseUrl}/review?mode=word&slug=dissonance&limit=1`, {
+      waitUntil: "networkidle"
+    });
+    await answerCurrentCard(page, "wrong");
+    await page.goto(`${baseUrl}/review?mode=word&slug=dissonance&limit=1`, {
+      waitUntil: "networkidle"
+    });
+    await answerCurrentCard(page, "wrong");
+
+    const weakStateBefore = await readLocalJson<ReviewStateStore>(
+      page,
+      "vlx_review_state_v1"
+    );
+
+    expect(weakStateBefore?.dissonance?.mastery).toBe("Weak");
+    expect(Number(weakStateBefore?.dissonance?.weakScore)).toBeGreaterThan(0);
+
+    await page.goto(`${baseUrl}/review/weak-sprint`, {
+      waitUntil: "networkidle"
+    });
+    await expect(
+      page.getByRole("heading", { name: /A five-card sprint for fragile recall/i })
+    ).toBeVisible();
+    await answerCurrentCard(page, "correct");
+
+    const events = await readLocalJson<ReviewEvent[]>(page, "vlx_review_events_v1");
+    const reviewState = await readLocalJson<ReviewStateStore>(
+      page,
+      "vlx_review_state_v1"
+    );
+    const weakEvents = (events ?? []).filter(
+      (event) => event.questionType === "weak_review"
+    );
+
+    expect(weakEvents.length).toBeGreaterThan(0);
+    expect(weakEvents.at(-1)).toMatchObject({
+      slug: "dissonance",
+      questionType: "weak_review"
+    });
+    expect(reviewState?.dissonance?.lastQuestionType).toBe("weak_review");
+  });
+
+  test("pack preview progress comes from preview start and real review answers", async ({
+    page
+  }) => {
+    await clearVlxLocalStorage(page);
+    await page.goto(`${baseUrl}/packs`, { waitUntil: "networkidle" });
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Packs" })
+    ).toBeVisible();
+    await expect(page.locator("body")).toContainText("No local pack progress yet");
+
+    await page.goto(`${baseUrl}/packs/academic-vocabulary`, {
+      waitUntil: "networkidle"
+    });
+    await page
+      .getByRole("link", { name: "Start preview Academic Vocabulary" })
+      .click();
+    await expect(page).toHaveURL(
+      /\/review\?mode=hub&hub=academic-vocabulary&limit=10&packId=academic-vocabulary&source=pack_preview$/
+    );
+
+    let progress = await readLocalJson<PackProgressStore>(
+      page,
+      "vlx_pack_progress_v1"
+    );
+
+    expect(progress?.["academic-vocabulary"]).toMatchObject({
+      packId: "academic-vocabulary",
+      source: "pack_detail",
+      reviewedCount: 0,
+      correctCount: 0
+    });
+
+    const answeredCards = await completeReviewSession(page);
+    const events = await readLocalJson<ReviewEvent[]>(page, "vlx_review_events_v1");
+    const correctCount = (events ?? []).filter(
+      (event) => event.result === "correct"
+    ).length;
+
+    progress = await readLocalJson<PackProgressStore>(
+      page,
+      "vlx_pack_progress_v1"
+    );
+
+    expect(events).toHaveLength(answeredCards);
+    expect(progress?.["academic-vocabulary"]).toMatchObject({
+      source: "review",
+      reviewedCount: answeredCards,
+      correctCount
+    });
+    expect(typeof progress?.["academic-vocabulary"]?.previewCompletedAt).toBe(
+      "string"
+    );
+  });
+
+  test("pricing records local interest only and settings keep beta gated", async ({
+    page
+  }) => {
+    await clearVlxLocalStorage(page);
+    await page.goto(`${baseUrl}/pricing`, { waitUntil: "networkidle" });
+
+    const pricingUrl = page.url();
+
+    await expect(page.locator("body")).toContainText("Billing is not connected yet");
+    await expect(page.locator("body")).toContainText("No checkout is live");
+
+    for (const label of [
+      "Note Lite interest - billing not connected yet",
+      "Note Pro interest - billing not connected yet",
+      "Note Exam Pack interest - billing not connected yet"
+    ]) {
+      await page.getByRole("button", { name: label }).click();
+    }
+
+    await expect(page).toHaveURL(pricingUrl);
+    await expect(
+      page.getByText("Paid beta interest noted locally. Billing is not connected yet.")
+    ).toHaveCount(3);
+
+    const interestRecords = await readLocalJson<ReviewEvent[]>(
+      page,
+      "vlx_upgrade_interest_v1"
+    );
+    const planState = await readLocalJson(page, "vlx_plan_state_v1");
+
+    expect(interestRecords).toHaveLength(3);
+    expect(interestRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ plan: "lite", source: "pricing_page" }),
+        expect.objectContaining({ plan: "pro", source: "pricing_page" }),
+        expect.objectContaining({ plan: "exam_pack", source: "pricing_page" })
+      ])
+    );
+    expect(planState).toBeNull();
+
+    await page.goto(`${baseUrl}/settings`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
+    await expect(page.locator("body")).toContainText("Account Sync");
+    await expect(page.locator("body")).toContainText("Not connected");
+    await expect(page.locator("body")).toContainText("Billing");
+    await expect(page.locator("body")).toContainText("Not configured");
+  });
+});
+
+test.describe("paid beta manual QA safety guards", () => {
+  test("no forbidden runtime paths or checkout billing routes are created", () => {
     for (const relativePath of PAID_BETA_MANUAL_QA_EXECUTION_FORBIDDEN_ACTUAL_PATHS) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);
     }
@@ -379,12 +861,11 @@ test.describe("paid beta manual QA execution report", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
-      "src/app/api/me/entitlements/route.ts",
-      "src/app/auth/confirm/route.ts"
+      ...PAID_BETA_MANUAL_QA_EXECUTION_ALLOWED_ROUTE_HANDLERS
     ]);
   });
 
-  test("no forbidden provider SDKs, auth, database, payment, or logging dependencies are added", () => {
+  test("no forbidden provider SDKs auth database payment or logging dependencies are added", () => {
     for (const fileName of ["package.json", "package-lock.json"] as const) {
       const dependencies = readRootPackageDependencies(fileName);
 
@@ -456,71 +937,5 @@ test.describe("paid beta manual QA execution report", () => {
         );
       }
     }
-  });
-
-  test("helpers are pure static reads", () => {
-    const { sideEffects, value } = withNoRuntimeSurfaceAccess(() => ({
-      privateVerdict: getPrivateBetaVerdict(),
-      publicVerdict: getPublicBetaVerdict(),
-      p0Ids: getP0Blockers().map((finding) => finding.id),
-      pricingDisposition: getManualQaRouteCheckByPath("/pricing")?.betaDisposition,
-      nextPr: getRecommendedNextPr()
-    }));
-
-    expect(value).toMatchObject({
-      privateVerdict: "conditional_manual_only_private_paid_beta",
-      publicVerdict: "no_go_public_paid_beta",
-      p0Ids: [...PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_P0_IDS],
-      pricingDisposition: "conditional_manual_only",
-      nextPr: {
-        prNumber: 80,
-        title: "Private beta gate prep",
-        docsContractsTestsOnly: true,
-        realAccountSyncRecommended: false,
-        realPaymentRecommended: false
-      }
-    });
-    expect(sideEffects).toEqual({
-      fetchAccessed: false,
-      windowAccessed: false,
-      localStorageAccessed: false,
-      processEnvAccessed: false
-    });
-  });
-
-  test("README and execution docs are linked and explicit", () => {
-    const readme = readFileSync(join(workspaceRoot, "README.md"), "utf8");
-    const doc = readFileSync(
-      join(workspaceRoot, "docs", "PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md"),
-      "utf8"
-    );
-    const moduleReadme = readFileSync(
-      join(
-        workspaceRoot,
-        "src",
-        "lib",
-        "paid-beta-manual-qa-execution",
-        "README.md"
-      ),
-      "utf8"
-    );
-
-    expect(PAID_BETA_MANUAL_QA_EXECUTION_DOC_FILES).toEqual([
-      "docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md",
-      "README.md"
-    ]);
-    expect(readme).toContain("docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md");
-
-    for (const section of PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_DOC_SECTIONS) {
-      expect(doc, section).toContain(section);
-    }
-
-    expect(doc).toContain("Private paid beta: **Conditional / Manual-only**");
-    expect(doc).toContain("Public paid beta: **No-Go**");
-    expect(doc).toContain("Real payment/checkout is not implemented.");
-    expect(doc).toContain("Production account sync is not implemented.");
-    expect(doc).toContain("Recommended next PR: **#80 Private beta gate prep**");
-    expect(moduleReadme).toContain("pure static TypeScript data");
-    expect(moduleReadme).toContain("does not execute browser probes");
   });
 });

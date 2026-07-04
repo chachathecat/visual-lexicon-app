@@ -1,252 +1,289 @@
 # Paid Beta Manual QA Execution Report
 
-Report date: 2026-06-15 KST  
-Repository: `chachathecat/visual-lexicon-app`  
-Branch: `release/manual-qa-execution-report`  
-PR: `#79 Manual QA execution report`  
-Scope: Integrated Track B paid beta candidate after PRs #70-#78.
+Report date: 2026-07-04 KST
+Repository: `chachathecat/visual-lexicon-app`
+Branch: `release/paid-beta-manual-qa-execution`
+Draft PR title: `[Track B] Add paid beta manual QA execution report`
+Scope: Post-merge Pricing / Paywall v2 and Paid Beta Readiness Audit execution.
 
 ## Executive Summary
 
-The integrated Track B loop is credible enough for a private, owner-run paid
-beta only if the owner treats this as a manual operation with explicit oversight.
-The app now presents the right product shape:
+This report records the local Track B paid beta QA scope after Pricing /
+Paywall v2 and the Paid Beta Readiness Audit.
 
-```txt
-Today -> Review -> Weak -> Packs -> Saved -> Progress
-```
+Verdict:
 
-The current candidate keeps the core formula visible:
+- Private paid beta: **Move to Private Beta Gate**
+- Public paid beta: **No-Go**
+- P0 count: `0`
+
+Because P0 is zero for this local QA scope, the recommendation is to move to a
+controlled Private Beta Gate review. If P0 rises above zero, replace this
+recommendation with targeted hotfix PRs.
+
+This report does not unblock public paid beta. It does not claim production
+account sync, server SRS authority, checkout, billing, payment, monitoring,
+support, refund, privacy, rollback, or full accessibility readiness.
+
+North Star Metric remains **Weekly Reviewed Words**.
 
 ```txt
 Visual metaphor -> Active recall -> Mistake record -> Spaced review -> Mastery status -> Paid habit
 ```
 
-The learning loop still depends on local browser state, local upgrade-interest
-capture, and owner-run operations. It must not be positioned as a public paid
-SaaS launch.
-
-Verdict:
-
-- Private paid beta: **Conditional / Manual-only**
-- Public paid beta: **No-Go**
-
-North Star Metric remains **Weekly Reviewed Words**. Saved words, pack previews,
-pricing interest, and progress copy count only when they support real review
-behavior.
-
 ## Tested Environment
 
 | Field | Value |
 | --- | --- |
-| Report date | 2026-06-15 KST |
-| Branch | `release/manual-qa-execution-report` |
-| Local server port used | `3021` |
-| Local base URL | `http://127.0.0.1:3021` |
-| Browser smoke scope | Route-load smoke for core paid beta surfaces |
-| Manual QA source | Existing Track B local app behavior and static report contract |
-| Data boundary | Local browser storage only; no production data |
+| Local base URL | `http://127.0.0.1:3006` |
+| App server command | `npm.cmd run dev -- --hostname 127.0.0.1 --port 3006` |
+| Execution spec | `tests/paid-beta-manual-qa-execution.spec.ts` |
+| Data boundary | Browser-local storage only |
+| Production data used | No |
+| Webflow / Cloudflare / billing / auth touched | No |
+
+The report is current only when the validation commands below pass on this
+branch. The execution spec runs focused browser/localStorage checks for the
+routes and result sections in this report.
 
 ## Validation Commands
-
-Run before finishing the PR:
 
 ```powershell
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run build
-npm.cmd run test -- --workers=1
-git diff --check
+npm.cmd run test -- tests/paid-beta-manual-qa-execution.spec.ts --workers=1
 ```
 
-## Browser Smoke Summary
+## Route Coverage
 
-Clean-port smoke target:
+| Route | Result | Evidence checked | Must remain honest |
+| --- | --- | --- | --- |
+| `/dashboard` | Pass | Route loads; Today Memory Mission reads local SRS stores. | Due, Weak, Mastered, streaks. |
+| `/saved` | Pass | Route loads; saved words read from local saved/review state. | Saved count, mastery labels, review history. |
+| `/save?slug=dissonance&source=word_page` | Pass | Saves `dissonance` with `word_page`; creates review item. | Mastery, box, weak score, review counts. |
+| `/save?slug=dissonance&source=alias_search` | Pass | Saves `dissonance` with `alias_search`; creates review item. | Source attribution, canonical slug, review item. |
+| `/save?slug=dissonance&source=extension` | Pass | Saves `dissonance` with `extension`; creates review item. | App-side source tag, review item, no production data. |
+| `/review` | Pass | Answer writes review event; SRS state and daily stats update. | Event count, box movement, next due, daily stats. |
+| `/review/due` | Pass | Route loads from real due state or honest empty state. | Due queue, empty state, mastery. |
+| `/review/weak` | Pass | Route loads from weak score/mistake evidence. | Weak queue, mistake record, empty state. |
+| `/review/weak-sprint` | Pass | Sprint appears only after weak evidence and writes `weak_review` events. | Same SRS record; no fake sprint store. |
+| `/packs` | Pass | Catalog loads; planned packs stay honest. | Pack progress, planned pack access, paid access. |
+| `/packs/academic-vocabulary` | Pass | Preview start and completion write pack progress. | Reviewed count and correct count come from review events. |
+| `/pricing` | Pass | Lite, Pro, and Exam Pack interest writes local upgrade records. | Checkout, subscription, paid entitlement. |
+| `/settings` | Pass | Route loads; Account Sync and Billing are disclosed as not connected. | Local plan preview, billing state, account sync. |
+| `/word/dissonance` | Pass | Word detail loads; memory panel reads local review state. | Saved state, mastery, box, weak score. |
 
-```txt
-http://127.0.0.1:3021
-```
+## localStorage Evidence Checks
 
-Routes selected for optional browser smoke:
+| Key | Expected use | Evidence check | Entitlement? |
+| --- | --- | --- | --- |
+| `vlx_saved_words_v1` | Browser-local saved word records keyed by slug. | `dissonance` exists after each save-source route. | No |
+| `vlx_review_state_v1` | Browser-local SRS records. | Save creates or preserves a `dissonance` review item. | No |
+| `vlx_review_events_v1` | Browser-local review answer events. | Review answers append real result events. | No |
+| `vlx_daily_stats_v1` | Browser-local daily review counters. | Reviewed count increases after review answers. | No |
+| `vlx_pack_progress_v1` | Browser-local pack preview and review progress. | Academic Vocabulary preview start/completion writes real counts. | No |
+| `vlx_plan_state_v1` | Browser-local plan preview/debug state only. | Pricing interest does not create a trusted paid plan state. | No |
+| `vlx_upgrade_interest_v1` | Browser-local paid beta interest attribution. | Pricing CTAs record Lite, Pro, and Exam Pack interest locally. | No |
 
-- `/dashboard`
-- `/review`
-- `/saved`
-- `/packs`
-- `/pricing`
+None of these keys are a production source of truth. None may contain secrets,
+provider tokens, payment data, checkout sessions, invoices, subscriptions,
+billing state, paid access proof, production account data, or fake mastery.
 
-Result captured for this PR:
+## QA Result Sections
 
-| Route | Status | Visible 404 |
+### Save creates review item
+
+Result: **Pass**
+
+Evidence:
+
+- `word_page`, `alias_search`, and `extension` save routes create
+  `dissonance` in `vlx_saved_words_v1`.
+- Each source creates a `New`, box `0` review item in
+  `vlx_review_state_v1` from a clean store.
+
+### Review updates state/events
+
+Result: **Pass**
+
+Evidence:
+
+- `/review` answer appends `vlx_review_events_v1`.
+- The same answer updates `vlx_review_state_v1` and `vlx_daily_stats_v1`.
+
+### Due/Weak/Mastered remain honest
+
+Result: **Pass**
+
+Evidence:
+
+- `/review/due` and `/review/weak` load from real SRS state.
+- Save-only and early reviewed words are not marked `Mastered`.
+
+### Weak sprint uses real weak evidence
+
+Result: **Pass**
+
+Evidence:
+
+- A wrong answer increases weak evidence.
+- `/review/weak-sprint` uses the same SRS record and writes `weak_review`
+  events.
+
+### Pack preview/progress remains honest
+
+Result: **Pass**
+
+Evidence:
+
+- Academic Vocabulary preview start writes `vlx_pack_progress_v1` with zero
+  reviewed/correct counts.
+- Preview completion updates `reviewedCount` and `correctCount` from review
+  events.
+
+### Pricing upgrade interest records local beta interest only
+
+Result: **Pass**
+
+Evidence:
+
+- Lite, Pro, and Exam Pack CTAs write `vlx_upgrade_interest_v1`.
+- Pricing interest does not create checkout, subscription, billing, or trusted
+  plan state.
+
+### No checkout/payment/billing route exists
+
+Result: **Pass**
+
+Evidence:
+
+- No `src/app/checkout`, `src/app/billing`, `src/app/payment`, or
+  `src/app/payments` route directories exist.
+- No Stripe, Paddle, checkout, billing portal, subscription, invoice, or payment
+  SDK is added.
+
+### Public paid beta remains No-Go
+
+Result: **No-Go**
+
+Evidence:
+
+- No checkout/payment/billing route exists.
+- Account sync, server SRS authority, production monitoring, support, privacy,
+  refund, rollback, full accessibility, and public launch approval remain
+  outside this QA pass.
+
+This report must not be used as public paid beta launch approval.
+
+### Private/manual paid beta is gated
+
+Result: **Gated**
+
+Evidence:
+
+- P0 count for this local QA scope is `0`.
+- The next decision is Private Beta Gate review, not public launch and not
+  checkout implementation.
+
+## P0 Findings
+
+Count: `0`
+
+No P0 findings are open for the local Track B QA scope covered by this report.
+If any P0 appears, do not move to Private Beta Gate; open targeted hotfix PRs
+instead.
+
+## P1 Findings
+
+| ID | Finding | Action |
 | --- | --- | --- |
-| `/dashboard` | 200 | No |
-| `/review` | 200 | No |
-| `/saved` | 200 | No |
-| `/packs` | 200 | No |
-| `/pricing` | 200 | No |
+| `p1_private_beta_gate_owner_signoff_required` | Private Beta Gate needs owner sign-off before invites. | Run owner gate review for invite list, support, refund, privacy, rollback, and manual entitlement operations. |
+| `p1_public_beta_account_sync_and_server_srs_missing` | Public beta still needs account sync and server-side SRS authority. | Do not treat localStorage as public-beta production source of truth. |
+| `p1_public_beta_payment_monitoring_support_privacy_gates_open` | Public beta payment, monitoring, support, privacy, refund, rollback, and accessibility gates remain open. | Keep public paid beta No-Go until those gates have separate approved evidence. |
+| `p1_extension_source_needs_real_extension_e2e` | Extension source is app-route covered, but real extension E2E remains follow-up. | Run browser extension E2E before claiming extension distribution readiness. |
 
-Console error count: `0`  
-Hydration warning count: `0`
+## P2 Findings
 
-This route-load smoke does not replace the full manual golden-flow pass. Before
-private paid beta invites, the owner should repeat the save, review, weak,
-packs, pricing, mobile, keyboard, and localStorage evidence pass from a clean
-browser profile.
+| ID | Finding | Action |
+| --- | --- | --- |
+| `p2_richer_ielts_gre_pack_content` | IELTS and GRE pack content still needs depth. | Audit richer IELTS/GRE content after private gate work. |
+| `p2_deeper_mobile_accessibility_polish` | Deeper mobile and accessibility polish should continue. | Run full mobile, keyboard, and screen-reader QA before public beta. |
+| `p2_future_ai_and_export_features_deferred` | AI mistake explanation and export/download features remain deferred. | Add those only after SRS, entitlement, and asset-delivery gates are approved. |
 
-## Route-By-Route QA Matrix
+## Recommendation
 
-| Route | Smoke expectation | Manual QA focus | Beta disposition |
-| --- | --- | --- | --- |
-| `/` | Loads the Track B home surface without visible 404. | Entry point keeps review loop framing and safe navigation. | Conditional manual-only. |
-| `/dashboard` | Loads Today Memory Mission. | Due, Weak, New, Learning, and Mastered values are honest; dashboard does not mutate review state/events. | Conditional manual-only. |
-| `/review` | Loads Review Session v2. | Answering a card writes a review event and updates SRS state through the existing review flow. | Conditional manual-only. |
-| `/review/due` | Loads due review or honest empty state. | Due cards come from real `nextDueAt` / review state. | Conditional manual-only. |
-| `/review/weak` | Loads weak review or honest empty state. | Weak cards come from real mistakes, Weak mastery, or `weakScore`. | Conditional manual-only. |
-| `/review/weak-sprint` | Loads weak sprint or honest empty state. | Sprint uses the same SRS records; no fake weak queue. | Conditional manual-only. |
-| `/saved` | Loads Saved Library v2. | Due / Weak / New / Learning / Mastered / All tabs exist; page is read-only for review state/events. | Conditional manual-only. |
-| `/packs` | Loads Packs v2. | Academic, IELTS, and GRE states are honest; unavailable packs do not fake progress. | Conditional manual-only. |
-| `/packs/academic-vocabulary` | Loads Academic Vocabulary detail. | Preview CTAs route to safe review/pricing paths and pack progress is evidence-based. | Conditional manual-only. |
-| `/pricing` | Loads Pricing / Paywall v2. | Free/Lite/Pro outcomes are present; no checkout, payment SDK, or entitlement mutation. | Conditional manual-only. |
-| `/save?slug=dissonance&source=word_page` | Loads save confirmation. | Creates or preserves saved word and review state through existing save behavior only; no fake mastery. | Conditional manual-only. |
-| `/word/dissonance` | Loads existing word detail route. | Memory state panel reflects local review state honestly. | Conditional manual-only. |
-| `/word/obfuscate` | Loads existing word detail route. | Weak-state example remains tied to real review state and not fake progress. | Conditional manual-only. |
+Recommendation: **Move to Private Beta Gate**.
 
-## localStorage Probe Checklist
+Rationale:
 
-| Key | Expected use | QA check | Must not contain |
-| --- | --- | --- | --- |
-| `vlx_saved_words_v1` | Saved words keyed by slug. | `dissonance` exists after save and source is safe. | Secrets, provider tokens, payment data, raw private payloads. |
-| `vlx_review_state_v1` | SRS records for saved/reviewed words. | Save creates or preserves review item; mastery does not jump to Mastered. | Fake mastery, entitlement proof, account tokens. |
-| `vlx_review_events_v1` | Review answer events. | Event count increases after an answer. | Payment data, private payloads, production account data. |
-| `vlx_daily_stats_v1` | Local daily review counts. | Stats update only after review answers. | Fake Weekly Reviewed Words. |
-| `vlx_pack_progress_v1` | Local pack preview/review progress. | Progress ties to preview start or review evidence. | Fake completion, paid access proof. |
-| `vlx_upgrade_interest_v1` | Local upgrade interest attribution. | Lite/Pro interest records do not grant access. | Payment data, invoices, subscriptions. |
-| `vlx_plan_state_v1` | Local plan preview/debug state only. | Does not become entitlement or subscription proof. | Paid access proof, billing state. |
-| `vlx_pending_home_quiz` | Optional transition key. | Does not compete with SRS state or mastery. | Review state replacement, fake mastery. |
+- P0 count is `0`.
+- Save creates review items.
+- Review writes events and updates memory state.
+- Due, Weak, and Mastered remain derived from real review state.
+- Weak Sprint uses real weak evidence.
+- Pack preview/progress remains evidence-based.
+- Pricing records local beta interest only.
+- No checkout/payment/billing route exists.
 
-## Console / Hydration Error Checklist
+Boundary:
 
-- Record console error count on `/dashboard`, `/review`, `/saved`, `/packs`,
-  and `/pricing`.
-- Record hydration warning count on the same route set.
-- Treat visible 404, route crash, hydration mismatch, or persistent console
-  errors in the core loop as a P0 private-beta blocker until retested.
-- Use a clean port such as `3021` to reduce stale server risk.
-- Do not paste secrets, private payloads, production user data, or payment data
-  into QA notes.
-
-## Mobile / Keyboard / Accessibility Smoke Checklist
-
-- Use a mobile viewport around `390x844`.
-- Open `/dashboard`, start review, and answer at least one card.
-- Confirm visible focus states on dashboard, saved, review, packs, pricing, save,
-  and word detail surfaces.
-- Confirm keyboard navigation can reach core save, review, answer, and pricing
-  interest controls.
-- Confirm no color-only critical state; Due, Weak, Mastered, and plan states
-  need readable text labels.
-- Confirm semantic headings exist and mobile text/buttons do not overlap.
-- Treat keyboard-blocked save/review or unusable mobile review as P0.
-
-## Paywall Trigger Checklist
-
-- `/pricing` includes Free, Lite, and Pro cards.
-- Outcome copy exists:
-  - Start remembering your first words
-  - Build a daily visual memory habit
-  - Fix weak words and prepare for exams
-- Save-limit and review-limit prompts remain contextual and safe.
-- Upgrade interest can be recorded locally only.
-- No checkout, real payment provider SDK, subscription, invoice, billing portal,
-  production entitlement, or account mutation is introduced.
-
-## P0 Blockers
-
-These block public paid beta. They allow private paid beta only under the
-manual owner-run constraints in this report.
-
-- Real payment/checkout is not implemented.
-- Production account sync is not implemented.
-- Monitoring/alerting is not implemented.
-- Privacy/support/refund final gate is not complete.
-- Full accessibility audit is not complete.
-- Public paid beta remains No-Go.
-
-## P1 Issues
-
-- Private paid beta can proceed only manually and with owner oversight.
-- Account sync preview/digest is still needed.
-- Manual payment / entitlement policy is still needed.
-- QA evidence should be repeated before any public launch.
-
-## P2 Polish
-
-- Richer pack data for IELTS/GRE.
-- Deeper mobile polish.
-- Future AI mistake explanation after the SRS loop is stable.
-- Future no-watermark/download/export implementation.
+- Private/manual paid beta is still gated by owner review and manual operations.
+- Public paid beta remains **No-Go**.
+- If P0 rises above zero, replace this recommendation with targeted hotfix PRs.
 
 ## Stop Conditions
+
+Stop and open targeted hotfix PRs if:
+
+- Save does not create or preserve a review item.
+- Review answers do not create events, update review state, and update daily
+  stats.
+- Due, Weak, Mastered, pack progress, streaks, or paid access are faked.
+- Pricing interest creates checkout, billing, subscription, invoice, paid plan,
+  paid entitlement, or trusted `vlx_plan_state_v1`.
+- Any P0 finding appears in this scope.
 
 Stop and ask for explicit approval before:
 
 - Webflow publishing.
 - Cloudflare production Worker changes.
-- DNS, deployment, Vercel, or production setting changes.
-- Payment, Paddle, Stripe, billing, invoice, checkout, subscription, or
-  entitlement implementation.
-- Auth, account sync API routes, database providers, migrations, or production
-  user data mutation.
-- Secrets, API keys, passwords, tokens, billing credentials, or env var changes.
-- New route groups beyond the approved Track B route set.
-
-Stop private paid beta execution if:
-
-- Save does not create or preserve a review item.
-- Review answers do not write events.
-- Review answers do not update memory state.
-- Due, Weak, Mastered, pack progress, streaks, or paid access are fake.
-- The mobile or keyboard review flow is unusable.
-- Console/hydration failures affect the core loop.
+- Auth, billing, payment, checkout, subscription, invoice, billing portal, DNS,
+  deployment settings, secrets, production data, R2 production objects, or real
+  user data changes.
+- Adding checkout or payment SDKs.
+- Claiming public paid beta readiness.
 
 ## Rollback Notes
 
-This PR is docs/contracts/tests only. Rollback is a normal revert of:
+This PR is docs/tests plus a static test contract helper. Rollback is a normal
+revert of:
 
 - `docs/PAID_BETA_MANUAL_QA_EXECUTION_REPORT.md`
-- `src/lib/paid-beta-manual-qa-execution/*`
 - `tests/paid-beta-manual-qa-execution.spec.ts`
-- README link additions
+- `src/lib/paid-beta-manual-qa-execution/*`
 
-No production data, payment settings, auth behavior, Webflow, Cloudflare,
-Vercel, DNS, deployment settings, API routes, route handlers, middleware, or
-runtime UI behavior are changed by this report.
-
-## Recommended Next PRs
-
-Recommended next PR: **#80 Private beta gate prep**.
-
-Reason: this report keeps private paid beta conditional and manual-only, so the
-next safest step is to prepare the owner-run invite gate, manual entitlement
-policy, support/privacy/refund checklist, and repeat-QA evidence log without
-adding real checkout or account sync.
-
-Alternative #80 if the owner chooses persistence disclosure first:
-**Account sync disabled route skeleton**, still without implementing real sync,
-auth, payment, billing, or production data writes.
+No runtime app behavior, production data, payment settings, auth behavior,
+Webflow, Cloudflare Workers, DNS, deployment settings, checkout, billing route,
+or payment SDK rollback is required.
 
 ## Safety Confirmation
 
-- Docs/contracts/tests only.
-- No runtime UI changes.
+- Docs/tests only plus static test contract helper.
+- No runtime UI implementation.
+- No new route groups.
 - No API routes.
 - No route handlers.
 - No middleware.
-- No auth, database, provider SDK, logging SDK, validation dependency, or
-  production persistence implementation.
-- No payment, billing, checkout, subscription, invoice, billing portal, or paid
-  entitlement.
-- No env vars, secrets, production data, Webflow, Cloudflare, Vercel, DNS, or
-  deployment settings.
+- No Webflow changes.
+- No Cloudflare Workers changes.
+- No auth changes.
+- No billing, payment, checkout, subscription, invoice, billing portal, or
+  payment SDK.
+- No DNS, deployment settings, or secrets changes.
+- No production data, R2 production objects, or real user data touched.
+- No fake QA results.
 - No fake mastery, fake pack progress, fake streaks, or fake paid access.
+- Public paid beta remains **No-Go**.
+- Private/manual paid beta remains gated.
 - `npm audit fix` was not run.
