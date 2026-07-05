@@ -49,7 +49,7 @@ const auditedRoutes = [
   {
     path: "/dashboard",
     waitForRole: {
-      name: "Start review",
+      name: "Start due review",
       role: "link" as const
     }
   },
@@ -688,8 +688,11 @@ test.describe("Track B product/UI readiness rendered audit", () => {
   test("keyboard focus can reach principal learning actions", async ({ page }) => {
     await seedVlxLocalStorage(page, makeReadySeed());
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("link", { name: "Start review" }).waitFor();
-    await expectTabReaches(page, page.getByRole("link", { name: "Start review" }));
+    await page.getByRole("link", { name: "Start due review" }).waitFor();
+    await expectTabReaches(
+      page,
+      page.getByRole("link", { name: "Start due review" })
+    );
 
     await page.goto(`${baseUrl}/review?mode=word&slug=dissonance`, {
       waitUntil: "domcontentloaded"
@@ -813,13 +816,13 @@ test.describe("Track B product/UI readiness rendered audit", () => {
     await seedVlxLocalStorage(page, makeReadySeed());
 
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("link", { name: "Start review" }).waitFor();
+    await page.getByRole("link", { name: "Start due review" }).waitFor();
 
     const bodyText = await page.locator("body").innerText();
 
-    expect(bodyText).toMatch(/1\s+DUE NOW/);
-    expect(bodyText).toMatch(/1\s+NEEDS WORK/);
-    expect(bodyText).toMatch(/1\s+MASTERED/);
+    expect(bodyText).toMatch(/DUE TODAY\s+1/);
+    expect(bodyText).toMatch(/WEAK WORDS\s+1/);
+    expect(bodyText).toMatch(/MASTERED\s+1/);
 
     await page.goto(`${baseUrl}/saved`, { waitUntil: "domcontentloaded" });
 
@@ -906,7 +909,7 @@ test.describe("Track B product/UI readiness rendered audit", () => {
     await seedVlxLocalStorage(page, makeReadySeed());
 
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("link", { name: "Start review" }).waitFor();
+    await page.getByRole("link", { name: "Start due review" }).waitFor();
     await expect(page.locator("[data-paywall-trigger]")).toHaveCount(0);
     await expect(page.locator(".track-b-upgrade-nudge")).toHaveCount(0);
 

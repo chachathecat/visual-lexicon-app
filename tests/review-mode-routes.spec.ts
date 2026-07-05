@@ -939,8 +939,8 @@ test.describe('Visual Lexicon review route mode contract', () => {
 
     await expect(sprintLink).toHaveCount(0);
     await expect(
-      page.locator('.dashboard-v2-mission-card').getByRole('link', {
-        name: 'Start review',
+      page.locator('.dashboard-v3-mission').getByRole('link', {
+        name: 'Start due review',
       }),
     ).toHaveAttribute('href', '/review/due');
   });

@@ -521,6 +521,7 @@ test.describe("Track B entitlement runtime read model", () => {
       "src/components/track-b/layout-primitives.tsx",
       "src/components/track-b/learning-primitives.tsx",
       "src/components/track-b/tokens.ts",
+      "src/app/dashboard/page.tsx",
       "src/app/pricing/page.tsx",
       "src/components/local-paywall-trigger-panel.tsx",
       "src/components/paywall-prompt.tsx",

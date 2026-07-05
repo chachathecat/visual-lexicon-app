@@ -192,7 +192,7 @@ test.describe("Track B accessibility release gate", () => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
 
     const startReview = page.getByRole("link", {
-      name: /start review/i
+      name: /start due review/i
     });
     await tabUntilFocused(page, startReview);
     await expectVisibleFocus(page);

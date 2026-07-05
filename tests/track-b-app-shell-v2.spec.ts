@@ -542,8 +542,8 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
   }) => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect(
-      page.getByRole("link", {
-        name: "Start review"
+      page.locator(".dashboard-v3-mission").getByRole("link", {
+        name: "Save a word to start"
       })
     ).toHaveCount(1);
 

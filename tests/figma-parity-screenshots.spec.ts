@@ -343,7 +343,9 @@ for (const viewport of viewports) {
     test(`captures dashboard ${viewport.name}`, async ({ page }) => {
       await prepareVisualPage(page, viewport);
       await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-      await expect(page.locator(".dashboard-v2-due-row")).toHaveCount(3);
+      await expect(
+        page.locator(".dashboard-v3-mission .dashboard-v3-word-row")
+      ).toHaveCount(3);
       await capture(page, `figma-parity-dashboard-${viewport.name}`);
     });
 
