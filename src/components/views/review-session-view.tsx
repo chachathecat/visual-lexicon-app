@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { PaywallPrompt } from "@/components/paywall-prompt";
 import {
   MetricPill,
   TrackBAppShell,
@@ -13,31 +12,28 @@ import {
 import {
   CheckIcon,
   ChevronRightIcon,
+  LayersIcon,
   RotateCcwIcon,
   XIcon
 } from "@/components/track-b/icons";
 import { WordVisualImage } from "@/components/word-visual-image";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
-import { readLocalPlanState, type VlxPlanId } from "@/lib/entitlements";
 import { mockQuizWords } from "@/lib/packs/mock-data";
-import { recordPackReviewCompleted } from "@/lib/packs/progress";
-import type { VlxQuizWord } from "@/lib/packs/types";
 import {
-  evaluateExamPackPreviewEndPaywall,
-  evaluateMistakeExplanationLockedPaywall,
-  evaluateReviewLimitPaywall,
-  type VlxPaywallPrompt
-} from "@/lib/paywall";
+  hasVisiblePackProgress,
+  readPackProgressStore,
+  recordPackReviewCompleted,
+  type VlxPackProgressItem
+} from "@/lib/packs/progress";
+import type { VlxQuizWord } from "@/lib/packs/types";
 import type { VlxReviewRouteMode } from "@/lib/review/route-contract";
 import {
   getDueToday,
   getNewSaved,
-  getReviewedToday,
   getWeakWords
 } from "@/lib/srs/selectors";
 import {
   applyReviewAnswer,
-  readDailyStats,
   readReviewEvents,
   readReviewState,
   readSavedWords,
@@ -158,9 +154,10 @@ type SessionSummary = {
   nextDueWord?: string;
 };
 
-type ReviewPaywallSurface = {
-  prompt: VlxPaywallPrompt;
-  userState: VlxPlanId;
+type SummaryContinuePack = {
+  href: string;
+  label: string;
+  progressLabel: string;
 };
 
 type ReviewPersistenceError = {
@@ -944,6 +941,44 @@ function formatDateLabel(value: string) {
   }).format(date);
 }
 
+function formatDueTiming(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  const dueAt = Date.parse(value);
+
+  if (!Number.isFinite(dueAt)) {
+    return undefined;
+  }
+
+  const diffMs = dueAt - Date.now();
+
+  if (diffMs <= 15 * 60 * 1000) {
+    return "due soon";
+  }
+
+  const diffHours = Math.ceil(diffMs / (60 * 60 * 1000));
+
+  if (diffHours < 24) {
+    return `due in about ${diffHours} ${diffHours === 1 ? "hour" : "hours"}`;
+  }
+
+  const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+
+  return `due in about ${diffDays} ${diffDays === 1 ? "day" : "days"}`;
+}
+
+function getAnswerScheduleExplanation(answer: SessionAnswer) {
+  const dueTiming =
+    formatDueTiming(answer.nextDueAt) ??
+    (answer.nextDueAt
+      ? `due ${formatDateLabel(answer.nextDueAt) ?? "soon"}`
+      : "not scheduled");
+
+  return `${answer.masteryAfter} - Box ${answer.boxAfter} - ${dueTiming}`;
+}
+
 function getNextReviewMessage(nextDueAt?: string, word?: string) {
   if (!nextDueAt) {
     return undefined;
@@ -977,7 +1012,17 @@ function getSessionSummaryHeadline(summary: SessionSummary) {
     return "No committed answers were saved.";
   }
 
-  return `${formatWordCount(summary.reviewed)} reviewed. ${summary.correct} correct, ${summary.wrong} wrong.`;
+  return `You rescued ${formatWordCount(summary.reviewed)} from forgetting.`;
+}
+
+function getSessionSummaryEvidenceCopy(summary: SessionSummary) {
+  const closerCopy = `${formatWordCount(summary.movedForward)} moved closer to Mastered.`;
+  const weakCopy =
+    summary.weakRemaining > 0
+      ? `${summary.weakRemaining} ${summary.weakRemaining === 1 ? "weak word needs" : "weak words need"} one more review soon.`
+      : "No weak words remain in the current weak queue.";
+
+  return `${closerCopy} ${weakCopy}`;
 }
 
 function formatConfidence(confidence: VlxReviewConfidence) {
@@ -998,10 +1043,12 @@ function formatPercent(value: number) {
 
 function getReviewFeedbackKind({
   confidence,
+  movedForward,
   responseMs,
   result
 }: {
   confidence: VlxReviewConfidence;
+  movedForward: boolean;
   responseMs: number;
   result: VlxReviewResult;
 }): ReviewFeedbackKind {
@@ -1013,7 +1060,9 @@ function getReviewFeedbackKind({
     return "guessed";
   }
 
-  return responseMs <= VLX_FAST_RESPONSE_MS ? "correct-fast" : "correct-slow";
+  return responseMs <= VLX_FAST_RESPONSE_MS && movedForward
+    ? "correct-fast"
+    : "correct-slow";
 }
 
 function getFeedbackLabel(kind: ReviewFeedbackKind) {
@@ -1034,18 +1083,18 @@ function getFeedbackLabel(kind: ReviewFeedbackKind) {
 
 function getFeedbackTitle(kind: ReviewFeedbackKind) {
   if (kind === "correct-fast") {
-    return "Fast recall moved this card forward.";
+    return "You recalled it. This word moves closer to Mastered.";
   }
 
   if (kind === "correct-slow") {
-    return "Correct, but still close to review.";
+    return "You got it, but we'll keep it close.";
   }
 
   if (kind === "guessed") {
-    return "Guess recorded without fake progress.";
+    return "You got it, but we'll keep it close.";
   }
 
-  return "Wrong answer recorded.";
+  return "Almost. This word will come back sooner.";
 }
 
 function getFeedbackExplanation(
@@ -1073,58 +1122,80 @@ function getFeedbackExplanation(
   return `${hook} Wrong answers increase weakness and bring the card back sooner.`;
 }
 
-function getReviewSummaryPaywallSurface({
-  packId,
-  routeSource,
-  sessionId
-}: {
-  packId?: string;
-  routeSource?: string;
-  sessionId: string;
-}): ReviewPaywallSurface | null {
-  const userState = readLocalPlanState().plan;
+function formatToken(value?: string) {
+  return value
+    ?.split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
-  if (packId && routeSource === "pack_preview") {
-    const prompt = evaluateExamPackPreviewEndPaywall({
-      plan: userState,
-      packId,
-      previewCompleted: true,
-      source: "review_pack_preview_end"
-    });
+function getPackLabel(packId: string) {
+  return formatToken(packId) ?? packId;
+}
 
-    if (prompt) {
-      return { prompt, userState };
-    }
+function getPackProgressLabel(progress: VlxPackProgressItem) {
+  if (progress.reviewedCount > 0) {
+    return `${formatWordCount(progress.reviewedCount)} reviewed`;
   }
 
-  const dailyReviewedCount = getReviewedToday(readDailyStats());
-  const reviewLimitPrompt = evaluateReviewLimitPaywall({
-    plan: userState,
-    dailyReviewedCount,
-    source: "review_limit"
-  });
-
-  if (reviewLimitPrompt) {
-    return { prompt: reviewLimitPrompt, userState };
+  if (progress.previewCompletedAt) {
+    return "Preview completed";
   }
 
-  const sessionWrongEvents = readReviewEvents().filter(
-    (event) => event.sessionId === sessionId && event.result === "wrong"
-  );
-  const lastWrongEvent = sessionWrongEvents.at(-1);
+  return "Preview started";
+}
 
-  if (!lastWrongEvent) {
+function getSummaryContinuePack(
+  preferredPackId?: string
+): SummaryContinuePack | null {
+  const progressStore = readPackProgressStore();
+  const preferredProgress = preferredPackId
+    ? progressStore[preferredPackId]
+    : undefined;
+  const fallbackProgress = Object.values(progressStore)
+    .filter(hasVisiblePackProgress)
+    .sort((first, second) => {
+      const firstDate =
+        Date.parse(
+          first.lastReviewedAt ??
+            first.previewCompletedAt ??
+            first.previewStartedAt ??
+            first.startedAt ??
+            ""
+        ) || 0;
+      const secondDate =
+        Date.parse(
+          second.lastReviewedAt ??
+            second.previewCompletedAt ??
+            second.previewStartedAt ??
+            second.startedAt ??
+            ""
+        ) || 0;
+
+      return secondDate - firstDate;
+    })[0];
+  const progress = hasVisiblePackProgress(preferredProgress)
+    ? preferredProgress
+    : fallbackProgress;
+
+  if (!progress) {
     return null;
   }
 
-  const mistakePrompt = evaluateMistakeExplanationLockedPaywall({
-    plan: userState,
-    wrongCount: sessionWrongEvents.length,
-    slug: lastWrongEvent.slug,
-    source: "review_mistake_explanation"
-  });
+  return {
+    href: `/packs/${progress.packId}`,
+    label: getPackLabel(progress.packId),
+    progressLabel: getPackProgressLabel(progress)
+  };
+}
 
-  return mistakePrompt ? { prompt: mistakePrompt, userState } : null;
+function hasWeakEvidence(answer: SessionAnswer) {
+  return (
+    answer.masteryAfter === "Weak" ||
+    answer.weakScoreAfter >= 0.6 ||
+    answer.weakScoreBefore >= 0.6
+  );
 }
 
 function getReviewAnswerLiveMessage(answer: SessionAnswer) {
@@ -1229,8 +1300,8 @@ export function ReviewSessionView({
   const [isPersistingAnswer, setIsPersistingAnswer] = useState(false);
   const [reviewPersistenceError, setReviewPersistenceError] =
     useState<ReviewPersistenceError | null>(null);
-  const [summaryPaywallSurface, setSummaryPaywallSurface] =
-    useState<ReviewPaywallSurface | null>(null);
+  const [summaryContinuePack, setSummaryContinuePack] =
+    useState<SummaryContinuePack | null>(null);
   const [queueLabel, setQueueLabel] = useState(copy.sourceLabel);
   const [liveMessage, setLiveMessage] = useState(
     "Loading review state from local storage."
@@ -1266,7 +1337,7 @@ export function ReviewSessionView({
       if (!nextQuestions.length) {
         setStatus("empty");
         setCompletedSummary(null);
-        setSummaryPaywallSurface(null);
+        setSummaryContinuePack(null);
         setPendingSelection(null);
         setPendingConfidence(null);
         setCurrentAnswer(null);
@@ -1290,7 +1361,7 @@ export function ReviewSessionView({
       setCompletedSummary(null);
       setAvailabilityStats(stats ?? null);
       setReviewPersistenceError(null);
-      setSummaryPaywallSurface(null);
+      setSummaryContinuePack(null);
       setQueueLabel(label);
       setStatus("active");
       setLiveMessage(
@@ -1324,7 +1395,7 @@ export function ReviewSessionView({
         setQuestions([]);
         setAnswers([]);
         setCompletedSummary(null);
-        setSummaryPaywallSurface(null);
+        setSummaryContinuePack(null);
         setCurrentAnswer(null);
         setPendingSelection(null);
         setPendingConfidence(null);
@@ -1351,7 +1422,7 @@ export function ReviewSessionView({
       setQuestions([]);
       setAnswers([]);
       setCompletedSummary(null);
-      setSummaryPaywallSurface(null);
+      setSummaryContinuePack(null);
       setCurrentAnswer(null);
       setPendingSelection(null);
       setPendingConfidence(null);
@@ -1507,6 +1578,7 @@ export function ReviewSessionView({
       });
       const feedbackKind = getReviewFeedbackKind({
         confidence: output.event.confidence ?? confidence,
+        movedForward: output.event.boxAfter > output.event.boxBefore,
         responseMs: output.event.responseMs,
         result: output.event.result
       });
@@ -1657,13 +1729,7 @@ export function ReviewSessionView({
           wrongCount: nextSummary.wrong
         });
       }
-      setSummaryPaywallSurface(
-        getReviewSummaryPaywallSurface({
-          packId,
-          routeSource,
-          sessionId
-        })
-      );
+      setSummaryContinuePack(getSummaryContinuePack(packId));
       setStatus("summary");
       setFocusTarget("summary-heading");
       return;
@@ -1798,8 +1864,13 @@ export function ReviewSessionView({
                 })}
               </div>
               <span>
-                {currentIndex + 1} / {questions.length}
+                Card {currentIndex + 1} of {questions.length}
               </span>
+            </div>
+
+            <div className="review-v2-session__meta" aria-label="Review mode">
+              <span>{copy.modeLabel}</span>
+              <span>{getQuestionTypeLabel(currentQuestion.questionType)}</span>
             </div>
 
             <article className="review-v2-card" aria-label="Review card">
@@ -1870,36 +1941,25 @@ export function ReviewSessionView({
                 className="review-v2-confidence"
                 aria-labelledby="review-confidence-title"
               >
-                <h3 className="sr-only" id="review-confidence-title">
+                <h3 id="review-confidence-title">
                   How did that recall feel?
                 </h3>
                 <p>
-                  {pendingSelection.result === "correct"
-                    ? "How confident did you feel?"
-                    : "How close were you?"}
+                  Choose one before this answer is saved to memory state.
                 </p>
                 <div className="review-v2-confidence__buttons">
-                  {confidenceOptions.map((option) => {
-                    const visibleLabel =
-                      option.value === "knew"
-                        ? "Knew it"
-                        : option.value === "guessed"
-                          ? "Sort of"
-                          : "Not at all";
-
-                    return (
-                      <button
-                        aria-label={option.label}
-                        className="review-v2-confidence-button"
-                        disabled={isPersistingAnswer || Boolean(pendingConfidence)}
-                        key={option.value}
-                        onClick={() => handleConfidence(option.value)}
-                        type="button"
-                      >
-                        {visibleLabel}
-                      </button>
-                    );
-                  })}
+                  {confidenceOptions.map((option) => (
+                    <button
+                      aria-label={option.label}
+                      className="review-v2-confidence-button"
+                      disabled={isPersistingAnswer || Boolean(pendingConfidence)}
+                      key={option.value}
+                      onClick={() => handleConfidence(option.value)}
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             ) : null}
@@ -1937,6 +1997,14 @@ export function ReviewSessionView({
                   </p>
                   <h3>{getFeedbackTitle(currentAnswer.feedbackKind)}</h3>
                   <p>{currentAnswer.explanation}</p>
+                  {hasWeakEvidence(currentAnswer) ? (
+                    <p className="review-v2-feedback__weak-note">
+                      This stays in Weak Words until the evidence improves.
+                    </p>
+                  ) : null}
+                  <p className="review-v2-feedback__schedule">
+                    {getAnswerScheduleExplanation(currentAnswer)}
+                  </p>
                   <p className="sr-only">
                     Memory state updated from this answer and confidence.
                   </p>
@@ -1956,11 +2024,16 @@ export function ReviewSessionView({
                       </dd>
                     </div>
                     <div>
+                      <dt>Mastery</dt>
+                      <dd>{currentAnswer.masteryAfter}</dd>
+                    </div>
+                    <div>
                       <dt>Next due</dt>
                       <dd>
-                        {currentAnswer.nextDueAt
-                          ? formatDateLabel(currentAnswer.nextDueAt)
-                          : "Not scheduled"}
+                        {formatDueTiming(currentAnswer.nextDueAt) ??
+                          (currentAnswer.nextDueAt
+                            ? formatDateLabel(currentAnswer.nextDueAt)
+                            : "Not scheduled")}
                       </dd>
                     </div>
                   </dl>
@@ -2000,6 +2073,7 @@ export function ReviewSessionView({
                 >
                   {getSessionSummaryHeadline(summary)}
                 </h3>
+                <p>{getSessionSummaryEvidenceCopy(summary)}</p>
                 <p>{nextDueExplanation}</p>
               </div>
 
@@ -2026,10 +2100,16 @@ export function ReviewSessionView({
                   value={summary.wrong}
                 />
                 <MetricPill
-                  detail="box or weak score improved"
+                  detail="moved closer to Mastered"
                   label="Improved"
                   tone="learning"
-                  value={summary.weakImproved}
+                  value={summary.movedForward}
+                />
+                <MetricPill
+                  detail="real weak queue count"
+                  label="Weak words"
+                  tone="weak"
+                  value={summary.weakRemaining}
                 />
                 <MetricPill
                   detail="still needs review evidence"
@@ -2038,6 +2118,25 @@ export function ReviewSessionView({
                   value={summary.stillWeak}
                 />
               </div>
+
+              {summary.weakSpotlight ? (
+                <aside
+                  className="review-v2-weak-spotlight"
+                  data-testid="review-weak-spotlight"
+                >
+                  <p className="track-b-eyebrow">Weak spotlight</p>
+                  <h4>{summary.weakSpotlight.word}</h4>
+                  <p>
+                    {summary.weakSpotlight.result === "wrong"
+                      ? "Missed in this session."
+                      : "Still weak after this review."}{" "}
+                    Weak score {formatPercent(summary.weakSpotlight.weakScore)}.
+                    {summary.weakSpotlight.nextDueAt
+                      ? ` ${formatDueTiming(summary.weakSpotlight.nextDueAt) ?? "Due soon"}.`
+                      : ""}
+                  </p>
+                </aside>
+              ) : null}
 
               <div className="review-results" aria-label="Reviewed cards">
                 {answers.map((answer) => (
@@ -2067,13 +2166,6 @@ export function ReviewSessionView({
                 ))}
               </div>
 
-              {summaryPaywallSurface ? (
-                <PaywallPrompt
-                  prompt={summaryPaywallSurface.prompt}
-                  userState={summaryPaywallSurface.userState}
-                />
-              ) : null}
-
               <div className="track-b-action-row">
                 <Link
                   className="track-b-button track-b-button--primary"
@@ -2082,6 +2174,30 @@ export function ReviewSessionView({
                 >
                   Back to dashboard
                 </Link>
+                {summary.weakRemaining > 0 ? (
+                  <Link
+                    className="track-b-button track-b-button--quiet"
+                    href="/review/weak"
+                    prefetch={false}
+                  >
+                    <RotateCcwIcon size={13} />
+                    Review Weak Words
+                  </Link>
+                ) : null}
+                {summaryContinuePack ? (
+                  <Link
+                    className="track-b-button track-b-button--quiet"
+                    href={summaryContinuePack.href}
+                    prefetch={false}
+                  >
+                    <LayersIcon size={13} />
+                    Continue Pack
+                    <span className="sr-only">
+                      {summaryContinuePack.label} -{" "}
+                      {summaryContinuePack.progressLabel}
+                    </span>
+                  </Link>
+                ) : null}
                 <button
                   className="track-b-button track-b-button--quiet"
                   onClick={loadLocalSession}

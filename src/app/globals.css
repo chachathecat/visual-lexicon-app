@@ -1402,7 +1402,9 @@ select {
 }
 
 .review-v2-card__body h2,
+.review-v2-confidence h3,
 .review-v2-inline-feedback h3,
+.review-v2-weak-spotlight h4,
 .review-v2-feedback h3,
 .review-v2-empty h2,
 .review-v2-summary__header h3 {
@@ -1449,6 +1451,24 @@ select {
   color: #7a6b5d;
   font-size: 0.75rem;
   font-weight: 650;
+}
+
+.review-v2-session__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-v2-session__meta span {
+  min-height: 28px;
+  padding: 7px 10px;
+  border: 1px solid rgba(44, 24, 16, 0.08);
+  border-radius: var(--vlx-track-b-radius-sm);
+  background: rgba(255, 253, 248, 0.76);
+  color: #7a6b5d;
+  font-size: 0.72rem;
+  font-weight: 780;
+  line-height: 1;
 }
 
 .review-v2-card {
@@ -1655,6 +1675,10 @@ select {
   text-align: center;
 }
 
+.review-v2-confidence h3 {
+  font-size: 1.12rem;
+}
+
 .review-v2-confidence p {
   margin: 0;
   color: #7a6b5d;
@@ -1786,6 +1810,26 @@ select {
   line-height: 1.5;
 }
 
+.review-v2-feedback__weak-note,
+.review-v2-feedback__schedule {
+  padding: 10px 12px;
+  border-radius: var(--vlx-track-b-radius-md);
+}
+
+.review-v2-feedback__weak-note {
+  border: 1px solid rgba(192, 139, 48, 0.28);
+  background: #fdf5e8;
+  color: #79500f;
+  font-weight: 720;
+}
+
+.review-v2-feedback__schedule {
+  border: 1px solid rgba(72, 146, 106, 0.18);
+  background: #eaf4ee;
+  color: #2a6645;
+  font-weight: 760;
+}
+
 .review-v2-empty p:not(.track-b-eyebrow) {
   max-width: 620px;
   margin: 0;
@@ -1855,6 +1899,27 @@ select {
   line-height: 1.25;
 }
 
+.review-v2-weak-spotlight {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid rgba(192, 139, 48, 0.24);
+  border-radius: var(--vlx-track-b-radius-md);
+  background: #fdf5e8;
+  color: #79500f;
+}
+
+.review-v2-weak-spotlight h4 {
+  margin: 0;
+  font-size: 1.24rem;
+}
+
+.review-v2-weak-spotlight p:not(.track-b-eyebrow) {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .review-results {
   display: grid;
   gap: 8px;
@@ -1907,7 +1972,7 @@ select {
 
 .review-v2-summary .track-b-action-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .review-v2-summary .track-b-button,
