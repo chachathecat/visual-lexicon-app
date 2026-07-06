@@ -25,13 +25,13 @@ const vlxLocalStorageKeys = [
 const plannedPlaceholderRoutes = [
   {
     path: "/packs/ielts-writing-vocabulary",
-    heading: "IELTS Writing Vocabulary",
-    emptyHeading: "IELTS pack data is not available yet"
+    heading: "IELTS Writing",
+    emptyHeading: "IELTS Writing preview plan is being prepared"
   },
   {
     path: "/packs/gre-visual-verbal",
     heading: "GRE Visual Verbal",
-    emptyHeading: "GRE pack data is not available yet"
+    emptyHeading: "GRE Visual Verbal preview plan is being prepared"
   }
 ] as const;
 
@@ -206,7 +206,7 @@ test.describe("Packs v2 learning-plan surface", () => {
       page.getByRole("heading", { level: 1, name: "Packs" })
     ).toBeVisible();
     await expect(page.locator("body")).toContainText(
-      "Guided visual vocabulary plans for goals and exams."
+      "Turn saved words into 30-day visual learning plans."
     );
     await expect(
       page.getByRole("heading", { name: "Featured learning plans" })
@@ -214,7 +214,7 @@ test.describe("Packs v2 learning-plan surface", () => {
 
     for (const title of [
       "Academic Vocabulary",
-      "IELTS Writing Vocabulary",
+      "IELTS Writing",
       "GRE Visual Verbal"
     ]) {
       await expect(featuredCard(page, title)).toBeVisible();
@@ -232,16 +232,9 @@ test.describe("Packs v2 learning-plan surface", () => {
     await expect(academicCard).toContainText("Academic essays and lectures");
     await expect(academicCard).toContainText("3 words");
     await expect(academicCard).toContainText("Free preview: 3 cards");
-    await expect(academicCard).toContainText("14-day plan");
+    await expect(academicCard).toContainText("30-day plan");
     await expect(academicCard).toContainText(
-      "Full pack access is planned for Pro. Payment is not connected in this beta."
-    );
-    await expect(academicCard).toContainText("Billing is not connected");
-    await expect(academicCard).toContainText(
-      "Public paid beta remains blocked"
-    );
-    await expect(academicCard).toContainText(
-      "Private/manual beta remains gated"
+      "Longer plan access remains gated for owner-approved beta."
     );
     await expect(academicCard).toContainText("No local pack progress yet");
     await expect(
@@ -250,12 +243,15 @@ test.describe("Packs v2 learning-plan surface", () => {
       })
     ).toHaveAttribute("href", academicPreviewReviewHref);
 
-    for (const title of ["IELTS Writing Vocabulary", "GRE Visual Verbal"]) {
+    for (const title of ["IELTS Writing", "GRE Visual Verbal"]) {
       const card = featuredCard(page, title);
 
       await expect(card).toContainText("Data pending");
       await expect(card).toContainText("Word count pending");
       await expect(card).toContainText("Free preview pending");
+      await expect(card).toContainText(
+        "Preview plan is being prepared for private beta."
+      );
       await expect(card).toContainText(
         "Progress cannot be computed until this pack has word data."
       );
@@ -263,7 +259,7 @@ test.describe("Packs v2 learning-plan surface", () => {
         "Preview review is unavailable until preview words exist."
       );
       await expect(card).toContainText(
-        "Full IELTS/GRE content is not implied unless actual data exists."
+        "Owner approval remains required before any beta launch claim."
       );
       await expect(
         card.getByRole("link", { name: /Preview|Start review|Continue/ })
@@ -382,7 +378,7 @@ test.describe("Packs v2 learning-plan surface", () => {
     );
   });
 
-  test("pack detail shows hero, real SRS counts, queues, preview words, and visual-only Pro nudge", async ({
+  test("pack detail shows hero, real SRS counts, queues, preview words, and owner-gated beta copy", async ({
     page
   }) => {
     const reviewState = {
@@ -482,10 +478,9 @@ test.describe("Packs v2 learning-plan surface", () => {
     ).toBeVisible();
     await expect(
       page.locator('.track-b-upgrade-nudge[data-visual-only="true"]')
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: "View pricing" })).toHaveAttribute(
-      "href",
-      "/pricing"
+    ).toHaveCount(0);
+    await expect(page.locator("body")).toContainText(
+      "Longer plan access remains gated for owner-approved beta."
     );
     await expect(page.getByRole("link", { name: "Review due" })).toHaveAttribute(
       "href",
@@ -558,13 +553,10 @@ test.describe("Packs v2 learning-plan surface", () => {
         page.getByRole("heading", { name: route.emptyHeading })
       ).toBeVisible();
       await expect(page.locator("body")).toContainText(
-        "Billing is not connected"
+        "Preview plan is being prepared for private beta."
       );
       await expect(page.locator("body")).toContainText(
-        "Public paid beta remains blocked"
-      );
-      await expect(page.locator("body")).toContainText(
-        "Private/manual beta remains gated"
+        "Owner approval remains required before any beta launch claim."
       );
       await expect(
         page.getByRole("link", { name: /Preview|Start review|Continue/ })

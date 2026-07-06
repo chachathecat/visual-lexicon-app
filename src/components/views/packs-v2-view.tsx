@@ -10,18 +10,18 @@ import {
 } from "react";
 
 import {
+  MemoryMissionCard,
   TrackBAppShell,
   TrackBEmptyState,
   TrackBMetricCard,
   TrackBPageHeader,
   TrackBSection,
-  TrackBUpgradeNudge
+  type MetricPillProps
 } from "@/components/track-b";
 import { emitVlxEvent, VLX_ANALYTICS_EVENTS } from "@/lib/analytics";
 import {
   hasVisiblePackProgress,
   readPackProgressStore,
-  recordPackOpened,
   recordPackPreviewStarted,
   type VlxPackProgressItem,
   type VlxPackProgressSource,
@@ -66,13 +66,9 @@ const visualCueSlugs = new Set([
 ]);
 
 const fullPackLockedCopy =
-  "Full pack access is planned for Pro. Payment is not connected in this beta.";
-const betaGateCopy =
-  "Billing is not connected. Public paid beta remains blocked. Private/manual beta remains gated.";
+  "Longer plan access remains gated for owner-approved beta. This preview surface does not grant entitlement.";
 const placeholderPackCopy =
-  "Pack data is not available yet. Word count pending. Free preview pending. Progress cannot be computed until this pack has word data. Preview review is unavailable until preview words exist.";
-const fullExamContentCopy =
-  "Full IELTS/GRE content is not implied unless actual data exists.";
+  "Preview plan is being prepared for private beta. Pack data is not available yet. Word count pending. Free preview pending. Progress cannot be computed until this pack has word data. Preview review is unavailable until preview words exist. Owner approval remains required before any beta launch claim.";
 const weakReviewRouteNote =
   "Uses the existing weak review route; filtered pack-only weak practice is not connected yet.";
 
@@ -99,6 +95,15 @@ type PackLocalSummary = {
   reviewEvents: VlxReviewEventsStore;
   progress?: VlxPackProgressItem;
   hasVisibleProgress: boolean;
+};
+
+type PacksMissionSummary = {
+  activePackCount: number;
+  previewProgressCount: number;
+  completedPreviewCount: number;
+  weakWordsInsidePacks: number;
+  reviewedWordsFromProgress: number;
+  mostRecentActivePackId?: string;
 };
 
 type PackActionSource = Extract<
@@ -191,6 +196,119 @@ function getKnownPackSlugs(pack: VlxPackPreview) {
   return pack.previewWords.map((word) => word.slug);
 }
 
+function parseProgressTime(value?: string) {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp = Date.parse(value);
+
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getProgressSortTime(progress: VlxPackProgressItem) {
+  return Math.max(
+    parseProgressTime(progress.lastReviewedAt),
+    parseProgressTime(progress.previewCompletedAt),
+    parseProgressTime(progress.previewStartedAt),
+    parseProgressTime(progress.lastOpenedAt),
+    parseProgressTime(progress.startedAt)
+  );
+}
+
+function getPacksMissionSummary(
+  packs: VlxPackPreview[],
+  snapshot: PacksV2Snapshot
+): PacksMissionSummary {
+  const packIds = new Set(packs.map((pack) => pack.packId));
+  const knownSlugs = new Set(packs.flatMap((pack) => getKnownPackSlugs(pack)));
+  const activeProgress = Object.values(snapshot.packProgressStore)
+    .filter(
+      (progress) =>
+        packIds.has(progress.packId) && hasVisiblePackProgress(progress)
+    )
+    .sort(
+      (first, second) =>
+        getProgressSortTime(second) - getProgressSortTime(first)
+    );
+  const weakSlugsInsidePacks = new Set(
+    snapshot.weakWords
+      .filter((word) => knownSlugs.has(word.slug))
+      .map((word) => word.slug)
+  );
+  const reviewedWordsFromProgress = activeProgress.reduce(
+    (total, progress) => total + progress.reviewedCount,
+    0
+  );
+
+  return {
+    activePackCount: activeProgress.length,
+    previewProgressCount: activeProgress.filter(
+      (progress) => progress.previewStartedAt || progress.previewCompletedAt
+    ).length,
+    completedPreviewCount: activeProgress.filter(
+      (progress) => progress.previewCompletedAt
+    ).length,
+    weakWordsInsidePacks: weakSlugsInsidePacks.size,
+    reviewedWordsFromProgress,
+    mostRecentActivePackId: activeProgress[0]?.packId
+  };
+}
+
+function getMissionAction(summary: PacksMissionSummary) {
+  if (summary.mostRecentActivePackId) {
+    return {
+      label: "Continue learning plan",
+      href: `/packs/${summary.mostRecentActivePackId}`
+    };
+  }
+
+  return {
+    label: "Start Academic preview",
+    href: "/packs/academic-vocabulary"
+  };
+}
+
+function getMissionMetrics(summary: PacksMissionSummary): MetricPillProps[] {
+  const metrics: MetricPillProps[] = [
+    {
+      label: "Active packs",
+      value: summary.activePackCount,
+      detail: "visible local progress"
+    },
+    {
+      label: "Preview progress",
+      value: summary.previewProgressCount,
+      detail: "from vlx_pack_progress_v1"
+    },
+    {
+      label: "Completed previews",
+      value: summary.completedPreviewCount,
+      detail: "from vlx_pack_progress_v1"
+    }
+  ];
+
+  if (summary.weakWordsInsidePacks > 0) {
+    metrics.push({
+      label: "Weak inside packs",
+      value: summary.weakWordsInsidePacks,
+      detail: "from review state",
+      tone: "weak"
+    });
+  }
+
+  if (summary.reviewedWordsFromProgress > 0) {
+    metrics.push({
+      label: "Reviewed from pack progress",
+      value: summary.reviewedWordsFromProgress,
+      detail: "stored review evidence",
+      tone: "learning"
+    });
+  }
+
+  return metrics;
+}
+
 function getPackLocalSummary(
   pack: VlxPackPreview,
   snapshot: PacksV2Snapshot
@@ -278,9 +396,12 @@ function getPlanLengthLabel(pack: VlxPackPreview) {
     : undefined;
 }
 
-function getPrimaryActionLabel(summary: PackLocalSummary) {
+function getPrimaryActionLabel(
+  summary: PackLocalSummary,
+  variant: "card" | "detail" = "card"
+) {
   if (summary.hasVisibleProgress) {
-    return "Continue";
+    return variant === "detail" ? "Continue review" : "Continue";
   }
 
   return "Start preview";
@@ -314,11 +435,11 @@ function PacksV2Token({ children }: { children: ReactNode }) {
 
 function getPackAccessCopy(pack: VlxPackPreview) {
   if (pack.status !== "available") {
-    return `${placeholderPackCopy} ${betaGateCopy} ${fullExamContentCopy}`;
+    return placeholderPackCopy;
   }
 
   if (isPremiumPack(pack)) {
-    return `${fullPackLockedCopy} ${betaGateCopy}`;
+    return fullPackLockedCopy;
   }
 
   return null;
@@ -439,13 +560,17 @@ function PackPrimaryAction({
   pack,
   setSnapshot,
   source,
-  summary
+  summary,
+  variant = "card"
 }: {
   pack: VlxPackPreview;
   setSnapshot: (snapshot: PacksV2Snapshot) => void;
   source: PackActionSource;
   summary: PackLocalSummary;
+  variant?: "card" | "detail";
 }) {
+  const label = getPrimaryActionLabel(summary, variant);
+
   function handleStartPack() {
     recordPackPreviewStarted(pack.packId, source);
     emitVlxEvent(VLX_ANALYTICS_EVENTS.packPreviewStart, {
@@ -462,12 +587,12 @@ function PackPrimaryAction({
 
   return (
     <Link
-      aria-label={`${getPrimaryActionLabel(summary)} ${pack.title}`}
+      aria-label={`${label} ${pack.title}`}
       className="track-b-button track-b-button--primary"
       href={pack.reviewHref}
       onClick={handleStartPack}
     >
-      {getPrimaryActionLabel(summary)}
+      {label}
     </Link>
   );
 }
@@ -552,7 +677,7 @@ function PacksV2Loading({ currentPath }: { currentPath: string }) {
   return (
     <TrackBAppShell activeItemId="packs" currentPath={currentPath}>
       <TrackBPageHeader
-        description="Guided visual vocabulary plans for goals and exams."
+        description="Turn saved words into 30-day visual learning plans."
         eyebrow="Packs"
         title="Packs"
       />
@@ -585,11 +710,13 @@ export function PacksV2View({ packs }: { packs: VlxPackPreview[] }) {
   const setSnapshot = (nextSnapshot: PacksV2Snapshot) => {
     setSnapshotState(nextSnapshot);
   };
+  const missionSummary = getPacksMissionSummary(packs, snapshot);
+  const missionAction = getMissionAction(missionSummary);
 
   return (
     <TrackBAppShell activeItemId="packs" currentPath="/packs">
       <TrackBPageHeader
-        description="Guided visual vocabulary plans for goals and exams."
+        description="Turn saved words into 30-day visual learning plans."
         eyebrow="Packs"
         meta={
           <span>
@@ -600,8 +727,21 @@ export function PacksV2View({ packs }: { packs: VlxPackPreview[] }) {
         title="Packs"
       />
 
+      <MemoryMissionCard
+        action={{
+          ariaLabel: missionAction.label,
+          href: missionAction.href,
+          label: missionAction.label
+        }}
+        body="Progress is read from local pack progress and real review evidence. Opening this page does not create pack progress."
+        className="packs-v2-mission"
+        eyebrow="30-day plan surface"
+        metrics={getMissionMetrics(missionSummary)}
+        title="Learning plans that feed review"
+      />
+
       <TrackBSection
-        description="The first Track B plans emphasize academic vocabulary, IELTS writing, and GRE verbal preparation. Placeholder plans stay clearly marked until word data exists."
+        description="The first Track B plans emphasize Academic Vocabulary, IELTS Writing, and GRE Visual Verbal. Planned packs stay clearly marked until word data exists."
         id="packs-v2-featured"
         title="Featured learning plans"
       >
@@ -647,16 +787,6 @@ export function PacksV2View({ packs }: { packs: VlxPackPreview[] }) {
           />
         )}
       </TrackBSection>
-
-      <TrackBUpgradeNudge
-        action={{
-          href: "/pricing",
-          label: "View pricing"
-        }}
-        badgeLabel="Pro preview"
-        body={`${fullPackLockedCopy} ${betaGateCopy} This visual-only note links to the existing pricing page and does not grant paid access or change entitlements from Packs.`}
-        title="Want longer guided plans later?"
-      />
     </TrackBAppShell>
   );
 }
@@ -696,6 +826,7 @@ function PackDetailActions({
         setSnapshot={setSnapshot}
         source="pack_detail"
         summary={summary}
+        variant="detail"
       />
       {summary.dueWords.length > 0 ? (
         <Link className="track-b-button track-b-button--quiet" href="/review/due">
@@ -737,11 +868,16 @@ function PackDetailHero({
           {pack.targetLabel ??
             "This pack will show a target learner when pack data provides one."}
         </p>
+        <p>
+          This is a 30-day visual learning plan surface. Preview cards, review
+          actions, and progress stay tied to real pack data and local memory
+          evidence.
+        </p>
         <PacksV2TokenRow>
           <PacksV2Token>{getStatusLabel(pack.status)}</PacksV2Token>
           <PacksV2Token>{getPreviewAccessLabel(pack)}</PacksV2Token>
           {isPremiumPack(pack) ? (
-            <PacksV2Token>Pro visual preview</PacksV2Token>
+            <PacksV2Token>Owner-gated beta preview</PacksV2Token>
           ) : null}
         </PacksV2TokenRow>
         <PackAccessNote pack={pack} />
@@ -761,13 +897,7 @@ function PackDetailHero({
   );
 }
 
-function PackDetailMetrics({
-  pack,
-  summary
-}: {
-  pack: VlxPackPreview;
-  summary: PackLocalSummary;
-}) {
+function PackDetailMetrics({ summary }: { summary: PackLocalSummary }) {
   if (!summary.computable) {
     return (
       <TrackBEmptyState
@@ -797,8 +927,8 @@ function PackDetailMetrics({
         value={summary.weakWords.length}
       />
       <TrackBMetricCard
-        description="Known pack words with at least one review answer."
-        label="Reviewed"
+        description="Known pack words with at least one answer in review state."
+        label="SRS reviewed"
         tone="learning"
         value={reviewedCount}
       />
@@ -963,7 +1093,6 @@ export function PackDetailV2View({ pack }: { pack: VlxPackPreview }) {
   const [snapshot, setSnapshotState] = useState<PacksV2Snapshot | null>(null);
 
   useEffect(() => {
-    recordPackOpened(pack.packId);
     emitVlxEvent(VLX_ANALYTICS_EVENTS.examPackPreviewView, {
       packId: pack.packId,
       title: pack.title,
@@ -1020,7 +1149,7 @@ export function PackDetailV2View({ pack }: { pack: VlxPackPreview }) {
         id="pack-memory-state"
         title="Progress summary"
       >
-        <PackDetailMetrics pack={pack} summary={summary} />
+        <PackDetailMetrics summary={summary} />
       </TrackBSection>
 
       <TrackBSection
@@ -1039,17 +1168,6 @@ export function PackDetailV2View({ pack }: { pack: VlxPackPreview }) {
         <PreviewWords pack={pack} />
       </TrackBSection>
 
-      {isPremiumPack(pack) ? (
-        <TrackBUpgradeNudge
-          action={{
-            href: "/pricing",
-            label: "View pricing"
-          }}
-          badgeLabel="Pro preview"
-          body={`${fullPackLockedCopy} ${betaGateCopy} This visual-only Pro note links to pricing and does not grant paid access, checkout, or subscription behavior.`}
-          title="Pro can support larger guided packs later"
-        />
-      ) : null}
     </TrackBAppShell>
   );
 }

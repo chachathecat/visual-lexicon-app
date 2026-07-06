@@ -46,6 +46,7 @@ type StarterPackDefinition = {
   kind: VlxPackPreviewKind;
   targetLabel?: string;
   targetExam?: VlxTargetExam;
+  planDays?: number;
   sourceLabel: string;
   resolver: "academic" | "core" | "home" | "placeholder";
   reviewHub?: string;
@@ -66,24 +67,26 @@ const starterPackDefinitions = [
     kind: "exam",
     targetLabel: "Academic essays and lectures",
     targetExam: "academic",
+    planDays: 30,
     sourceLabel: "Exam pack and academic hub",
     resolver: "academic",
     reviewHub: "academic-vocabulary"
   },
   {
     packId: "ielts-writing-vocabulary",
-    title: "IELTS Writing Vocabulary",
+    title: "IELTS Writing",
     description:
       "A planned writing-focused visual vocabulary plan for IELTS Task 1 and Task 2.",
     kind: "exam",
     targetLabel: "IELTS Writing",
     targetExam: "ielts",
+    planDays: 30,
     sourceLabel: "Planned exam pack",
     resolver: "placeholder",
     fallbackReviewHref: MIXED_REVIEW_FALLBACK,
-    emptyTitle: "IELTS pack data is not available yet",
+    emptyTitle: "IELTS Writing preview plan is being prepared",
     emptyBody:
-      "The current pack reader and mock fallback do not include IELTS words, so this preview does not show word counts or sample cards."
+      "Preview plan is being prepared for private beta. The current pack reader does not include IELTS words, so this page does not show word counts, preview cards, or a review CTA."
   },
   {
     packId: "gre-visual-verbal",
@@ -93,12 +96,13 @@ const starterPackDefinitions = [
     kind: "exam",
     targetLabel: "GRE Verbal",
     targetExam: "gre",
+    planDays: 30,
     sourceLabel: "Planned exam pack",
     resolver: "placeholder",
     fallbackReviewHref: MIXED_REVIEW_FALLBACK,
-    emptyTitle: "GRE pack data is not available yet",
+    emptyTitle: "GRE Visual Verbal preview plan is being prepared",
     emptyBody:
-      "The current pack reader and mock fallback do not include GRE words, so this preview does not show word counts or sample cards."
+      "Preview plan is being prepared for private beta. The current pack reader does not include GRE words, so this page does not show word counts, preview cards, or a review CTA."
   },
   {
     packId: "core-v1",
@@ -207,6 +211,7 @@ function buildBasePreview(
     targetExam: definition.targetExam,
     levelLabel: summarizeLevels(previewWords),
     difficultyLabel: summarizeDifficulties(previewWords),
+    planDays: definition.planDays,
     reviewHref: getReviewHref(definition),
     reviewFallbackNote: getReviewFallbackNote(definition),
     wordSlugs: words.map((word) => word.slug),
@@ -259,7 +264,7 @@ async function getAcademicPreview(
           PREVIEW_LIMIT
         )
       : undefined,
-    planDays: examPack?.days,
+    planDays: definition.planDays ?? examPack?.days,
     priceTier: examPack?.priceTier,
     updatedAt: examPack?.updatedAt ?? hubPack?.updatedAt
   } satisfies VlxPackPreview;
