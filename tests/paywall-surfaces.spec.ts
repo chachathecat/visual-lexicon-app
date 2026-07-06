@@ -202,7 +202,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     });
   });
 
-  test('review summary after pack preview shows pack_preview_end prompt', async ({
+  test('review summary after pack preview stays free of payment copy', async ({
     page,
   }) => {
     await clearVlxLocalStorage(page);
@@ -212,16 +212,10 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     await completeReviewSession(page);
 
-    await expect(
-      page.locator('[data-paywall-trigger="pack_preview_end"]'),
-    ).toBeVisible();
-    await expect(page.locator('[data-paywall-trigger]')).toHaveCount(1);
-    await expect(
-      page.locator('[data-paywall-trigger="review_limit"]'),
-    ).toHaveCount(0);
-    await expect(
-      page.locator('[data-paywall-trigger="mistake_explanation_locked"]'),
-    ).toHaveCount(0);
+    await expect(page.locator('[data-paywall-trigger]')).toHaveCount(0);
+    await expect(page.locator('.review-v2-summary')).not.toContainText(
+      /checkout|payment|billing/i,
+    );
   });
 
   test('dashboard with weak words keeps first screen free of upgrade prompts', async ({
