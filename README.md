@@ -120,6 +120,7 @@ docs/REVIEW_SESSION_V2_IMPLEMENTATION_SEQUENCE.md
 docs/TRACK_B_REVIEW_RELIABILITY_GATE.md
 docs/TRACK_B_ANALYTICS_RETENTION_GATE.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
+docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md
 docs/TRACK_B_PACKS_V2.md
 docs/PACKS_V2_CONTRACT.md
 docs/PACKS_V2_IMPLEMENTATION_SEQUENCE.md
@@ -164,6 +165,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B Review Reliability Gate](docs/TRACK_B_REVIEW_RELIABILITY_GATE.md)
 - [Track B Analytics & Retention Gate](docs/TRACK_B_ANALYTICS_RETENTION_GATE.md) - test: `tests/track-b-analytics-retention-gate.spec.ts`
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
+- [Saved Library V3 Memory Queue](docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md)
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)
 - [Packs v2 Contract](docs/PACKS_V2_CONTRACT.md)
 - [Packs v2 Implementation Sequence](docs/PACKS_V2_IMPLEMENTATION_SEQUENCE.md)
