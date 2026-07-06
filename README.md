@@ -124,6 +124,7 @@ docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md
 docs/TRACK_B_PACKS_V2.md
 docs/PACKS_V2_CONTRACT.md
 docs/PACKS_V2_IMPLEMENTATION_SEQUENCE.md
+docs/PACKS_V3_30_DAY_PLAN_SURFACE.md
 docs/TRACK_B_PRICING_PAYWALL_V2.md
 docs/PRICING_PAYWALL_V2_CONTRACT.md
 docs/PRICING_PAYWALL_V2_IMPLEMENTATION_SEQUENCE.md
@@ -169,6 +170,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)
 - [Packs v2 Contract](docs/PACKS_V2_CONTRACT.md)
 - [Packs v2 Implementation Sequence](docs/PACKS_V2_IMPLEMENTATION_SEQUENCE.md)
+- [Packs v3 30-Day Plan Surface](docs/PACKS_V3_30_DAY_PLAN_SURFACE.md)
 - [Track B Pricing / Paywall V2](docs/TRACK_B_PRICING_PAYWALL_V2.md)
 - [Pricing / Paywall v2 Contract](docs/PRICING_PAYWALL_V2_CONTRACT.md)
 - [Pricing / Paywall v2 Implementation Sequence](docs/PRICING_PAYWALL_V2_IMPLEMENTATION_SEQUENCE.md)
