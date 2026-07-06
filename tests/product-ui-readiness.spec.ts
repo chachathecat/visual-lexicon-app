@@ -84,7 +84,7 @@ const auditedRoutes = [
   {
     path: "/saved",
     waitForRole: {
-      name: /Saved words that are ready to become memory/i,
+      name: "Saved Library",
       role: "heading" as const
     }
   },
