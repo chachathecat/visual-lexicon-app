@@ -24,12 +24,16 @@ Visual metaphor -> Active recall -> Mistake record -> Spaced review -> Mastery s
 
 ## Runtime Scope
 
+Dashboard v2 is superseded by
+`docs/DASHBOARD_V3_TODAY_MEMORY_MISSION.md` for the active `/dashboard`
+renderer.
+
 This parity pass makes `/dashboard` the canonical Track B app entry.
 
 - `/` redirects to `/dashboard` from `src/app/page.tsx`.
 - `/dashboard` uses `TrackBAppShell`, `TrackBMetricCard`, and
   `TrackBEmptyState`.
-- `DashboardV2View` remains the dashboard renderer.
+- `DashboardV2View` remains in the codebase as the previous dashboard renderer.
 - The legacy `DashboardView` remains in the codebase but is no longer the root
   entry route.
 - Review Session, Saved Library, Packs pages, Pricing, SRS engine behavior,

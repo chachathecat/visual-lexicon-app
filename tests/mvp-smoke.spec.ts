@@ -287,7 +287,9 @@ test.describe('Visual Lexicon local MVP smoke', () => {
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('heading', { name: 'Dissonance' }),
+      page.locator('.dashboard-v3-mission').getByRole('link', {
+        name: /Dissonance/,
+      }),
     ).toBeVisible({ timeout: 15000 });
 
     await page.goto(`${baseUrl}/review`, { waitUntil: 'networkidle' });

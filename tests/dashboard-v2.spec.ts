@@ -208,8 +208,8 @@ test.describe("Dashboard Figma source parity", () => {
     expect(rootRoute).toContain('import { redirect } from "next/navigation";');
     expect(rootRoute).toContain('redirect("/dashboard");');
     expect(rootRoute).not.toContain("DashboardView");
-    expect(dashboardRoute).toContain("DashboardV2View");
-    expect(dashboardRoute).toContain("return <DashboardV2View />;");
+    expect(dashboardRoute).toContain("DashboardV3View");
+    expect(dashboardRoute).toContain("return <DashboardV3View />;");
 
     const rootResponse = await request.get(`${baseUrl}/`, { maxRedirects: 0 });
     const rootLocation = rootResponse.headers().location;
@@ -224,7 +224,7 @@ test.describe("Dashboard Figma source parity", () => {
 
     expect(followedResponse?.status()).toBe(200);
     expect(new URL(page.url()).pathname).toBe("/dashboard");
-    await expect(page.locator(".dashboard-v2-mission-card")).toBeVisible();
+    await expect(page.locator(".dashboard-v3-mission")).toBeVisible();
   });
 
   test("serves /dashboard directly without a redirect loop", async ({
@@ -244,7 +244,7 @@ test.describe("Dashboard Figma source parity", () => {
 
     expect(pageResponse?.status()).toBe(200);
     expect(new URL(page.url()).pathname).toBe("/dashboard");
-    await expect(page.locator(".dashboard-v2-mission-card")).toBeVisible();
+    await expect(page.locator(".dashboard-v3-mission")).toBeVisible();
   });
 
   test("renders only the requested first-screen learning loop", async ({ page }) => {
@@ -259,43 +259,39 @@ test.describe("Dashboard Figma source parity", () => {
     await expect(page.locator(".track-b-shell__sidebar")).toHaveCount(0);
     await expect(page.locator(".track-b-page-header")).toHaveCount(0);
 
-    const mission = page.locator(".dashboard-v2-mission-card");
+    const mission = page.locator(".dashboard-v3-mission");
     await expect(mission).toBeVisible();
     await expect(mission).toContainText("Today's Memory Mission");
-    await expect(mission.getByRole("heading", { name: "Review 5 words before they fade" })).toBeVisible();
-    await expect(mission.locator(".dashboard-v2-due-row")).toHaveCount(3);
-    await expect(mission.getByRole("link", { name: "Start review" })).toHaveAttribute(
+    await expect(mission.getByRole("heading", { name: "Today's Memory Mission" })).toBeVisible();
+    await expect(mission.locator(".dashboard-v3-word-row")).toHaveCount(3);
+    await expect(mission.getByRole("link", { name: "Start due review" })).toHaveAttribute(
       "href",
       "/review/due"
     );
 
     const stateCards = page
-      .getByRole("region", { name: "Memory state" })
-      .locator(".dashboard-v2-state-card");
-    await expect(stateCards).toHaveCount(4);
+      .getByRole("region", { name: "Review evidence" })
+      .locator(".dashboard-v3-card");
+    await expect(stateCards).toHaveCount(6);
 
-    const labels = await stateCards.evaluateAll((cards) =>
-      cards.map((card) => card.querySelector("span")?.textContent?.trim() ?? "")
-    );
-    expect(labels).toEqual(["Due now", "Needs work", "New", "Mastered"]);
-
-    const secondaryActions = page.locator(".dashboard-v2-secondary-actions");
-    await expect(
-      secondaryActions.getByRole("link", { name: "Memory queue", exact: true })
-    ).toHaveAttribute("href", "/saved");
-    await expect(
-      secondaryActions.getByRole("link", { name: "Save a word", exact: true })
-    ).toHaveAttribute("href", "/save?slug=dissonance&source=app");
+    await expect(page.getByLabel("Due Today: 3")).toBeVisible();
+    await expect(page.getByLabel("Weak Words: 1")).toBeVisible();
+    await expect(page.getByLabel("New Saved: 1")).toBeVisible();
+    await expect(page.getByLabel("Mastered: 1")).toBeVisible();
+    await expect(page.getByText("Weekly Reviewed Words")).toBeVisible();
+    await expect(page.getByText("Recent Saved")).toBeVisible();
+    await expect(page.getByText("Continue Pack")).toHaveCount(0);
 
     const bodyText = await page.locator("body").innerText();
     for (const forbidden of [
       "Alias Search",
-      "Learning Modules",
       "Hub Progress",
       "Streak",
-      "Packs",
       "Pro promotion",
-      "Saved Library"
+      "Saved Library",
+      "checkout",
+      "payment",
+      "billing"
     ]) {
       expect(bodyText).not.toContain(forbidden);
     }
@@ -306,10 +302,11 @@ test.describe("Dashboard Figma source parity", () => {
   }) => {
     await seedDashboardMission(page);
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
-    await expect(page.locator(".dashboard-v2-due-row")).toHaveCount(3);
+    const mission = page.locator(".dashboard-v3-mission");
+    await expect(mission.locator(".dashboard-v3-word-row")).toHaveCount(3);
 
     const visuals = await page
-      .locator(".dashboard-v2-due-row__image")
+      .locator(".dashboard-v3-mission .dashboard-v3-word-thumb")
       .evaluateAll((images) =>
         images.map((image) => ({
           className: Array.from(image.classList).join(" "),
@@ -334,7 +331,7 @@ test.describe("Dashboard Figma source parity", () => {
     );
 
     await expect(primaryActions).toHaveCount(1);
-    await expect(primaryActions).toContainText("Start today's review");
+    await expect(primaryActions).toContainText("Start due review");
   });
 });
 
@@ -353,7 +350,7 @@ test.describe("Dashboard v2 static contract", () => {
   test("does not introduce forbidden dashboard integrations", () => {
     const dashboardFiles = [
       "src/app/dashboard/page.tsx",
-      "src/components/views/dashboard-v2-view.tsx"
+      "src/components/views/dashboard-v3-view.tsx"
     ];
     const forbiddenPatterns = [
       /\bNextRequest\b/,

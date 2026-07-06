@@ -450,14 +450,13 @@ test.describe("Minimal Auth Session Flow v1", () => {
     }
   });
 
-  test("DashboardV2 remains unchanged", () => {
+  test("DashboardV2 implementation remains untouched by auth changes", () => {
     const diff = execFileSync(
       "git",
       [
         "diff",
         "--name-only",
         "--",
-        "src/app/dashboard/page.tsx",
         "src/components/views/dashboard-v2-view.tsx",
       ],
       {

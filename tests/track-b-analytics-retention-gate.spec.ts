@@ -600,20 +600,22 @@ test("canonical dashboard entry preserves the retention selector boundary", asyn
     join(workspaceRoot, "src", "app", "dashboard", "page.tsx"),
     "utf8"
   );
-  const dashboardV2View = readFileSync(
-    join(workspaceRoot, "src", "components", "views", "dashboard-v2-view.tsx"),
+  const dashboardV3View = readFileSync(
+    join(workspaceRoot, "src", "components", "views", "dashboard-v3-view.tsx"),
     "utf8"
   );
 
   expect(rootRoute).toContain('redirect("/dashboard");');
   expect(rootRoute).not.toContain("DashboardView");
-  expect(dashboardRoute).toContain("DashboardV2View");
-  expect(dashboardV2View).not.toContain("getWeeklyReviewedWords");
+  expect(dashboardRoute).toContain("DashboardV3View");
+  expect(dashboardV3View).toContain("getWeeklyReviewedWords");
+  expect(dashboardV3View).not.toContain("writeReviewState");
+  expect(dashboardV3View).not.toContain("writeDailyStats");
 
   await page.goto(baseUrl, { waitUntil: "networkidle" });
   expect(new URL(page.url()).pathname).toBe("/dashboard");
-  await expect(page.locator(".dashboard-v2-mission-card")).toBeVisible();
-  await expect(page.getByText("Weekly Reviewed Words")).toHaveCount(0);
+  await expect(page.locator(".dashboard-v3-mission")).toBeVisible();
+  await expect(page.getByText("Weekly Reviewed Words")).toBeVisible();
 });
 
 test.describe("browser runtime analytics gate", () => {
