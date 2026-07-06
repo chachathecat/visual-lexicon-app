@@ -138,11 +138,11 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Pricing',
+        name: 'Choose how you want to remember.',
       }),
     ).toBeVisible();
     await expect(page.locator('body')).toContainText(
-      'Build a visual memory habit before words fade.',
+      'Pro sells memory management',
     );
     await expect(page.locator('body')).toContainText(
       'Billing is not connected yet',
@@ -177,9 +177,13 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
         name: 'Exam Pack',
       }),
     ).toBeVisible();
-    await expect(freePlan).toContainText('Start remembering your first words.');
+    await expect(freePlan).toContainText(
+      'Start remembering your first saved words.',
+    );
     await expect(litePlan).toContainText('Build a daily visual memory habit.');
-    await expect(proPlan).toContainText('Fix weak words and prepare for exams.');
+    await expect(proPlan).toContainText(
+      'Fix weak words and prepare for Academic / IELTS / GRE vocabulary.',
+    );
     await expect(examPackPlan).toContainText(
       'Follow a guided visual vocabulary plan.',
     );
@@ -264,7 +268,7 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: 'networkidle' });
 
     await expect(
-      page.getByRole('heading', { name: 'Pricing' }),
+      page.getByRole('heading', { name: 'Choose how you want to remember.' }),
     ).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Free' }),

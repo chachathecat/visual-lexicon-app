@@ -20,51 +20,51 @@ const FREE_DAILY_REVIEW_LIMIT =
 const PAYWALL_COPY = {
   save_limit: {
     recommendedPlan: "lite",
-    title: "Keep new saved words in review",
+    title: "Your memory library is full",
     body:
-      "You reached the free saved-word limit from local saved-word evidence. Lite is positioned to keep more new words moving into review. Billing is not connected yet; this records beta interest only.",
+      "Your memory library is full. Lite unlocks unlimited saved words and daily review. Billing is not connected yet; this records beta interest only and does not grant paid access.",
     primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   review_limit: {
     recommendedPlan: "lite",
     title: "Keep reviewing before words fade",
     body:
-      "You reached today's free review limit from local daily review evidence. Lite supports a daily visual memory habit without pretending paid access is active. Billing is not connected yet; this records beta interest only.",
+      "You rescued today's free cards. Lite lets you keep reviewing before words fade. Billing is not connected yet; this records beta interest only and does not grant paid access.",
     primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   pack_preview_end: {
-    recommendedPlan: "exam_pack",
+    recommendedPlan: "pro",
     title: "Continue the guided exam plan",
     body:
-      "You finished a real pack preview. Exam Pack is a guided visual vocabulary plan, but full-pack access remains locked until future approved entitlements exist. Billing is not connected yet; this records beta interest only.",
-    primaryCtaLabel: "Note Exam Pack interest - billing not connected yet"
+      "You started the 30-day Academic plan. Pro unlocks the full guided pack. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+    primaryCtaLabel: "Note Pro interest - billing not connected yet"
   },
   weak_words_sprint_locked: {
     recommendedPlan: "pro",
-    title: "Repair weak words with Pro tools",
+    title: "You have weak words waiting",
     body:
-      "You have weak words from review misses or weakScore. Pro is positioned for Weak Sprint and advanced weak-word repair after the beta gates are cleared. Billing is not connected yet; this records beta interest only.",
+      "You have weak words waiting. Pro unlocks focused weak-word practice. Billing is not connected yet; this records beta interest only and does not grant paid access.",
     primaryCtaLabel: "Note Pro interest - billing not connected yet"
   },
   mastery_export_locked: {
     recommendedPlan: "pro",
     title: "Use review history outside the app",
     body:
-      "You have mastery evidence from local review state. Pro export is planned for using real review history outside the app, not for faking mastery. Billing is not connected yet; this records beta interest only.",
+      "Your mastery evidence is useful beyond the app. Pro is planned for memory exports from real review history and delayed recall, not fabricated mastery claims. Billing is not connected yet; this records beta interest only and does not grant paid access.",
     primaryCtaLabel: "Note Pro interest - billing not connected yet"
   },
   no_watermark_download: {
     recommendedPlan: "lite",
-    title: "Clean downloads are still gated",
+    title: "No-watermark export is locked",
     body:
-      "You asked for a clean visual download. Lite and Pro may support no-watermark downloads in a future approved implementation, but no clean asset delivery or paid access is active. Billing is not connected yet; this records beta interest only.",
+      "No-watermark export is locked. Lite is planned for clean study visuals, while Pro adds exam-ready export support. Billing is not connected yet; this records beta interest only and does not grant paid access.",
     primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   mistake_explanation_locked: {
     recommendedPlan: "pro",
-    title: "Get mistake explanations later",
+    title: "Mistake explanations come later",
     body:
-      "You made a wrong answer that could support a future mistake explanation. AI mistake explanations come later after the SRS loop works; no AI is connected in this MVP. Billing is not connected yet; this records beta interest only.",
+      "A wrong answer is a mistake record. Pro will add AI mistake explanations later, after the SRS loop works. Billing is not connected yet; this records beta interest only and does not grant paid access.",
     primaryCtaLabel: "Note Pro interest - billing not connected yet"
   }
 } as const satisfies Record<

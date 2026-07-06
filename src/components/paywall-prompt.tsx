@@ -73,7 +73,8 @@ export function PaywallPrompt({
         </h2>
         <p>{prompt.body}</p>
         <p className="paywall-prompt__gate">
-          Public paid beta remains blocked. Private/manual beta remains gated.
+          Public paid beta remains No-Go. Private/manual beta requires owner
+          approval.
         </p>
         {metrics.length > 0 ? (
           <dl className="paywall-prompt__metrics" aria-label="Trigger reason">
