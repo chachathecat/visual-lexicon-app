@@ -1989,9 +1989,7 @@ export function ReviewSessionView({
 
             {currentAnswer ? (
               <div
-                aria-live="polite"
                 className={`review-feedback review-v2-feedback review-v2-feedback--${currentAnswer.result}`}
-                role="status"
               >
                 <div className="review-v2-feedback__copy">
                   <p className="track-b-eyebrow">
