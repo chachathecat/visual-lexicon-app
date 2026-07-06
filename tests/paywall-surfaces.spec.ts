@@ -267,7 +267,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     const prompt = page.locator('[data-paywall-trigger="save_limit"]');
 
     await expect(prompt).toBeVisible();
-    await expect(prompt).toContainText('Keep new saved words in review');
+    await expect(prompt).toContainText('Your memory library is full');
     await expect(
       prompt.getByRole('link', { name: 'Compare plans' }),
     ).toHaveAttribute('href', '/pricing');
@@ -349,13 +349,13 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
     const pricingUrl = page.url();
 
     await expect(page.locator('[data-plan-id="free"]')).toContainText(
-      'Start remembering your first words.',
+      'Start remembering your first saved words.',
     );
     await expect(page.locator('[data-plan-id="lite"]')).toContainText(
       'Build a daily visual memory habit.',
     );
     await expect(page.locator('[data-plan-id="pro"]')).toContainText(
-      'Fix weak words and prepare for exams.',
+      'Fix weak words and prepare for Academic / IELTS / GRE vocabulary.',
     );
     await expect(page.locator('[data-plan-id="exam_pack"]')).toContainText(
       'Follow a guided visual vocabulary plan.',
@@ -455,7 +455,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
       'Billing is not connected yet.',
     );
     await expect(page.locator('body')).toContainText(
-      'public paid beta remains blocked',
+      'Public paid beta remains No-Go',
     );
   });
 

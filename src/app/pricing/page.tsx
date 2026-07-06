@@ -30,7 +30,7 @@ const tiers = [
     cadence: "$0 local starter",
     outcome: VLX_PLAN_DEFINITIONS.free.outcome,
     detail:
-      "Start with a focused browser-local memory loop before any paid beta access exists.",
+      "Turn the first words you save into a real local review queue before any paid beta access exists.",
     features: [
       "Save the first visual words into local review",
       "Practice short active-recall sessions",
@@ -60,7 +60,7 @@ const tiers = [
     cadence: "Paid beta interest",
     outcome: VLX_PLAN_DEFINITIONS.pro.outcome,
     detail:
-      "For learners using mistake history and weak state to repair recall before exams.",
+      "For learners using mistake history and weak state to repair recall before Academic, IELTS, and GRE work.",
     features: [
       "Weak Sprint and mastery export positioning",
       "Exam-prep review and pack access planning",
@@ -90,37 +90,44 @@ const paywallReasons = [
   {
     id: "save_limit",
     title: "Save limit",
-    body: "You reached the free saved-word limit from local saved-word evidence."
+    body:
+      "Your memory library is full. Lite unlocks unlimited saved words and daily review."
   },
   {
     id: "review_limit",
     title: "Review limit",
-    body: "You reached today's free review limit from local daily review evidence."
+    body:
+      "You rescued today's free cards. Lite lets you keep reviewing before words fade."
   },
   {
     id: "pack_preview_end",
     title: "Pack preview end",
-    body: "You completed a real pack preview and full-pack access is still gated."
+    body:
+      "You started the 30-day Academic plan. Pro unlocks the full guided pack."
   },
   {
     id: "weak_words_sprint_locked",
     title: "Weak Sprint locked",
-    body: "You have weak words from review misses or weakScore."
+    body:
+      "You have weak words waiting. Pro unlocks focused weak-word practice."
   },
   {
     id: "mastery_export_locked",
-    title: "Mastery export locked",
-    body: "You asked to use mastery evidence outside the app."
+    title: "Memory export locked",
+    body:
+      "Pro export is planned for using delayed-recall history outside the app, not a shortcut."
   },
   {
     id: "no_watermark_download",
-    title: "No-watermark download",
-    body: "You asked for a clean visual download before asset delivery is approved."
+    title: "No-watermark export locked",
+    body:
+      "Lite is planned for clean study visuals while Pro adds exam-ready export support."
   },
   {
     id: "mistake_explanation_locked",
-    title: "Mistake explanation locked",
-    body: "You made a wrong answer that may support a future explanation."
+    title: "Future AI mistake explanation locked",
+    body:
+      "Pro will add AI mistake explanations later, after the SRS loop works."
   }
 ] as const;
 
@@ -181,12 +188,13 @@ export default function PricingPage() {
         >
           <div className="pricing-v2-beta-hero__pill">
             <span aria-hidden="true" />
-            Public paid beta blocked
+            Public paid beta No-Go
           </div>
-          <h1 id="pricing-v2-heading">Pricing</h1>
+          <h1 id="pricing-v2-heading">Choose how you want to remember.</h1>
           <p>
-            Build a visual memory habit before words fade. Billing is not
-            connected yet, and upgrade actions record beta interest only.
+            Pro sells memory management: weak-word repair, guided exam prep,
+            and review momentum before words fade. Billing is not connected
+            yet, and upgrade actions record beta interest only.
           </p>
         </header>
 
@@ -218,8 +226,9 @@ export default function PricingPage() {
 
         <p className="pricing-v2-note">
           Visual Lexicon is collecting paid beta interest only. Billing is not
-          connected yet. No checkout is live. No pricing is final, public paid
-          beta remains blocked, and private/manual beta remains gated.
+          connected yet. No checkout is live. No real paid entitlement is
+          active. Public paid beta remains No-Go, and private/manual beta
+          requires owner approval.
         </p>
       </div>
     </TrackBAppShell>

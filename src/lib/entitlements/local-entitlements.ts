@@ -45,7 +45,7 @@ export const VLX_PLAN_DEFINITIONS = {
     priceLabel: "$0",
     summary:
       "Save a focused starter set, review a basic daily queue, and keep progress in this browser while the MVP stays local.",
-    outcome: "Start remembering your first words.",
+    outcome: "Start remembering your first saved words.",
     availabilityNote: "Local MVP. No billing or active subscription is connected.",
     featureBullets: [
       "Save up to 50 visual words",
@@ -101,7 +101,7 @@ export const VLX_PLAN_DEFINITIONS = {
     priceLabel: "Planned",
     summary:
       "For learners using memory state to repair repeated misses and follow guided exam vocabulary plans.",
-    outcome: "Fix weak words and prepare for exams.",
+    outcome: "Fix weak words and prepare for Academic / IELTS / GRE vocabulary.",
     availabilityNote: "Paid beta placeholder. No real subscription is created.",
     featureBullets: [
       "Everything in Lite",

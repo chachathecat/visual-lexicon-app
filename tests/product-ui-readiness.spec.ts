@@ -105,7 +105,7 @@ const auditedRoutes = [
   {
     path: "/pricing",
     waitForRole: {
-      name: "Pricing",
+      name: "Choose how you want to remember.",
       role: "heading" as const
     }
   },
