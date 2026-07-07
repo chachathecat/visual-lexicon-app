@@ -195,7 +195,10 @@ test.describe("Track B v3 beta readiness audit", () => {
 
   test("localStorage inventory mentions required keys", () => {
     const audit = readWorkspaceFile("docs", "TRACK_B_V3_BETA_READINESS_AUDIT.md");
-    const manualQa = readWorkspaceFile("docs", "TRACK_B_V3_MANUAL_QA_SCRIPT.md");
+    const manualQa = readWorkspaceFile(
+      "docs",
+      "TRACK_B_V3_MANUAL_QA_SCRIPT.md"
+    ).replace(/\r\n/g, "\n");
 
     for (const key of requiredStorageKeys) {
       expect(audit, key).toContain(key);
@@ -215,7 +218,10 @@ test.describe("Track B v3 beta readiness audit", () => {
   });
 
   test("manual QA script includes Save Review Events Daily Stats Packs Pricing path", () => {
-    const manualQa = readWorkspaceFile("docs", "TRACK_B_V3_MANUAL_QA_SCRIPT.md");
+    const manualQa = readWorkspaceFile(
+      "docs",
+      "TRACK_B_V3_MANUAL_QA_SCRIPT.md"
+    ).replace(/\r\n/g, "\n");
 
     expect(manualQa).toContain(
       "Save -> Review -> Events -> Daily Stats -> Packs ->\nPricing path"

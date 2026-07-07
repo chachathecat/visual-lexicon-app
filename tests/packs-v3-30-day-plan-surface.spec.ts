@@ -276,7 +276,13 @@ test.describe("Packs v3 30-Day Plan Surface", () => {
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
       await expect(page.locator("body")).toContainText(
-        "Preview plan is being prepared for private beta."
+        "Preview plan is being prepared."
+      );
+      await expect(page.locator("body")).toContainText(
+        "Private/manual beta requires owner approval."
+      );
+      await expect(page.locator("body")).toContainText(
+        "Full IELTS/GRE content is not implied until real word data exists."
       );
       await expect(page.locator("body")).toContainText("Word count pending");
       await expect(page.locator("body")).toContainText("Free preview pending");

@@ -75,7 +75,8 @@ export function UpgradePlaceholderButton({
       )}
       {clicked ? (
         <p className="upgrade-placeholder__note" role="status">
-          Paid beta interest noted locally. Billing is not connected yet.
+          Paid beta interest noted locally. Billing is not connected yet. This
+          does not grant paid access.
         </p>
       ) : null}
     </div>

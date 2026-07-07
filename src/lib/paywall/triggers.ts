@@ -22,49 +22,49 @@ const PAYWALL_COPY = {
     recommendedPlan: "lite",
     title: "Your memory library is full",
     body:
-      "Your memory library is full. Lite unlocks unlimited saved words and daily review. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+      "Your memory library is full. Lite is planned for expanded saved words and daily review capacity. Billing is not connected yet. No checkout is live. This records beta interest only. This does not grant paid access. No real paid entitlement is active.",
     primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   review_limit: {
     recommendedPlan: "lite",
     title: "Keep reviewing before words fade",
     body:
-      "You rescued today's free cards. Lite lets you keep reviewing before words fade. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+      "You rescued today's free cards. Lite is planned for keeping daily review moving before words fade. Billing is not connected yet. No checkout is live. This records beta interest only. This does not grant paid access. No real paid entitlement is active.",
     primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   pack_preview_end: {
     recommendedPlan: "pro",
     title: "Continue the guided exam plan",
     body:
-      "You started the 30-day Academic plan. Pro unlocks the full guided pack. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+      "You started the 30-day Academic plan. Pro guided pack access is planned for a future owner-gated beta. Billing is not connected yet. No checkout is live. This records beta interest only. This does not grant paid access. No real paid entitlement is active.",
     primaryCtaLabel: "Note Pro interest - billing not connected yet"
   },
   weak_words_sprint_locked: {
     recommendedPlan: "pro",
     title: "You have weak words waiting",
     body:
-      "You have weak words waiting. Pro unlocks focused weak-word practice. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+      "You have weak words waiting. Pro is planned for focused weak-word practice after owner approval. Billing is not connected yet. No checkout is live. This records beta interest only. This does not grant paid access. No real paid entitlement is active.",
     primaryCtaLabel: "Note Pro interest - billing not connected yet"
   },
   mastery_export_locked: {
     recommendedPlan: "pro",
     title: "Use review history outside the app",
     body:
-      "Your mastery evidence is useful beyond the app. Pro is planned for memory exports from real review history and delayed recall, not fabricated mastery claims. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+      "Your mastery evidence is useful beyond the app. Pro is planned for memory exports from real review history and delayed recall, not fabricated mastery claims. Billing is not connected yet. No checkout is live. This records beta interest only. This does not grant paid access. No real paid entitlement is active.",
     primaryCtaLabel: "Note Pro interest - billing not connected yet"
   },
   no_watermark_download: {
     recommendedPlan: "lite",
-    title: "No-watermark export is locked",
+    title: "No-watermark export is planned",
     body:
-      "No-watermark export is locked. Lite is planned for clean study visuals, while Pro adds exam-ready export support. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+      "No-watermark export is planned for a future approved implementation. Lite is planned for clean study visuals, while Pro adds exam-ready export support. Billing is not connected yet. No checkout is live. This records beta interest only. This does not grant paid access. No real paid entitlement is active.",
     primaryCtaLabel: "Note Lite interest - billing not connected yet"
   },
   mistake_explanation_locked: {
     recommendedPlan: "pro",
     title: "Mistake explanations come later",
     body:
-      "A wrong answer is a mistake record. Pro will add AI mistake explanations later, after the SRS loop works. Billing is not connected yet; this records beta interest only and does not grant paid access.",
+      "A wrong answer is a mistake record. AI mistake explanations are planned for a future approved implementation after the SRS loop works. Billing is not connected yet. No checkout is live. This records beta interest only. This does not grant paid access. No real paid entitlement is active.",
     primaryCtaLabel: "Note Pro interest - billing not connected yet"
   }
 } as const satisfies Record<

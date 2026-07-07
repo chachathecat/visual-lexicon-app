@@ -87,7 +87,7 @@ test.describe("Pricing / Paywall v3 outcome copy", () => {
 
     expect(bodyText).toMatch(/public paid beta no-go/i);
     expect(bodyText).toContain("Public paid beta remains No-Go");
-    expect(bodyText).toContain("private/manual beta requires owner approval");
+    expect(bodyText).toContain("Private/manual beta requires owner approval");
     expect(bodyText).toContain("No real paid entitlement is active");
     expect(bodyText).not.toMatch(forbiddenRealEntitlementClaims);
   });
@@ -167,14 +167,14 @@ test.describe("Pricing / Paywall v3 outcome copy", () => {
           id: "save_limit",
           recommendedPlan: "lite",
           body: expect.stringContaining(
-            "Your memory library is full. Lite unlocks unlimited saved words and daily review."
+            "Your memory library is full. Lite is planned for expanded saved words and daily review capacity."
           )
         }),
         expect.objectContaining({
           id: "review_limit",
           recommendedPlan: "lite",
           body: expect.stringContaining(
-            "You rescued today's free cards. Lite lets you keep reviewing before words fade."
+            "You rescued today's free cards. Lite is planned for keeping daily review moving before words fade."
           )
         }),
         expect.objectContaining({
@@ -182,24 +182,26 @@ test.describe("Pricing / Paywall v3 outcome copy", () => {
           recommendedPlan: "pro",
           primaryCtaLabel: "Note Pro interest - billing not connected yet",
           body: expect.stringContaining(
-            "You started the 30-day Academic plan. Pro unlocks the full guided pack."
+            "You started the 30-day Academic plan. Pro guided pack access is planned for a future owner-gated beta."
           )
         }),
         expect.objectContaining({
           id: "weak_words_sprint_locked",
           recommendedPlan: "pro",
           body: expect.stringContaining(
-            "You have weak words waiting. Pro unlocks focused weak-word practice."
+            "You have weak words waiting. Pro is planned for focused weak-word practice after owner approval."
           )
         }),
         expect.objectContaining({
           id: "no_watermark_download",
-          body: expect.stringContaining("No-watermark export is locked.")
+          body: expect.stringContaining(
+            "No-watermark export is planned for a future approved implementation."
+          )
         }),
         expect.objectContaining({
           id: "mistake_explanation_locked",
           body: expect.stringContaining(
-            "Pro will add AI mistake explanations later, after the SRS loop works."
+            "AI mistake explanations are planned for a future approved implementation after the SRS loop works."
           )
         })
       ])
@@ -208,6 +210,8 @@ test.describe("Pricing / Paywall v3 outcome copy", () => {
     for (const prompt of prompts) {
       expect(prompt).toBeTruthy();
       expect(prompt?.body).toContain("Billing is not connected yet");
+      expect(prompt?.body).toContain("No checkout is live");
+      expect(prompt?.body).toContain("No real paid entitlement is active");
       expect(prompt?.body).toContain("does not grant paid access");
       expect(prompt?.body).not.toMatch(forbiddenRealEntitlementClaims);
     }

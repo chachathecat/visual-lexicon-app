@@ -250,7 +250,13 @@ test.describe("Packs v2 learning-plan surface", () => {
       await expect(card).toContainText("Word count pending");
       await expect(card).toContainText("Free preview pending");
       await expect(card).toContainText(
-        "Preview plan is being prepared for private beta."
+        "Preview plan is being prepared."
+      );
+      await expect(card).toContainText(
+        "Private/manual beta requires owner approval."
+      );
+      await expect(card).toContainText(
+        "Full IELTS/GRE content is not implied until real word data exists."
       );
       await expect(card).toContainText(
         "Progress cannot be computed until this pack has word data."
@@ -553,7 +559,13 @@ test.describe("Packs v2 learning-plan surface", () => {
         page.getByRole("heading", { name: route.emptyHeading })
       ).toBeVisible();
       await expect(page.locator("body")).toContainText(
-        "Preview plan is being prepared for private beta."
+        "Preview plan is being prepared."
+      );
+      await expect(page.locator("body")).toContainText(
+        "Private/manual beta requires owner approval."
+      );
+      await expect(page.locator("body")).toContainText(
+        "Full IELTS/GRE content is not implied until real word data exists."
       );
       await expect(page.locator("body")).toContainText(
         "Owner approval remains required before any beta launch claim."

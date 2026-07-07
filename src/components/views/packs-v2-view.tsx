@@ -68,7 +68,7 @@ const visualCueSlugs = new Set([
 const fullPackLockedCopy =
   "Longer plan access remains gated for owner-approved beta. This preview surface does not grant entitlement.";
 const placeholderPackCopy =
-  "Preview plan is being prepared for private beta. Pack data is not available yet. Word count pending. Free preview pending. Progress cannot be computed until this pack has word data. Preview review is unavailable until preview words exist. Owner approval remains required before any beta launch claim.";
+  "Preview plan is being prepared. Private/manual beta requires owner approval. Planned pack data is not available yet. Full IELTS/GRE content is not implied until real word data exists. Word count pending. Free preview pending. Progress cannot be computed until this pack has word data. Preview review is unavailable until preview words exist. Owner approval remains required before any beta launch claim.";
 const weakReviewRouteNote =
   "Uses the existing weak review route; filtered pack-only weak practice is not connected yet.";
 
