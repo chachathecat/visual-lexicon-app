@@ -59,7 +59,7 @@ Inventory and classification:
 | Pricing page | `src/app/pricing/page.tsx` | Needs clearer interest-only copy; needs clearer no-real-entitlement copy | Updated paywall reason copy away from active "unlocks" language and toward planned / interest-only language. |
 | Paywall evaluator and prompt | `src/lib/paywall/triggers.ts`, `src/components/paywall-prompt.tsx` | Needs clearer interest-only copy; needs clearer no-real-entitlement copy | Updated prompt bodies to include billing not connected, no checkout live, beta interest only, no paid access, and no real paid entitlement active. |
 | Upgrade interest button | `src/components/upgrade-placeholder-button.tsx` | Needs clearer interest-only copy | Updated clicked status to state interest does not grant paid access. |
-| Packs catalog and details | `src/components/views/packs-v2-view.tsx`, `src/lib/packs/preview.ts` | Needs clearer planned-content copy | Updated IELTS/GRE placeholder language to say preview plan is being prepared, private/manual beta requires owner approval, planned pack data is unavailable, and full IELTS/GRE content is not implied until real word data exists. |
+| Packs catalog and details | `src/components/views/packs-v2-view.tsx`, `src/lib/packs/preview.ts` | Needs clearer planned-content copy | Updated IELTS/GRE language to preview-only content v1 from current static words, private/manual beta requires owner approval, and full IELTS/GRE content is not live. |
 | Settings and local plan state | `src/app/settings/page.tsx`, `src/components/local-plan-state-panel.tsx`, `src/lib/entitlements/local-entitlements.ts` | OK as-is with small clarity improvement | Local plan labels remain local skeletons; availability notes now state no checkout live or no real paid entitlement active where relevant. |
 | Runtime entitlement read model | `src/app/api/me/entitlements/route.ts`, `src/lib/entitlements/server-read-model.ts`, `docs/TRACK_B_ENTITLEMENT_RUNTIME_READ_MODEL.md` | OK as-is | Existing route is read-only and returns guest/free only. It does not grant Lite, Pro, purchases, promotions, or manual grants. |
 | v3 readiness and #176 manual QA docs | `docs/TRACK_B_V3_BETA_READINESS_AUDIT.md`, `docs/TRACK_B_V3_MANUAL_QA_SCRIPT.md`, `docs/TRACK_B_V3_MANUAL_QA_EXECUTION_REPORT.md` | OK as-is | They preserve P0 count `0`, conditional owner-gated private/manual beta, and public paid beta No-Go. |
@@ -93,7 +93,7 @@ Needs clearer interest-only copy:
 
 Needs clearer planned-content copy:
 
-- IELTS and GRE packs with no real pack word data.
+- IELTS and GRE packs with preview-only word data but no full pack content.
 - AI mistake explanation, export, and no-watermark language that references
   future value.
 
@@ -117,9 +117,9 @@ P0 unsafe claim:
 - "No real paid entitlement is active."
 - "Private/manual beta requires owner approval."
 - "Public paid beta remains No-Go."
-- "Preview plan is being prepared."
-- "Planned pack data is not available yet."
-- "Full IELTS/GRE content is not implied until real word data exists."
+- "Preview-only content v1 from current static words."
+- "Preview of planned 30-day path."
+- "Full IELTS/GRE content is not live."
 - "AI mistake explanations are planned for a future approved implementation."
 
 ## Forbidden Copy Patterns
@@ -133,7 +133,7 @@ P0 unsafe claim:
 - "Public beta launched"
 - "Public paid beta is live"
 - "Private beta launched"
-- "IELTS/GRE full pack available" unless real word data exists
+- "IELTS/GRE full pack available" unless complete pack data exists
 - "AI mistake explanations included now" unless actually implemented
 
 ## Route/Surface Inventory
@@ -143,10 +143,10 @@ P0 unsafe claim:
 | `/pricing` | Paid options record interest only; billing is not connected; no checkout is live; no real paid entitlement is active; public paid beta remains No-Go; private/manual beta requires owner approval. | P1 ambiguity resolved |
 | Pricing CTA buttons | Buttons record local interest and do not navigate to checkout when no approved placeholder URL is configured. | OK |
 | Paywall prompt | Prompt bodies state interest-only and no paid access. Clicked state says the action does not grant paid access. | P1 ambiguity resolved |
-| `/packs` | Pack progress is local/read-only on load. Planned IELTS/GRE packs are marked as prepared and unavailable until real word data exists. | P1 ambiguity resolved |
+| `/packs` | Pack progress is local/read-only on load. IELTS/GRE packs are marked preview-only with current static words and no full-pack claim. | P1 ambiguity resolved |
 | `/packs/academic-vocabulary` | Academic preview uses existing real mock/static pack data and remains owner-gated for longer plan access. | OK |
-| `/packs/ielts-writing-vocabulary` | Planned pack data unavailable; no review CTA; full IELTS content is not implied. | P1 ambiguity resolved |
-| `/packs/gre-visual-verbal` | Planned pack data unavailable; no review CTA; full GRE content is not implied. | P1 ambiguity resolved |
+| `/packs/ielts-writing-vocabulary` | Preview-only content v1; no review CTA; full IELTS Writing pack is planned, not live. | P1 ambiguity resolved |
+| `/packs/gre-visual-verbal` | Preview-only content v1; no review CTA; full GRE Visual Verbal pack is planned, not live. | P1 ambiguity resolved |
 | `/settings` | Account Sync and billing remain not connected/configured; local plan state is a skeleton, not paid subscription proof. | OK |
 | `/api/me/entitlements` | Read-only guest/free response only. No paid grant store or paid entitlement source. | OK |
 | README | Placeholder upgrade URLs are documented as interest-only and non-entitlement. | P2 docs clarity resolved |
@@ -166,8 +166,8 @@ P1:
 - Pricing and paywall copy had "unlocks" phrasing that could read like active
   entitlement. It has been replaced with planned / owner-gated / interest-only
   copy.
-- IELTS/GRE placeholder copy needed the explicit "full content is not implied"
-  caveat. It has been added.
+- IELTS/GRE preview-only copy needs the explicit "full content is not live"
+  caveat. It remains present.
 
 P2:
 

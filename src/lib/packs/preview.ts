@@ -5,6 +5,7 @@ import {
   getHubPack
 } from "@/lib/packs/pack-reader";
 import type {
+  VlxExamPack,
   VlxPriceTier,
   VlxQuizPack,
   VlxQuizWord,
@@ -32,9 +33,14 @@ export type VlxPackPreview = {
   updatedAt?: string;
   reviewHref: string;
   reviewFallbackNote?: string;
+  reviewEnabled: boolean;
   wordSlugs: string[];
   previewWords: VlxQuizWord[];
   sourceLabel: string;
+  contentStatusLabel?: string;
+  contentSafetyNote?: string;
+  planFraming?: string;
+  themes?: string[];
   emptyTitle: string;
   emptyBody: string;
 };
@@ -48,9 +54,15 @@ type StarterPackDefinition = {
   targetExam?: VlxTargetExam;
   planDays?: number;
   sourceLabel: string;
-  resolver: "academic" | "core" | "home" | "placeholder";
+  resolver: "academic" | "core" | "exam" | "home" | "placeholder";
+  examPackId?: string;
   reviewHub?: string;
   fallbackReviewHref?: string;
+  reviewEnabled?: boolean;
+  contentStatusLabel?: string;
+  contentSafetyNote?: string;
+  planFraming?: string;
+  themes?: string[];
   emptyTitle?: string;
   emptyBody?: string;
 };
@@ -70,39 +82,59 @@ const starterPackDefinitions = [
     planDays: 30,
     sourceLabel: "Exam pack and academic hub",
     resolver: "academic",
-    reviewHub: "academic-vocabulary"
+    reviewHub: "academic-vocabulary",
+    contentStatusLabel: "Active starter pack",
+    planFraming:
+      "This 30-day visual learning plan surface is the active Academic starter preview. Its review action uses the existing Academic Vocabulary hub route and current static Academic word data.",
+    themes: ["abstract essay words", "lecture vocabulary", "exam reading"]
   },
   {
     packId: "ielts-writing-vocabulary",
     title: "IELTS Writing",
     description:
-      "A planned writing-focused visual vocabulary plan for IELTS Task 1 and Task 2.",
+      "Preview-only content v1 for a planned 30-day IELTS Writing path: argument, evidence, contrast, and policy/society language.",
     kind: "exam",
     targetLabel: "IELTS Writing",
     targetExam: "ielts",
     planDays: 30,
-    sourceLabel: "Planned exam pack",
-    resolver: "placeholder",
+    sourceLabel: "Exam Pack Content v1 static preview",
+    resolver: "exam",
+    examPackId: "ielts-writing-vocabulary-preview",
+    reviewEnabled: false,
     fallbackReviewHref: MIXED_REVIEW_FALLBACK,
-    emptyTitle: "IELTS Writing preview plan is being prepared",
+    contentStatusLabel: "Preview of planned 30-day path",
+    contentSafetyNote:
+      "Preview-only content v1 from current static words. Full IELTS Writing pack is planned, not live. Private/manual beta requires owner approval. This does not grant paid access or real paid entitlement.",
+    planFraming:
+      "This is a preview of a planned 30-day path. It shows real preview words, but a pack-specific IELTS review route and full IELTS content are not live.",
+    themes: ["argument", "evidence", "contrast", "policy/society"],
+    emptyTitle: "IELTS Writing preview content is not available yet",
     emptyBody:
-      "Preview plan is being prepared. Private/manual beta requires owner approval. Planned pack data is not available yet. Full IELTS/GRE content is not implied until real word data exists. The current pack reader does not include IELTS words, so this page does not show word counts, preview cards, or a review CTA."
+      "Preview plan is being prepared. Private/manual beta requires owner approval. Full IELTS content is not implied by this planned pack surface."
   },
   {
     packId: "gre-visual-verbal",
     title: "GRE Visual Verbal",
     description:
-      "A planned visual verbal plan for abstract GRE words and mistake-prone choices.",
+      "Preview-only content v1 for a planned 30-day GRE Visual Verbal path: nuance, logic, contrast, and confusable advanced words.",
     kind: "exam",
     targetLabel: "GRE Verbal",
     targetExam: "gre",
     planDays: 30,
-    sourceLabel: "Planned exam pack",
-    resolver: "placeholder",
+    sourceLabel: "Exam Pack Content v1 static preview",
+    resolver: "exam",
+    examPackId: "gre-visual-verbal-preview",
+    reviewEnabled: false,
     fallbackReviewHref: MIXED_REVIEW_FALLBACK,
-    emptyTitle: "GRE Visual Verbal preview plan is being prepared",
+    contentStatusLabel: "Preview of planned 30-day path",
+    contentSafetyNote:
+      "Preview-only content v1 from current static words. Full GRE Visual Verbal pack is planned, not live. Private/manual beta requires owner approval. This does not grant paid access or real paid entitlement.",
+    planFraming:
+      "This is a preview of a planned 30-day path. It shows real preview words, but a pack-specific GRE review route and full GRE content are not live.",
+    themes: ["nuance", "logic", "contrast", "confusable advanced words"],
+    emptyTitle: "GRE Visual Verbal preview content is not available yet",
     emptyBody:
-      "Preview plan is being prepared. Private/manual beta requires owner approval. Planned pack data is not available yet. Full IELTS/GRE content is not implied until real word data exists. The current pack reader does not include GRE words, so this page does not show word counts, preview cards, or a review CTA."
+      "Preview plan is being prepared. Private/manual beta requires owner approval. Full GRE content is not implied by this planned pack surface."
   },
   {
     packId: "core-v1",
@@ -214,13 +246,38 @@ function buildBasePreview(
     planDays: definition.planDays,
     reviewHref: getReviewHref(definition),
     reviewFallbackNote: getReviewFallbackNote(definition),
+    reviewEnabled: definition.reviewEnabled ?? true,
     wordSlugs: words.map((word) => word.slug),
     previewWords,
     sourceLabel: definition.sourceLabel,
+    contentStatusLabel: definition.contentStatusLabel,
+    contentSafetyNote: definition.contentSafetyNote,
+    planFraming: definition.planFraming,
+    themes: definition.themes,
     emptyTitle: definition.emptyTitle ?? "No preview words available",
     emptyBody:
       definition.emptyBody ??
       "This pack resolved through the pack reader, but no preview words are available in the current data."
+  } satisfies VlxPackPreview;
+}
+
+function mergeExamPackPreview(
+  definition: StarterPackDefinition,
+  pack: VlxExamPack | null
+): VlxPackPreview {
+  const base = buildBasePreview(definition, pack?.words ?? [], Boolean(pack));
+  const previewCount = pack?.words.length
+    ? Math.min(base.previewWords.length, pack.freePreviewCount, PREVIEW_LIMIT)
+    : undefined;
+
+  return {
+    ...base,
+    title: pack?.title ?? base.title,
+    wordCount: pack?.words.length,
+    previewCount,
+    planDays: definition.planDays ?? pack?.days,
+    priceTier: pack?.priceTier,
+    updatedAt: pack?.updatedAt
   } satisfies VlxPackPreview;
 }
 
@@ -279,6 +336,13 @@ async function resolvePackPreview(
 
   if (definition.resolver === "core") {
     return mergeQuizPackPreview(definition, await getCorePack());
+  }
+
+  if (definition.resolver === "exam") {
+    return mergeExamPackPreview(
+      definition,
+      await getExamPack(definition.examPackId ?? definition.packId)
+    );
   }
 
   if (definition.resolver === "home") {

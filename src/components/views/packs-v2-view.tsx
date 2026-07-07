@@ -68,7 +68,7 @@ const visualCueSlugs = new Set([
 const fullPackLockedCopy =
   "Longer plan access remains gated for owner-approved beta. This preview surface does not grant entitlement.";
 const placeholderPackCopy =
-  "Preview plan is being prepared. Private/manual beta requires owner approval. Planned pack data is not available yet. Full IELTS/GRE content is not implied until real word data exists. Word count pending. Free preview pending. Progress cannot be computed until this pack has word data. Preview review is unavailable until preview words exist. Owner approval remains required before any beta launch claim.";
+  "Preview plan is being prepared. Private/manual beta requires owner approval. Full pack content is not live. Word count pending. Free preview pending. Progress cannot be computed until this pack has word data. Preview review is unavailable until preview words exist. Owner approval remains required before any beta launch claim.";
 const weakReviewRouteNote =
   "Uses the existing weak review route; filtered pack-only weak practice is not connected yet.";
 
@@ -379,6 +379,12 @@ function getPreviewAccessLabel(pack: VlxPackPreview) {
     return "Free preview pending";
   }
 
+  if (pack.reviewEnabled === false) {
+    return typeof pack.previewCount === "number"
+      ? `Preview-only: ${formatCount(pack.previewCount, "card")}`
+      : "Preview-only content";
+  }
+
   if (pack.priceTier && pack.priceTier !== "free") {
     return typeof pack.previewCount === "number"
       ? `Free preview: ${formatCount(pack.previewCount, "card")}`
@@ -436,6 +442,10 @@ function PacksV2Token({ children }: { children: ReactNode }) {
 function getPackAccessCopy(pack: VlxPackPreview) {
   if (pack.status !== "available") {
     return placeholderPackCopy;
+  }
+
+  if (pack.contentSafetyNote) {
+    return pack.contentSafetyNote;
   }
 
   if (isPremiumPack(pack)) {
@@ -501,9 +511,11 @@ function PackProgressFacts({
 }
 
 function PackProgressNote({
+  pack,
   summary,
   variant = "card"
 }: {
+  pack: VlxPackPreview;
   summary: PackLocalSummary;
   variant?: "card" | "detail";
 }) {
@@ -520,7 +532,11 @@ function PackProgressNote({
   return (
     <div className={`packs-v2-progress-note packs-v2-progress-note--${variant}`}>
       <span>No local pack progress yet</span>
-      <small>Progress appears after preview or review activity exists.</small>
+      <small>
+        {pack.reviewEnabled === false
+          ? "Progress stays empty until an approved pack-specific preview or review action exists."
+          : "Progress appears after preview or review activity exists."}
+      </small>
     </div>
   );
 }
@@ -585,6 +601,10 @@ function PackPrimaryAction({
     return null;
   }
 
+  if (pack.reviewEnabled === false) {
+    return null;
+  }
+
   return (
     <Link
       aria-label={`${label} ${pack.title}`}
@@ -629,6 +649,9 @@ function PackCard({
         <p>{pack.description}</p>
       </div>
       <PacksV2TokenRow>
+        {pack.contentStatusLabel ? (
+          <PacksV2Token>{pack.contentStatusLabel}</PacksV2Token>
+        ) : null}
         {pack.targetLabel ? <PacksV2Token>{pack.targetLabel}</PacksV2Token> : null}
         {wordCountLabel ? (
           <PacksV2Token>{wordCountLabel}</PacksV2Token>
@@ -638,10 +661,15 @@ function PackCard({
         {previewCountLabel ? <PacksV2Token>{previewCountLabel}</PacksV2Token> : null}
         {planLengthLabel ? <PacksV2Token>{planLengthLabel}</PacksV2Token> : null}
         <PacksV2Token>{getPreviewAccessLabel(pack)}</PacksV2Token>
+        {pack.themes?.slice(0, 2).map((theme) => (
+          <PacksV2Token key={`${pack.packId}-${theme}`}>
+            {formatToken(theme)}
+          </PacksV2Token>
+        ))}
       </PacksV2TokenRow>
       <PackAccessNote pack={pack} />
       <PackStateStrip summary={summary} />
-      <PackProgressNote summary={summary} />
+      <PackProgressNote pack={pack} summary={summary} />
       <div className="track-b-action-row">
         <PackPrimaryAction
           pack={pack}
@@ -741,7 +769,7 @@ export function PacksV2View({ packs }: { packs: VlxPackPreview[] }) {
       />
 
       <TrackBSection
-        description="The first Track B plans emphasize Academic Vocabulary, IELTS Writing, and GRE Visual Verbal. Planned packs stay clearly marked until word data exists."
+        description="The first Track B plans emphasize Academic Vocabulary, IELTS Writing, and GRE Visual Verbal. Preview-only packs stay clearly marked until full pack content and pack-specific review paths exist."
         id="packs-v2-featured"
         title="Featured learning plans"
       >
@@ -869,11 +897,13 @@ function PackDetailHero({
             "This pack will show a target learner when pack data provides one."}
         </p>
         <p>
-          This is a 30-day visual learning plan surface. Preview cards, review
-          actions, and progress stay tied to real pack data and local memory
-          evidence.
+          {pack.planFraming ??
+            "This is a 30-day visual learning plan surface. Preview cards, review actions, and progress stay tied to real pack data and local memory evidence."}
         </p>
         <PacksV2TokenRow>
+          {pack.contentStatusLabel ? (
+            <PacksV2Token>{pack.contentStatusLabel}</PacksV2Token>
+          ) : null}
           <PacksV2Token>{getStatusLabel(pack.status)}</PacksV2Token>
           <PacksV2Token>{getPreviewAccessLabel(pack)}</PacksV2Token>
           {isPremiumPack(pack) ? (
@@ -889,10 +919,11 @@ function PackDetailHero({
         <DetailFact label="Target exam" value={formatToken(pack.targetExam)} />
         <DetailFact label="Level" value={pack.levelLabel} />
         <DetailFact label="Difficulty" value={pack.difficultyLabel} />
+        <DetailFact label="Themes" value={pack.themes?.join(", ")} />
         <DetailFact label="Source" value={pack.sourceLabel} />
         <DetailFact label="Updated" value={pack.updatedAt} />
       </dl>
-      <PackProgressNote summary={summary} variant="detail" />
+      <PackProgressNote pack={pack} summary={summary} variant="detail" />
     </section>
   );
 }
@@ -1046,6 +1077,10 @@ function PreviewWordCard({ word }: { word: VlxQuizWord }) {
           <PacksV2Token>{word.cefr}</PacksV2Token>
         </div>
         <p>{word.definition}</p>
+        <p className="packs-v2-word-card__example">Example: {word.example}</p>
+        <p className="packs-v2-word-card__cue">
+          Memory cue: {word.memoryHook}
+        </p>
         <PacksV2TokenRow>
           <PacksV2Token>{formatToken(word.hub)}</PacksV2Token>
           <PacksV2Token>{formatToken(word.difficulty)}</PacksV2Token>

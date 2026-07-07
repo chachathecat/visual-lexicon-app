@@ -22,16 +22,18 @@ const vlxLocalStorageKeys = [
   "vlx_upgrade_interest_v1"
 ] as const;
 
-const plannedPlaceholderRoutes = [
+const plannedPreviewRoutes = [
   {
     path: "/packs/ielts-writing-vocabulary",
     heading: "IELTS Writing",
-    emptyHeading: "IELTS Writing preview plan is being prepared"
+    fullPackCopy: "Full IELTS Writing pack is planned, not live.",
+    previewWords: ["Lucid", "Abundance"]
   },
   {
     path: "/packs/gre-visual-verbal",
     heading: "GRE Visual Verbal",
-    emptyHeading: "GRE Visual Verbal preview plan is being prepared"
+    fullPackCopy: "Full GRE Visual Verbal pack is planned, not live.",
+    previewWords: ["Obfuscate", "Lucid"]
   }
 ] as const;
 
@@ -243,32 +245,37 @@ test.describe("Packs v2 learning-plan surface", () => {
       })
     ).toHaveAttribute("href", academicPreviewReviewHref);
 
-    for (const title of ["IELTS Writing", "GRE Visual Verbal"]) {
+    for (const { fullPackCopy, title } of [
+      {
+        title: "IELTS Writing",
+        fullPackCopy: "Full IELTS Writing pack is planned, not live."
+      },
+      {
+        title: "GRE Visual Verbal",
+        fullPackCopy: "Full GRE Visual Verbal pack is planned, not live."
+      }
+    ]) {
       const card = featuredCard(page, title);
 
-      await expect(card).toContainText("Data pending");
-      await expect(card).toContainText("Word count pending");
-      await expect(card).toContainText("Free preview pending");
+      await expect(card).toContainText("Preview ready");
+      await expect(card).toContainText("Preview of planned 30-day path");
+      await expect(card).toContainText("4 words");
+      await expect(card).toContainText("Preview-only: 4 cards");
       await expect(card).toContainText(
-        "Preview plan is being prepared."
+        "Preview-only content v1 from current static words."
       );
       await expect(card).toContainText(
         "Private/manual beta requires owner approval."
       );
+      await expect(card).toContainText(fullPackCopy);
       await expect(card).toContainText(
-        "Full IELTS/GRE content is not implied until real word data exists."
+        "No local pack progress yet"
       );
       await expect(card).toContainText(
-        "Progress cannot be computed until this pack has word data."
-      );
-      await expect(card).toContainText(
-        "Preview review is unavailable until preview words exist."
-      );
-      await expect(card).toContainText(
-        "Owner approval remains required before any beta launch claim."
+        "Progress stays empty until an approved pack-specific preview or review action exists."
       );
       await expect(
-        card.getByRole("link", { name: /Preview|Start review|Continue/ })
+        card.getByRole("link", { name: /Start preview|Start review|Continue/ })
       ).toHaveCount(0);
       await expect(
         card.getByRole("link", { name: `View ${title} plan` })
@@ -541,37 +548,36 @@ test.describe("Packs v2 learning-plan surface", () => {
     expect(academicProgress?.source).toBe("review");
   });
 
-  test("planned IELTS and GRE detail pages stay honest without fake access or progress", async ({
+  test("planned IELTS and GRE detail pages stay honest with preview-only content", async ({
     page
   }) => {
-    for (const route of plannedPlaceholderRoutes) {
+    for (const route of plannedPreviewRoutes) {
       await page.goto(`${baseUrl}${route.path}`, { waitUntil: "networkidle" });
 
       await expect(
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
-      await expect(page.getByText("Data pending", { exact: true })).toBeVisible();
       await expect(
-        page.getByText("Free preview pending", { exact: true })
+        page.getByText("Preview ready", { exact: true })
       ).toBeVisible();
-      await expect(page.getByText("Not available yet").first()).toBeVisible();
       await expect(
-        page.getByRole("heading", { name: route.emptyHeading })
+        page.getByText("Preview of planned 30-day path", { exact: true })
       ).toBeVisible();
       await expect(page.locator("body")).toContainText(
-        "Preview plan is being prepared."
+        "Preview-only content v1 from current static words."
       );
       await expect(page.locator("body")).toContainText(
         "Private/manual beta requires owner approval."
       );
-      await expect(page.locator("body")).toContainText(
-        "Full IELTS/GRE content is not implied until real word data exists."
-      );
-      await expect(page.locator("body")).toContainText(
-        "Owner approval remains required before any beta launch claim."
-      );
+      await expect(page.locator("body")).toContainText(route.fullPackCopy);
+      await expect(page.getByRole("heading", { name: "Preview words" })).toBeVisible();
+      for (const previewWord of route.previewWords) {
+        await expect(page.locator("#pack-preview-words")).toContainText(previewWord);
+      }
+      await expect(page.locator("body")).not.toContainText("Word count pending");
+      await expect(page.locator("body")).not.toContainText("Free preview pending");
       await expect(
-        page.getByRole("link", { name: /Preview|Start review|Continue/ })
+        page.getByRole("link", { name: /Start preview|Start review|Continue/ })
       ).toHaveCount(0);
       await expect(page.locator("[data-paywall-trigger]")).toHaveCount(0);
     }
