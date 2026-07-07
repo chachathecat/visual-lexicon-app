@@ -14,6 +14,11 @@ const manualQaPath = join(
   "docs",
   "TRACK_B_V3_MANUAL_QA_SCRIPT.md"
 );
+const manualQaExecutionPath = join(
+  workspaceRoot,
+  "docs",
+  "TRACK_B_V3_MANUAL_QA_EXECUTION_REPORT.md"
+);
 
 const requiredRoutes = [
   "/",
@@ -156,6 +161,7 @@ test.describe("Track B v3 beta readiness audit", () => {
   test("docs exist", () => {
     expect(existsSync(auditPath), auditPath).toBe(true);
     expect(existsSync(manualQaPath), manualQaPath).toBe(true);
+    expect(existsSync(manualQaExecutionPath), manualQaExecutionPath).toBe(true);
   });
 
   test("audit includes P0 P1 and P2 risk sections", () => {
@@ -235,6 +241,52 @@ test.describe("Track B v3 beta readiness audit", () => {
     }
   });
 
+  test("manual QA execution report records results and safety boundaries", () => {
+    const report = readWorkspaceFile(
+      "docs",
+      "TRACK_B_V3_MANUAL_QA_EXECUTION_REPORT.md"
+    );
+
+    for (const section of [
+      "Executive Summary",
+      "Environment",
+      "Commit under test",
+      "Date/Time Of QA",
+      "Local Test Setup",
+      "Browser Used",
+      "Validation Commands",
+      "Manual QA Steps",
+      "Evidence Summary",
+      "Console Error Summary",
+      "Mobile Smoke Summary",
+      "Keyboard Navigation Smoke Summary",
+      "P0/P1/P2 Result",
+      "Private/Manual Beta Recommendation",
+      "Public Paid Beta Recommendation",
+      "Safety Confirmation"
+    ]) {
+      expect(report, section).toContain(section);
+    }
+
+    for (const status of [
+      "PASS",
+      "PASS WITH NOTE",
+      "FAIL",
+      "BLOCKED",
+      "NOT RUN"
+    ]) {
+      expect(report, status).toContain(status);
+    }
+
+    expect(report).toContain("P0 count: `0`");
+    expect(report).toContain("Public paid beta remains No-Go");
+    expect(report).toContain("conditional owner-gated candidate only");
+    expect(report).toContain("No Webflow, Cloudflare Workers, auth, billing");
+    expect(report).toContain("payment SDK, real entitlement, analytics SDK");
+    expect(report).not.toMatch(/public paid beta (is )?(live|launched)/i);
+    expect(report).not.toMatch(/paid access granted/i);
+  });
+
   test("no forbidden payment checkout or billing route directories exist", () => {
     for (const routeDirectory of forbiddenRouteDirectories) {
       expect(
@@ -297,5 +349,6 @@ test.describe("Track B v3 beta readiness audit", () => {
 
     expect(readme).toContain("docs/TRACK_B_V3_BETA_READINESS_AUDIT.md");
     expect(readme).toContain("docs/TRACK_B_V3_MANUAL_QA_SCRIPT.md");
+    expect(readme).toContain("docs/TRACK_B_V3_MANUAL_QA_EXECUTION_REPORT.md");
   });
 });
