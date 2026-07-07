@@ -5081,6 +5081,19 @@ select {
   min-width: 0;
 }
 
+.packs-v2-word-card__example,
+.packs-v2-word-card__cue {
+  margin: 0;
+  color: var(--vlx-track-b-muted);
+  font-size: var(--vlx-track-b-type-small);
+  line-height: 1.5;
+}
+
+.packs-v2-word-card__cue {
+  padding-left: var(--vlx-track-b-space-sm);
+  border-left: 2px solid rgba(138, 63, 42, 0.2);
+}
+
 .packs-v2-card a:focus-visible,
 .packs-v2-word-card a:focus-visible,
 .packs-v2-queue-panel a:focus-visible {

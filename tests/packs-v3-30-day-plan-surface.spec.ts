@@ -257,17 +257,21 @@ test.describe("Packs v3 30-Day Plan Surface", () => {
     await expectNoForbiddenPacksCopy(page);
   });
 
-  test("IELTS and GRE detail pages stay planned without fake full content", async ({
+  test("IELTS and GRE detail pages stay preview-only without fake full content", async ({
     page
   }) => {
     for (const route of [
       {
         path: "/packs/ielts-writing-vocabulary",
-        heading: "IELTS Writing"
+        heading: "IELTS Writing",
+        fullPackCopy: "Full IELTS Writing pack is planned, not live.",
+        previewWords: ["Lucid", "Abundance"]
       },
       {
         path: "/packs/gre-visual-verbal",
-        heading: "GRE Visual Verbal"
+        heading: "GRE Visual Verbal",
+        fullPackCopy: "Full GRE Visual Verbal pack is planned, not live.",
+        previewWords: ["Obfuscate", "Lucid"]
       }
     ]) {
       await page.goto(`${baseUrl}${route.path}`, { waitUntil: "networkidle" });
@@ -276,16 +280,23 @@ test.describe("Packs v3 30-Day Plan Surface", () => {
         page.getByRole("heading", { level: 1, name: route.heading })
       ).toBeVisible();
       await expect(page.locator("body")).toContainText(
-        "Preview plan is being prepared."
+        "Preview-only content v1 from current static words."
       );
       await expect(page.locator("body")).toContainText(
         "Private/manual beta requires owner approval."
       );
+      await expect(page.locator("body")).toContainText(route.fullPackCopy);
       await expect(page.locator("body")).toContainText(
-        "Full IELTS/GRE content is not implied until real word data exists."
+        "Preview of planned 30-day path"
       );
-      await expect(page.locator("body")).toContainText("Word count pending");
-      await expect(page.locator("body")).toContainText("Free preview pending");
+      await expect(page.locator("body")).toContainText("Preview-only: 4 cards");
+      await expect(page.locator("body")).not.toContainText("Word count pending");
+      await expect(page.locator("body")).not.toContainText("Free preview pending");
+      for (const previewWord of route.previewWords) {
+        await expect(page.locator("#pack-preview-words")).toContainText(
+          previewWord
+        );
+      }
       await expect(
         page.getByRole("link", { name: /Start preview|Continue review|Continue/ })
       ).toHaveCount(0);

@@ -18,8 +18,9 @@ The initial plan set is:
 - GRE Visual Verbal
 
 Academic Vocabulary can be actionable when resolved pack data exists. IELTS
-Writing and GRE Visual Verbal stay planned/private-beta copy until real preview
-words exist.
+Writing and GRE Visual Verbal can show preview-only static words, but they stay
+planned/private-beta copy until full content and pack-specific review routes
+exist.
 
 ## Progress Derivation
 
@@ -39,6 +40,8 @@ real pack review answers.
 Pack-level `reviewedCount` and `correctCount` come only from
 `vlx_pack_progress_v1`. Due, Weak, Mastered, and pack weak-word lists come only
 from known pack word slugs mapped to existing review state and event evidence.
+Preview-only IELTS/GRE word cards do not create progress and do not unlock a
+pack-specific review CTA.
 
 ## Primary CTA
 

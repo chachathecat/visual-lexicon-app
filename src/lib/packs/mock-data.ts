@@ -127,7 +127,11 @@ export const mockQuizPackManifest = {
       ])
     ),
     examPacks: {
-      "academic-vocabulary-pack": "/exam-packs/academic-vocabulary-pack.json"
+      "academic-vocabulary-pack": "/exam-packs/academic-vocabulary-pack.json",
+      "ielts-writing-vocabulary-preview":
+        "/exam-packs/ielts-writing-vocabulary-preview.json",
+      "gre-visual-verbal-preview":
+        "/exam-packs/gre-visual-verbal-preview.json"
     },
     searchLite: "/search/search-lite-v1.json"
   }
@@ -165,12 +169,16 @@ export const mockAcademicVocabularyHubPack = {
 
 export const mockExamPackManifest = {
   version: "v1",
-  buildId: "20260605_mock_exam_contract",
-  builtAt: "2026-06-05T09:00:00.000Z",
+  buildId: "20260707_exam_pack_content_v1",
+  builtAt: "2026-07-07T09:00:00.000Z",
   source: "mock",
-  packCount: 1,
+  packCount: 3,
   packs: {
-    "academic-vocabulary-pack": "/exam-packs/academic-vocabulary-pack.json"
+    "academic-vocabulary-pack": "/exam-packs/academic-vocabulary-pack.json",
+    "ielts-writing-vocabulary-preview":
+      "/exam-packs/ielts-writing-vocabulary-preview.json",
+    "gre-visual-verbal-preview":
+      "/exam-packs/gre-visual-verbal-preview.json"
   }
 } satisfies VlxExamPackManifest;
 
@@ -201,6 +209,88 @@ export const mockAcademicVocabularyExamPack = {
   updatedAt: "2026-06-05T09:00:00.000Z"
 } satisfies VlxExamPack;
 
+function getMockQuizWordsBySlug(slugs: readonly string[]): VlxQuizWord[] {
+  return slugs.reduce<VlxQuizWord[]>((words, slug) => {
+    const word = getMockQuizWordBySlug(slug);
+
+    if (word) {
+      words.push(word as VlxQuizWord);
+    }
+
+    return words;
+  }, []);
+}
+
+const mockIeltsWritingPreviewWords = getMockQuizWordsBySlug([
+  "lucid",
+  "abundance",
+  "dissonance",
+  "resilient"
+]);
+
+const mockGreVisualVerbalPreviewWords = getMockQuizWordsBySlug([
+  "obfuscate",
+  "lucid",
+  "dissonance",
+  "resilient"
+]);
+
+export const mockIeltsWritingExamPack = {
+  packId: "ielts-writing-vocabulary-preview",
+  title: "IELTS Writing",
+  subtitle:
+    "Preview-only IELTS Writing vocabulary from current static word data",
+  targetExam: "ielts",
+  description:
+    "Preview-only content v1 for a planned 30-day IELTS Writing path.",
+  priceTier: "pro",
+  freePreviewCount: mockIeltsWritingPreviewWords.length,
+  wordCount: mockIeltsWritingPreviewWords.length,
+  days: 30,
+  words: mockIeltsWritingPreviewWords,
+  reviewSchedule: [
+    {
+      day: 1,
+      title: "Argument clarity and evidence preview",
+      newWords: ["lucid", "abundance"]
+    },
+    {
+      day: 3,
+      title: "Contrast and policy/society preview",
+      newWords: ["dissonance", "resilient"]
+    }
+  ],
+  updatedAt: "2026-07-07T09:00:00.000Z"
+} satisfies VlxExamPack;
+
+export const mockGreVisualVerbalExamPack = {
+  packId: "gre-visual-verbal-preview",
+  title: "GRE Visual Verbal",
+  subtitle:
+    "Preview-only GRE verbal vocabulary from current static word data",
+  targetExam: "gre",
+  description:
+    "Preview-only content v1 for a planned 30-day GRE Visual Verbal path.",
+  priceTier: "pro",
+  freePreviewCount: mockGreVisualVerbalPreviewWords.length,
+  wordCount: mockGreVisualVerbalPreviewWords.length,
+  days: 30,
+  words: mockGreVisualVerbalPreviewWords,
+  reviewSchedule: [
+    {
+      day: 1,
+      title: "Nuance and confusable advanced words preview",
+      newWords: ["obfuscate", "lucid"]
+    },
+    {
+      day: 3,
+      title: "Logic, contrast, and abstract reasoning preview",
+      newWords: ["dissonance", "resilient"]
+    }
+  ],
+  updatedAt: "2026-07-07T09:00:00.000Z"
+} satisfies VlxExamPack;
+
 export const mockSearchLiteIndex = {
   version: "v1",
   buildId: "20260605_mock_search_lite",
@@ -227,7 +317,9 @@ export const mockQuizPacks = [
 ] satisfies VlxQuizPack[];
 
 export const mockExamPacks = [
-  mockAcademicVocabularyExamPack
+  mockAcademicVocabularyExamPack,
+  mockIeltsWritingExamPack,
+  mockGreVisualVerbalExamPack
 ] satisfies VlxExamPack[];
 
 export const mockPackFiles = {
@@ -237,6 +329,10 @@ export const mockPackFiles = {
   "/quiz-pack/hubs/academic-vocabulary.json": mockAcademicVocabularyHubPack,
   "/exam-packs/manifest.json": mockExamPackManifest,
   "/exam-packs/academic-vocabulary-pack.json": mockAcademicVocabularyExamPack,
+  "/exam-packs/ielts-writing-vocabulary-preview.json":
+    mockIeltsWritingExamPack,
+  "/exam-packs/gre-visual-verbal-preview.json":
+    mockGreVisualVerbalExamPack,
   "/search/search-lite-v1.json": mockSearchLiteIndex,
   ...Object.fromEntries(
     mockQuizWords.map((word) => [

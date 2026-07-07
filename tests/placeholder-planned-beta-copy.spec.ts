@@ -27,9 +27,9 @@ const approvedSafetyCopy = [
   "No real paid entitlement is active.",
   "Private/manual beta requires owner approval.",
   "Public paid beta remains No-Go.",
-  "Preview plan is being prepared.",
-  "Planned pack data is not available yet.",
-  "Full IELTS/GRE content is not implied until real word data exists.",
+  "Preview-only content v1 from current static words.",
+  "Preview of planned 30-day path.",
+  "Full IELTS/GRE content is not live.",
   "AI mistake explanations are planned for a future approved implementation."
 ] as const;
 
@@ -249,23 +249,30 @@ test.describe("Placeholder planned beta copy safety", () => {
     page
   }) => {
     for (const route of [
-      "/packs/ielts-writing-vocabulary",
-      "/packs/gre-visual-verbal"
+      {
+        path: "/packs/ielts-writing-vocabulary",
+        fullPackCopy: "Full IELTS Writing pack is planned, not live.",
+        previewWord: "Lucid"
+      },
+      {
+        path: "/packs/gre-visual-verbal",
+        fullPackCopy: "Full GRE Visual Verbal pack is planned, not live.",
+        previewWord: "Obfuscate"
+      }
     ]) {
-      await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
+      await page.goto(`${baseUrl}${route.path}`, { waitUntil: "networkidle" });
       await expect(page.locator("body")).toContainText(
-        "Preview plan is being prepared."
+        "Preview-only content v1 from current static words."
       );
 
       const bodyText = await page.locator("body").innerText();
 
-      expect(bodyText).toContain("Preview plan is being prepared.");
-      expect(bodyText).toContain("Planned pack data is not available yet.");
-      expect(bodyText).toContain(
-        "Full IELTS/GRE content is not implied until real word data exists."
-      );
-      expect(bodyText).toContain("Word count pending");
-      expect(bodyText).toContain("Free preview pending");
+      expect(bodyText).toContain("Preview of planned 30-day path");
+      expect(bodyText).toContain(route.fullPackCopy);
+      expect(bodyText).toContain(route.previewWord);
+      expect(bodyText).toContain("Preview-only: 4 cards");
+      expect(bodyText).not.toContain("Word count pending");
+      expect(bodyText).not.toContain("Free preview pending");
       expect(bodyText).not.toMatch(/IELTS\/GRE full pack available/i);
       expect(bodyText).not.toMatch(/500 words|700 words|full content ready/i);
       await expect(
