@@ -130,6 +130,7 @@ docs/TRACK_B_V3_MANUAL_QA_EXECUTION_REPORT.md
 docs/TRACK_B_V3_KEYBOARD_QA_FOLLOW_UP_REPORT.md
 docs/TRACK_B_PLACEHOLDER_PLANNED_BETA_COPY_AUDIT.md
 docs/TRACK_B_EXAM_PACK_CONTENT_V1.md
+docs/TRACK_B_EXTENSION_SAVE_REVIEW_LOOP_ALIGNMENT.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
 docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md
 docs/TRACK_B_PACKS_V2.md
@@ -184,6 +185,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B v3 Keyboard QA Follow-up Report](docs/TRACK_B_V3_KEYBOARD_QA_FOLLOW_UP_REPORT.md) - test: `tests/v3-keyboard-qa-follow-up.spec.ts`
 - [Track B Placeholder / Planned Beta Copy Audit](docs/TRACK_B_PLACEHOLDER_PLANNED_BETA_COPY_AUDIT.md) - test: `tests/placeholder-planned-beta-copy.spec.ts`
 - [Track B Exam Pack Content v1](docs/TRACK_B_EXAM_PACK_CONTENT_V1.md) - test: `tests/exam-pack-content-v1.spec.ts`
+- [Track B Extension Save Review Loop Alignment](docs/TRACK_B_EXTENSION_SAVE_REVIEW_LOOP_ALIGNMENT.md) - test: `tests/extension-save-review-loop-alignment.spec.ts`
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
 - [Saved Library V3 Memory Queue](docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md)
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)
