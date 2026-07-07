@@ -132,6 +132,7 @@ docs/TRACK_B_PLACEHOLDER_PLANNED_BETA_COPY_AUDIT.md
 docs/TRACK_B_EXAM_PACK_CONTENT_V1.md
 docs/TRACK_B_EXTENSION_SAVE_REVIEW_LOOP_ALIGNMENT.md
 docs/TRACK_B_PRIVATE_BETA_OWNER_GATE.md
+docs/TRACK_A_TO_B_SAVE_CTA_BRIDGE.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
 docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md
 docs/TRACK_B_PACKS_V2.md
@@ -188,6 +189,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B Exam Pack Content v1](docs/TRACK_B_EXAM_PACK_CONTENT_V1.md) - test: `tests/exam-pack-content-v1.spec.ts`
 - [Track B Extension Save Review Loop Alignment](docs/TRACK_B_EXTENSION_SAVE_REVIEW_LOOP_ALIGNMENT.md) - test: `tests/extension-save-review-loop-alignment.spec.ts`
 - [Track B Private Beta Candidate Owner Gate](docs/TRACK_B_PRIVATE_BETA_OWNER_GATE.md) - test: `tests/private-beta-owner-gate.spec.ts`
+- [Track A to Track B Save CTA Bridge](docs/TRACK_A_TO_B_SAVE_CTA_BRIDGE.md) - test: `tests/track-a-to-b-save-cta-bridge.spec.ts`
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
 - [Saved Library V3 Memory Queue](docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md)
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)
