@@ -74,7 +74,8 @@ export const VLX_PLAN_DEFINITIONS = {
     summary:
       "For learners who want saved words to keep moving through due and weak review every day.",
     outcome: "Build a daily visual memory habit.",
-    availabilityNote: "Paid beta placeholder. Billing is not connected.",
+    availabilityNote:
+      "Paid beta placeholder. Billing is not connected yet. No real paid entitlement is active.",
     featureBullets: [
       "Expanded save and review capacity for paid beta positioning",
       "Due and weak review emphasis",
@@ -102,7 +103,8 @@ export const VLX_PLAN_DEFINITIONS = {
     summary:
       "For learners using memory state to repair repeated misses and follow guided exam vocabulary plans.",
     outcome: "Fix weak words and prepare for Academic / IELTS / GRE vocabulary.",
-    availabilityNote: "Paid beta placeholder. No real subscription is created.",
+    availabilityNote:
+      "Paid beta placeholder. No checkout is live. No real paid entitlement is active.",
     featureBullets: [
       "Everything in Lite",
       "Exam Packs and Weak Sprint positioning",

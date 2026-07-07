@@ -44,7 +44,7 @@ When no static pack base URL is configured, the app uses local mock pack
 data. The pack reader expects public JSON files only; do not put API tokens in
 pack URLs or browser-exposed environment variables.
 
-Optional paid beta upgrade placeholders:
+Optional paid beta upgrade interest placeholders:
 
 ```txt
 NEXT_PUBLIC_LITE_PAYMENT_URL=https://example.com/lite-beta
@@ -52,12 +52,15 @@ NEXT_PUBLIC_PRO_PAYMENT_URL=https://example.com/pro-beta
 NEXT_PUBLIC_PAID_BETA_FORM_URL=https://example.com/paid-beta-interest
 ```
 
-These URLs are placeholders only. When a Lite or Pro URL is configured, upgrade
-CTAs render as external links and append `plan` and `source` query parameters.
-When no URL is configured, the app stays local, records interest in
-`vlx_upgrade_interest_v1`, and shows: `Paid beta interest noted locally. Billing
-is not connected.` No checkout route, payment SDK, billing setting, or real
-subscription is created by this app.
+These URLs are placeholders only and must remain interest-only. They are not
+checkout URLs and do not grant paid access. When a Lite or Pro URL is
+configured, upgrade CTAs render as external interest links and append `plan` and
+`source` query parameters. When no URL is configured, the app stays local,
+records interest in `vlx_upgrade_interest_v1`, and shows:
+`Paid beta interest noted locally. Billing is not connected yet. This does not
+grant paid access.` Billing is not connected yet. No checkout is live. No real
+paid entitlement is active. No checkout route, payment SDK, billing setting, or
+real subscription is created by this app.
 
 Optional private dogfood auth configuration:
 
@@ -124,6 +127,7 @@ docs/TRACK_B_ACCESSIBILITY_PERFORMANCE_RELEASE_GATE.md
 docs/TRACK_B_V3_BETA_READINESS_AUDIT.md
 docs/TRACK_B_V3_MANUAL_QA_SCRIPT.md
 docs/TRACK_B_V3_MANUAL_QA_EXECUTION_REPORT.md
+docs/TRACK_B_PLACEHOLDER_PLANNED_BETA_COPY_AUDIT.md
 docs/TRACK_B_SAVED_LIBRARY_V2.md
 docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md
 docs/TRACK_B_PACKS_V2.md
@@ -175,6 +179,7 @@ docs/MONITORING_SUPPORT_PRIVACY_BETA_GATE.md
 - [Track B v3 Beta Readiness Audit](docs/TRACK_B_V3_BETA_READINESS_AUDIT.md) - test: `tests/v3-beta-readiness-audit.spec.ts`
 - [Track B v3 Manual QA Script](docs/TRACK_B_V3_MANUAL_QA_SCRIPT.md)
 - [Track B v3 Manual QA Execution Report](docs/TRACK_B_V3_MANUAL_QA_EXECUTION_REPORT.md)
+- [Track B Placeholder / Planned Beta Copy Audit](docs/TRACK_B_PLACEHOLDER_PLANNED_BETA_COPY_AUDIT.md) - test: `tests/placeholder-planned-beta-copy.spec.ts`
 - [Track B Saved Library V2](docs/TRACK_B_SAVED_LIBRARY_V2.md)
 - [Saved Library V3 Memory Queue](docs/SAVED_LIBRARY_V3_MEMORY_QUEUE.md)
 - [Track B Packs V2](docs/TRACK_B_PACKS_V2.md)

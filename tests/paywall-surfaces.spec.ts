@@ -449,7 +449,7 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
       }),
     ).toHaveCount(0);
     await expect(page.locator('body')).toContainText(
-      'Visual Lexicon is collecting paid beta interest only.',
+      'This records beta interest only.',
     );
     await expect(page.locator('body')).toContainText(
       'Billing is not connected yet.',

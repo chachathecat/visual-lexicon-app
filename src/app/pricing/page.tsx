@@ -48,7 +48,7 @@ const tiers = [
     features: [
       "Expanded save and review capacity positioning",
       "Daily due queue and weak-word habit emphasis",
-      "No active subscription or paid entitlement is created"
+      "No real paid entitlement is active"
     ],
     cta: "Note Lite interest - billing not connected yet",
     ariaLabel: "Note Lite interest - billing not connected yet",
@@ -64,7 +64,7 @@ const tiers = [
     features: [
       "Weak Sprint and mastery export positioning",
       "Exam-prep review and pack access planning",
-      "Mistake explanations later, after the SRS loop works"
+      "AI mistake explanations are planned for a future approved implementation"
     ],
     cta: "Note Pro interest - billing not connected yet",
     ariaLabel: "Note Pro interest - billing not connected yet"
@@ -78,7 +78,7 @@ const tiers = [
       "A guided 30-day visual vocabulary plan tied to preview, review, mistakes, and weak repair.",
     features: [
       "Academic Vocabulary, IELTS Writing, and GRE Visual Verbal positioning",
-      "Preview continues to real review evidence before any unlock",
+      "Preview continues to real review evidence before any future access claim",
       "No in-app purchase or full-pack access is active"
     ],
     cta: "Note Exam Pack interest - billing not connected yet",
@@ -91,7 +91,7 @@ const paywallReasons = [
     id: "save_limit",
     title: "Save limit",
     body:
-      "Your memory library is full. Lite unlocks unlimited saved words and daily review."
+      "Your memory library is full. Lite is planned for expanded saved words and daily review capacity."
   },
   {
     id: "review_limit",
@@ -103,13 +103,13 @@ const paywallReasons = [
     id: "pack_preview_end",
     title: "Pack preview end",
     body:
-      "You started the 30-day Academic plan. Pro unlocks the full guided pack."
+      "You started the 30-day Academic plan. Pro guided pack access is planned for a future owner-gated beta."
   },
   {
     id: "weak_words_sprint_locked",
     title: "Weak Sprint locked",
     body:
-      "You have weak words waiting. Pro unlocks focused weak-word practice."
+      "You have weak words waiting. Pro is planned for focused weak-word practice after owner approval."
   },
   {
     id: "mastery_export_locked",
@@ -119,15 +119,15 @@ const paywallReasons = [
   },
   {
     id: "no_watermark_download",
-    title: "No-watermark export locked",
+    title: "No-watermark export planned",
     body:
-      "Lite is planned for clean study visuals while Pro adds exam-ready export support."
+      "No-watermark export is planned for a future approved implementation while Pro adds exam-ready export support."
   },
   {
     id: "mistake_explanation_locked",
-    title: "Future AI mistake explanation locked",
+    title: "Future AI mistake explanation planned",
     body:
-      "Pro will add AI mistake explanations later, after the SRS loop works."
+      "AI mistake explanations are planned for a future approved implementation after the SRS loop works."
   }
 ] as const;
 
@@ -225,10 +225,10 @@ export default function PricingPage() {
         </section>
 
         <p className="pricing-v2-note">
-          Visual Lexicon is collecting paid beta interest only. Billing is not
-          connected yet. No checkout is live. No real paid entitlement is
-          active. Public paid beta remains No-Go, and private/manual beta
-          requires owner approval.
+          Billing is not connected yet. No checkout is live. This records beta
+          interest only. This does not grant paid access. No real paid
+          entitlement is active. Public paid beta remains No-Go. Private/manual
+          beta requires owner approval.
         </p>
       </div>
     </TrackBAppShell>

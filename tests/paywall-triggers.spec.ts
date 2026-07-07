@@ -156,8 +156,12 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
       },
     });
     expect(prompt?.body).toContain('You started the 30-day Academic plan');
-    expect(prompt?.body).toContain('Pro unlocks the full guided pack');
+    expect(prompt?.body).toContain(
+      'Pro guided pack access is planned for a future owner-gated beta',
+    );
     expect(prompt?.body).toContain('Billing is not connected yet');
+    expect(prompt?.body).toContain('No checkout is live');
+    expect(prompt?.body).toContain('No real paid entitlement is active');
     expect(prompt?.body).toContain('does not grant paid access');
     expect(
       evaluateExamPackPreviewEndPaywall({
@@ -193,7 +197,9 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
         weakCount: 4,
       },
     });
-    expect(prompt?.body).toContain('Pro unlocks focused weak-word practice');
+    expect(prompt?.body).toContain(
+      'Pro is planned for focused weak-word practice after owner approval',
+    );
     expect(prompt?.body).toContain('Billing is not connected yet');
   });
 
@@ -234,13 +240,15 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
     expect(prompt).toMatchObject({
       id: 'no_watermark_download',
       recommendedPlan: 'lite',
-      title: 'No-watermark export is locked',
+      title: 'No-watermark export is planned',
       primaryCtaLabel: 'Note Lite interest - billing not connected yet',
       reasonMetrics: {
         slug: 'lucid',
       },
     });
-    expect(prompt?.body).toContain('No-watermark export is locked');
+    expect(prompt?.body).toContain(
+      'No-watermark export is planned for a future approved implementation',
+    );
     expect(prompt?.body).toContain('does not grant paid access');
     expect(prompt?.body).toContain('Billing is not connected yet');
     expect(
@@ -271,7 +279,9 @@ test.describe('Visual Lexicon paywall trigger evaluator', () => {
       },
     });
     expect(prompt?.body).toContain('A wrong answer is a mistake record');
-    expect(prompt?.body).toContain('AI mistake explanations later');
+    expect(prompt?.body).toContain(
+      'AI mistake explanations are planned for a future approved implementation',
+    );
     expect(prompt?.body).toContain('Billing is not connected yet');
     expect(
       evaluateMistakeExplanationLockedPaywall({

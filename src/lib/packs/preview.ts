@@ -86,7 +86,7 @@ const starterPackDefinitions = [
     fallbackReviewHref: MIXED_REVIEW_FALLBACK,
     emptyTitle: "IELTS Writing preview plan is being prepared",
     emptyBody:
-      "Preview plan is being prepared for private beta. The current pack reader does not include IELTS words, so this page does not show word counts, preview cards, or a review CTA."
+      "Preview plan is being prepared. Private/manual beta requires owner approval. Planned pack data is not available yet. Full IELTS/GRE content is not implied until real word data exists. The current pack reader does not include IELTS words, so this page does not show word counts, preview cards, or a review CTA."
   },
   {
     packId: "gre-visual-verbal",
@@ -102,7 +102,7 @@ const starterPackDefinitions = [
     fallbackReviewHref: MIXED_REVIEW_FALLBACK,
     emptyTitle: "GRE Visual Verbal preview plan is being prepared",
     emptyBody:
-      "Preview plan is being prepared for private beta. The current pack reader does not include GRE words, so this page does not show word counts, preview cards, or a review CTA."
+      "Preview plan is being prepared. Private/manual beta requires owner approval. Planned pack data is not available yet. Full IELTS/GRE content is not implied until real word data exists. The current pack reader does not include GRE words, so this page does not show word counts, preview cards, or a review CTA."
   },
   {
     packId: "core-v1",
