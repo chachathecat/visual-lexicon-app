@@ -253,6 +253,9 @@ test.describe("Placeholder planned beta copy safety", () => {
       "/packs/gre-visual-verbal"
     ]) {
       await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
+      await expect(page.locator("body")).toContainText(
+        "Preview plan is being prepared."
+      );
 
       const bodyText = await page.locator("body").innerText();
 
