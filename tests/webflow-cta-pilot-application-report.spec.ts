@@ -12,7 +12,7 @@ const reportPath = join(
 
 const requiredSections = [
   "## Executive Summary",
-  "## Why This Follows #183",
+  "## Why This Follows #184",
   "## Pilot Scope",
   "## Owner-Supplied Webflow Evidence Fields",
   "## Word Page CTA Evidence",
@@ -218,6 +218,10 @@ test.describe("Track A Webflow CTA pilot application report", () => {
     }
 
     expect(doc).toContain("Pending owner evidence");
+    expect(doc).toContain(
+      "Owner evidence supplied in this handoff: none."
+    );
+    expect(doc).toContain("[PASTE OWNER EVIDENCE HERE]");
     expect(doc).toContain("If owner has not supplied Webflow screenshots/hrefs");
     expect(doc).toContain("This PR does not claim Webflow production was published.");
     expect(doc).toContain("This PR does not claim Track A production CTA is live.");
