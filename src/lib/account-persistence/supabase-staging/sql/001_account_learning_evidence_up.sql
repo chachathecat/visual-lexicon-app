@@ -138,13 +138,19 @@ create policy account_saved_words_owner_select
   on public.account_saved_words
   for select
   to authenticated
-  using ((select auth.uid()) = owner_account_id);
+  using (
+    (select auth.uid()) = owner_account_id
+    and (select (auth.jwt() ->> 'is_anonymous')::boolean) is false
+  );
 
 create policy account_review_events_owner_select
   on public.account_review_events
   for select
   to authenticated
-  using ((select auth.uid()) = owner_account_id);
+  using (
+    (select auth.uid()) = owner_account_id
+    and (select (auth.jwt() ->> 'is_anonymous')::boolean) is false
+  );
 
 revoke all on table public.account_saved_words from anon, authenticated;
 revoke all on table public.account_review_events from anon, authenticated;

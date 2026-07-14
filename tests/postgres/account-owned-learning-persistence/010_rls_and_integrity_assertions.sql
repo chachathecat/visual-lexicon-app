@@ -71,7 +71,7 @@ values
   );
 
 set role authenticated;
-set request.jwt.claim.sub = '6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b';
+set request.jwt.claims = '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":false}';
 
 select
   count(*) = 1 and
@@ -102,6 +102,30 @@ from public.account_review_events
   \echo 'two-account review-event RLS isolation failed'
   \quit 1
 \endif
+
+set request.jwt.claims = '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":true}';
+
+select count(*) = 0 as anonymous_saved_words_denied
+from public.account_saved_words
+\gset
+
+\if :anonymous_saved_words_denied
+\else
+  \echo 'anonymous authenticated JWT could read saved words'
+  \quit 1
+\endif
+
+select count(*) = 0 as anonymous_review_events_denied
+from public.account_review_events
+\gset
+
+\if :anonymous_review_events_denied
+\else
+  \echo 'anonymous authenticated JWT could read review events'
+  \quit 1
+\endif
+
+set request.jwt.claims = '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":false}';
 
 \set ON_ERROR_STOP off
 delete from public.account_saved_words
