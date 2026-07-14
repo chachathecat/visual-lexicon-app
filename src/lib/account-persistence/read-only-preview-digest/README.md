@@ -9,9 +9,11 @@ The actual Next.js route exports are hard default-disabled and now use the
 owner-approved staging activation policy. Reads require exact
 `staging_read_only` mode, an expected Supabase project ref matching
 `NEXT_PUBLIC_SUPABASE_URL`, exact `VERCEL_ENV=preview`, an exact non-main Git
-branch match, an explicit production-project-ref exclusion, a 32-byte-minimum
-server HMAC secret, the platform-provided `VERCEL=1` marker, and two configured
-Vercel Firewall rate limits. Any missing or unavailable control fails closed.
+branch match, a full reviewed commit SHA match, the canonical GitHub
+owner/repository, exact `NODE_ENV=production`, an explicit
+production-project-ref exclusion, a 32-byte-minimum server HMAC secret, the
+platform-provided `VERCEL=1` marker, and two configured Vercel Firewall rate
+limits. Any missing or unavailable control fails closed.
 
 ## Request boundary
 
@@ -47,6 +49,8 @@ adapter. Anonymous, expired, revoked, missing, malformed, and false-like
 anonymous evidence all fail closed. Invalid session evidence uses generic
 `AUTH_REQUIRED`; transport and 5xx
 provider outages use generic `AUTH_UNAVAILABLE`.
+This read-only route creates its Supabase client with auth-cookie writes
+disabled, so token refresh cannot mutate browser cookies through this path.
 
 The provider edge selects only owner ID, slug/event marker, and timestamp. It
 reads at most 501 saved-word markers and 1,001 review-event markers: one extra

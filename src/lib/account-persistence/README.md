@@ -5,8 +5,9 @@ Visual Lexicon Track B account persistence. The owner-approved
 `supabase-staging` directory is the first isolated-staging, read-only provider
 edge. The owner-approved `read-only-preview-digest` boundary adds default-off
 route files and an authenticated read path. Actual route exports can connect
-only through the exact preview/project/branch/HMAC gate and distributed IP and
-owner rate limits; mutations remain absent.
+only through exact deployed-runtime/project/canonical-repository/branch/
+reviewed-commit/HMAC gates and distributed IP and owner rate limits; mutations
+remain absent.
 
 The planning core does not implement real auth or import provider SDKs. The
 staging adapter reuses the existing Supabase client type only at the provider

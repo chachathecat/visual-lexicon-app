@@ -11,13 +11,14 @@ PR B adds reviewable Next.js route files for:
 - `POST /api/account/sync/preview`
 - `GET /api/account/sync/digest`
 
-Both actual exports are hard default-disabled and return `503 ROUTE_DISABLED`
-without creating a Supabase client. This keeps PR A's `runtimeConnected:
-false` statement accurate. A tested, non-wired future staging policy requires
-`VLX_ACCOUNT_LEARNING_READ_MODE=staging_read_only`, an exact expected project
-ref match against the configured Supabase URL, and exact
-`VERCEL_ENV=preview`. A later reviewed code change is required to wire that
-policy.
+PR B shipped both actual exports hard default-disabled. The separately
+approved staging activation change wires them to a fail-closed policy that
+still returns `503 ROUTE_DISABLED` without creating a Supabase client unless
+all dedicated-staging controls match: read mode, Preview environment,
+production Node runtime, canonical repository, exact non-main branch, exact
+reviewed commit SHA, staging Supabase project ref, production-ref exclusion,
+strong HMAC secret, and both distributed Firewall rules. Production and all
+write/apply/audit paths remain outside this approval.
 
 ## Authentication and account selection
 

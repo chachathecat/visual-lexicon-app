@@ -28,6 +28,25 @@ const requestOrigin = "https://preview.visuallexicon.test";
 const ownerAccountId = "6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b";
 const otherAccountId = "74d2da4e-5947-49ef-a24d-659c5e95f08d";
 const cursorHmacSecret = "test-only-cursor-secret-with-at-least-32-bytes";
+const reviewedCommitSha = "1".repeat(40);
+
+const matchingActivationEnv = {
+  VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
+  VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+  VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+  VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+    "release/account-read-only-staging-activation",
+  VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA: reviewedCommitSha,
+  VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
+  NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+  NODE_ENV: "production",
+  VERCEL_ENV: "preview",
+  VERCEL: "1",
+  VERCEL_GIT_REPO_OWNER: "chachathecat",
+  VERCEL_GIT_REPO_SLUG: "visual-lexicon-app",
+  VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
+  VERCEL_GIT_COMMIT_SHA: reviewedCommitSha,
+} as const;
 
 const enabledAccess = {
   enabled: true,
@@ -35,7 +54,10 @@ const enabledAccess = {
   expectedProjectRefMatched: true,
   productionProjectRefExcluded: true,
   expectedBranchMatched: true,
+  expectedCommitMatched: true,
+  canonicalRepositoryMatched: true,
   vercelPlatformConfirmed: true,
+  productionRuntimeConfirmed: true,
   hmacSecretConfigured: true,
 } as const;
 
@@ -248,7 +270,10 @@ test.describe("account-owned learning persistence PR B", () => {
       () => ({ ...enabledAccess, expectedProjectRefMatched: false }),
       () => ({ ...enabledAccess, productionProjectRefExcluded: false }),
       () => ({ ...enabledAccess, expectedBranchMatched: false }),
+      () => ({ ...enabledAccess, expectedCommitMatched: false }),
+      () => ({ ...enabledAccess, canonicalRepositoryMatched: false }),
       () => ({ ...enabledAccess, vercelPlatformConfirmed: false }),
+      () => ({ ...enabledAccess, productionRuntimeConfirmed: false }),
       () => ({ ...enabledAccess, hmacSecretConfigured: false }),
       () => {
         throw new Error("private access configuration detail");
@@ -271,19 +296,10 @@ test.describe("account-owned learning persistence PR B", () => {
     expect(clientCreations).toBe(0);
   });
 
-  test("staging activation requires mode, exact project ref, preview runtime, and a strong server secret", () => {
-    const matching = readAccountLearningStagingReadAccess({
-      VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
-      VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
-      VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
-      VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-        "release/account-read-only-staging-activation",
-      VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
-      NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
-      VERCEL_ENV: "preview",
-      VERCEL: "1",
-      VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
-    });
+  test("staging activation pins a production runtime, canonical repo, reviewed commit, project, and branch", () => {
+    const matching = readAccountLearningStagingReadAccess(
+      matchingActivationEnv
+    );
 
     expect(matching).toEqual({
       enabled: true,
@@ -291,92 +307,67 @@ test.describe("account-owned learning persistence PR B", () => {
       expectedProjectRefMatched: true,
       productionProjectRefExcluded: true,
       expectedBranchMatched: true,
+      expectedCommitMatched: true,
+      canonicalRepositoryMatched: true,
       vercelPlatformConfirmed: true,
+      productionRuntimeConfirmed: true,
       hmacSecretConfigured: true,
     });
 
     for (const env of [
       {},
       {
-        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
+        ...matchingActivationEnv,
         VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "wrong-project",
-        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
-        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-          "release/account-read-only-staging-activation",
-        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
-        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
-        VERCEL: "1",
-        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
       },
       {
-        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
-        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
-        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
-        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-          "release/account-read-only-staging-activation",
-        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
-        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
-        VERCEL: "1",
-        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
+        ...matchingActivationEnv,
+        VERCEL_ENV: undefined,
       },
       {
-        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
-        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
-        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
-        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-          "release/account-read-only-staging-activation",
-        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
-        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+        ...matchingActivationEnv,
         VERCEL_ENV: "production",
-        VERCEL: "1",
-        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
       },
       {
-        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
-        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
-        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
-        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-          "release/account-read-only-staging-activation",
+        ...matchingActivationEnv,
         VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: "too-short",
-        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
-        VERCEL_ENV: "preview",
-        VERCEL: "1",
-        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
       },
       {
-        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
-        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
-        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
-        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-          "release/account-read-only-staging-activation",
-        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
-        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
-        VERCEL_ENV: "preview",
-        VERCEL: "1",
+        ...matchingActivationEnv,
         VERCEL_GIT_COMMIT_REF: "feature/unapproved-preview",
       },
       {
-        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
-        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
-        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxstaging",
-        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-          "release/account-read-only-staging-activation",
-        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
-        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
-        VERCEL_ENV: "preview",
-        VERCEL: "1",
-        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
+        ...matchingActivationEnv,
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH: "main",
+        VERCEL_GIT_COMMIT_REF: "main",
       },
       {
-        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
-        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
-        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
-        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
-          "release/account-read-only-staging-activation",
-        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
-        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
-        VERCEL_ENV: "preview",
-        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
+        ...matchingActivationEnv,
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxstaging",
+      },
+      {
+        ...matchingActivationEnv,
+        VERCEL: undefined,
+      },
+      {
+        ...matchingActivationEnv,
+        NODE_ENV: "development",
+      },
+      {
+        ...matchingActivationEnv,
+        VERCEL_GIT_REPO_OWNER: "untrusted-fork",
+      },
+      {
+        ...matchingActivationEnv,
+        VERCEL_GIT_REPO_SLUG: "visual-lexicon-app-fork",
+      },
+      {
+        ...matchingActivationEnv,
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA: "2".repeat(40),
+      },
+      {
+        ...matchingActivationEnv,
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA: "not-a-commit-sha",
       },
     ]) {
       expect(readAccountLearningStagingReadAccess(env).enabled).toBe(false);
@@ -1008,6 +999,8 @@ test.describe("account-owned learning persistence PR B", () => {
 
     expect(adapterText).not.toMatch(/\.(insert|upsert|update|delete|rpc)\s*\(/);
     expect(serverText).not.toMatch(/\.(insert|upsert|delete|rpc)\s*\(/);
+    expect(serverText).not.toMatch(/\b(?:client|supabase)\.from\s*\(/);
+    expect(serverText).toContain('cookieWriteMode: "disabled"');
 
     for (const text of [serverText, adapterText]) {
       expect(text).not.toMatch(/localStorage|sessionStorage/);

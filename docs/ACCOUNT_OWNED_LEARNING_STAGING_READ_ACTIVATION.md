@@ -12,10 +12,16 @@ condition below is true on the same request:
 
 - `VLX_ACCOUNT_LEARNING_READ_MODE=staging_read_only`;
 - `VERCEL_ENV=preview` exactly;
-- the platform-provided `VERCEL=1` marker is present, preventing local
-  development from bypassing distributed Firewall checks;
+- the platform-provided `VERCEL=1` marker and exact `NODE_ENV=production` are
+  both present, so the Vercel Firewall SDK's development-mode allow behavior
+  cannot activate the route;
+- `VERCEL_GIT_REPO_OWNER=chachathecat` and
+  `VERCEL_GIT_REPO_SLUG=visual-lexicon-app` exactly;
 - `VERCEL_GIT_COMMIT_REF` exactly matches
   `VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH` and is not `main`;
+- `VERCEL_GIT_COMMIT_SHA` is a full 40-character SHA and exactly matches
+  `VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA`, pinning activation to one
+  reviewed commit;
 - `NEXT_PUBLIC_SUPABASE_URL` resolves to the exact project ref in
   `VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF`;
 - that ref differs from the required
@@ -48,14 +54,16 @@ update, or delete Visual Lexicon learning data.
 
 ## Isolated staging apply checklist
 
-1. Verify a dedicated Supabase staging project that contains no production
+1. Verify a dedicated Vercel staging project and dedicated Supabase staging
+   project whose IDs/refs differ from production and contain no production
    users or learning data.
 2. Apply `001_account_learning_evidence_up.sql` only after setting the database
    session marker `vlx.account_persistence_target=staging`.
 3. Scope the Supabase URL and publishable key to the approved staging Git
-   branch only.
+   branch only. Never copy the production URL or key.
 4. Scope the activation variables above to the same branch only; store the
-   HMAC value as a sensitive server variable.
+   HMAC value as a sensitive server variable and pin the expected commit SHA
+   to the exact reviewed deployment commit.
 5. Configure both Firewall rate-limit IDs before enabling read mode.
 6. Protect the preview deployment and use only synthetic permanent-user
    accounts and synthetic learning evidence.
@@ -66,11 +74,15 @@ update, or delete Visual Lexicon learning data.
 
 ## Kill switch and rollback
 
-The first kill switch is removal of
-`VLX_ACCOUNT_LEARNING_READ_MODE=staging_read_only`, which returns both routes to
-`503 ROUTE_DISABLED` without a deployment. The guarded down migration may then
-remove only the three migration-owned staging objects after exact ownership
-comments are verified.
+The immediate operational kill switch is to block the protected staging
+deployment or remove one named staging Firewall rule and verify that both
+routes fail closed with `503 RATE_LIMIT_UNAVAILABLE`. The durable kill switch
+is removal of `VLX_ACCOUNT_LEARNING_READ_MODE=staging_read_only` followed by a
+fresh Preview deployment, after which both routes must return
+`503 ROUTE_DISABLED`. Environment-variable changes must not be assumed to
+affect an already-built deployment without redeployment. The guarded down
+migration may then remove only the three migration-owned staging objects after
+exact ownership comments are verified.
 
 Do not run either SQL file against production. Do not promote this branch to
 production. Do not add an `apply` or `audit` route under this approval.
