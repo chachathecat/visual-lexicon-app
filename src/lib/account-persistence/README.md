@@ -1,12 +1,15 @@
 # Account Persistence Contracts
 
-This directory is pure TypeScript planning and contract code for future Visual
-Lexicon Track B account persistence.
+Most of this directory is pure TypeScript planning and contract code for future
+Visual Lexicon Track B account persistence. The owner-approved
+`supabase-staging` directory is the first isolated-staging, read-only provider
+edge; it remains disconnected from runtime routes and mutations.
 
-It does not implement real auth. It imports no provider SDK and makes no network
-calls. It has no runtime route or component integration, does not read
-`localStorage`, does not write browser storage, and does not provide production
-persistence.
+The planning core does not implement real auth or import provider SDKs. The
+staging adapter reuses the existing Supabase client type only at the provider
+edge and can make bounded reads when explicitly called by a future server
+boundary. There is still no runtime route or component integration, browser
+storage write, mutating account sync, or production persistence.
 
 Existing local/private beta storage remains the source of truth until real
 account persistence is implemented:
@@ -27,3 +30,6 @@ Files:
 - `merge-contracts.ts` creates preview-only merge plans and conflict categories.
 - `mock-adapter.ts` is a clearly labeled non-production in-memory adapter for
   contract tests. It is not production auth or persistence.
+- `supabase-staging/` contains guarded staging-only schema/RLS/rollback assets
+  and a bounded read-only provider adapter. Mutations and runtime wiring are
+  hard-disabled.
