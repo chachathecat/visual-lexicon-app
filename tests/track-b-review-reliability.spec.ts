@@ -937,8 +937,10 @@ test.describe("Track B review reliability browser flow", () => {
     await page.getByRole("button", { name: "Dissonance" }).click();
     await page.getByRole("button", { name: /I knew it/i }).click();
 
-    await expect(page.locator(".review-v2-storage-alert")).toContainText(
-      /conflicts/
+    const storageAlert = page.locator(".review-v2-storage-alert");
+    await expect(storageAlert).toContainText(/could not be saved safely/i);
+    expect(await storageAlert.innerText()).not.toMatch(
+      /conflict|local storage|vlx_|rollback|malformed|memory state/i
     );
     await expect(page.locator(".review-v2-feedback")).toHaveCount(0);
     expect(await snapshotPageReviewStores(page)).toEqual(beforeAnswer);
@@ -1387,7 +1389,10 @@ test.describe("Track B review reliability browser flow", () => {
 
     await answerCurrentCard(page);
 
-    await expect(liveRegion).toContainText("Memory state updated");
+    await expect(liveRegion).toContainText(/Strong recall|Correct|Not yet/);
+    expect(await liveRegion.innerText()).not.toMatch(
+      /\bbox\b|weak score|weakScore|memory state updated/i
+    );
     await expect(page.locator('[role="status"]')).toHaveCount(1);
   });
 

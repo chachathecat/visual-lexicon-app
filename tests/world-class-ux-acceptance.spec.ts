@@ -15,6 +15,8 @@ const learningStorageKeys = [
 
 const learnerFacingInternalTerms =
   /nextDueAt|weakScore|\bBox [0-5]\b|box 5|real local|local saved-word storage|stale review state|no review state/i;
+const reviewInternalTerms =
+  /\bBox\b|weak score|weakScore|real weak queue count|\bSRS\b|memory state updated|local storage|vlx_|rollback|malformed/i;
 
 async function seedDueWord(page: Page) {
   const now = new Date();
@@ -122,5 +124,29 @@ test.describe("World-class UX acceptance", () => {
 
     const bodyText = await page.locator("body").innerText();
     expect(bodyText).not.toMatch(learnerFacingInternalTerms);
+  });
+
+  test("keeps Review feedback and summary in learner language", async ({
+    page
+  }) => {
+    await seedDueWord(page);
+    await page.goto(`${baseUrl}/review/due?limit=1`, {
+      waitUntil: "networkidle"
+    });
+
+    await page.getByRole("button", { name: "Dissonance" }).click();
+    await page.getByRole("button", { name: "I knew it" }).click();
+
+    const feedback = page.locator(".review-v2-feedback");
+    await expect(feedback).toBeVisible();
+    await expect(feedback).toContainText("Memory status");
+    expect(await feedback.innerText()).not.toMatch(reviewInternalTerms);
+
+    await page.getByRole("button", { name: "View summary" }).click();
+
+    const summary = page.locator(".review-v2-summary");
+    await expect(summary).toBeVisible();
+    await expect(summary).toContainText("Needs practice");
+    expect(await summary.innerText()).not.toMatch(reviewInternalTerms);
   });
 });

@@ -1671,6 +1671,14 @@ select {
   box-shadow: var(--vlx-track-b-focus-shadow);
 }
 
+.review-v2-summary__header .review-v2-focus-anchor:focus {
+  margin-inline-start: -12px;
+  padding-inline-start: 12px;
+  border-radius: 2px;
+  outline: none;
+  box-shadow: inset 4px 0 0 var(--vlx-track-b-coral-deep);
+}
+
 .review-v2-confidence {
   text-align: center;
 }
@@ -1878,7 +1886,7 @@ select {
 
 .review-v2-summary-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: 8px;
 }
 
