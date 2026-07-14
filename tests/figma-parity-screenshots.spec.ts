@@ -324,11 +324,7 @@ async function capture(page: Page, name: string) {
   await waitForVisualAssets(page);
 
   if (name.includes("figma-parity-review-")) {
-    // Review Session v2 intentionally changes the review visual surface in this PR.
-    // Keep deterministic structural visual contracts here; regenerate pixel baselines
-    // in a dedicated owner-approved visual baseline PR.
     await expectReviewV2VisualContract(page, name);
-    return;
   }
 
   await expect(page).toHaveScreenshot(`${name}.png`, {

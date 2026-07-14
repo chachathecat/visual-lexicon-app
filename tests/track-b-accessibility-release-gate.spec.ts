@@ -183,6 +183,30 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
 }
 
+async function expectMinimumTargetSize(locator: Locator, minimumSize = 44) {
+  const targets = await locator.evaluateAll((elements) =>
+    elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+
+      return {
+        height: Math.round(rect.height),
+        label:
+          element.getAttribute("aria-label") ||
+          element.textContent?.replace(/\s+/g, " ").trim() ||
+          element.tagName,
+        width: Math.round(rect.width)
+      };
+    })
+  );
+
+  expect(targets.length).toBeGreaterThan(0);
+  expect(
+    targets.filter(
+      (target) => target.width < minimumSize || target.height < minimumSize
+    )
+  ).toEqual([]);
+}
+
 test.describe("Track B accessibility release gate", () => {
   test("keyboard-only dashboard to review feedback to summary flow", async ({
     page
@@ -356,6 +380,41 @@ test.describe("Track B accessibility release gate", () => {
     );
     await expect(page.locator('[role="status"]')).toHaveCount(1);
   });
+
+  for (const viewport of [
+    { name: "desktop", width: 1440, height: 900 },
+    { name: "mobile", width: 390, height: 844 }
+  ] as const) {
+    test(`Review v2 interactive targets remain at least 44 by 44 pixels on ${viewport.name}`, async ({
+      page
+    }) => {
+      await page.setViewportSize({
+        width: viewport.width,
+        height: viewport.height
+      });
+      await seedCoreLoopState(page);
+      await page.goto("/review?mode=word&slug=dissonance&limit=1", {
+        waitUntil: "networkidle"
+      });
+
+      await expectMinimumTargetSize(page.locator(".review-options button"));
+
+      await page.getByRole("button", { name: "Dissonance" }).click();
+      await expectMinimumTargetSize(
+        page.locator(".review-v2-confidence__buttons button")
+      );
+
+      await page.getByRole("button", { name: "I knew it" }).click();
+      await expectMinimumTargetSize(
+        page.getByRole("button", { name: "View summary" })
+      );
+
+      await page.getByRole("button", { name: "View summary" }).click();
+      await expectMinimumTargetSize(
+        page.locator(".review-v2-summary .track-b-action-row").locator("a, button")
+      );
+    });
+  }
 
   for (const route of seededRoutes) {
     test(`heading and landmark contract: ${route}`, async ({ page }) => {
