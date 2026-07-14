@@ -559,9 +559,7 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
     ).toHaveAttribute("href", "/dashboard");
 
     await page.goto("/pricing", { waitUntil: "networkidle" });
-    await expect(
-      page.getByText("No checkout is live.")
-    ).toBeVisible();
+    await expect(page.locator("body")).toContainText("no payment is taken");
     await expect(page.locator("body")).not.toContainText("Checkout");
     await expect(page.locator("body")).not.toContainText("Subscribe now");
   });

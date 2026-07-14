@@ -437,13 +437,13 @@ test.describe("Extension save review loop alignment", () => {
     expect(response?.status()).toBe(200);
     await page
       .getByRole("button", {
-        name: "Note Lite interest - billing not connected yet"
+        name: "I'm interested in Lite"
       })
       .click();
 
     await expect(
       page.getByText(
-        "Paid beta interest noted locally. Billing is not connected yet. This does not grant paid access."
+        "Interest saved on this device. No charge was made, and no paid features were unlocked."
       )
     ).toBeVisible();
 
@@ -518,11 +518,10 @@ test.describe("Extension save review loop alignment", () => {
 
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "networkidle" });
     await expect(page.locator("body")).toContainText(
-      "Public paid beta remains No-Go."
+      "Paid plans aren't available to purchase yet."
     );
-    await expect(page.locator("body")).toContainText(
-      "Private/manual beta requires owner approval."
-    );
+    await expect(page.locator("body")).toContainText("no payment is taken");
+    await expect(page.locator("body")).not.toContainText(/no-go|owner approval/i);
   });
 });
 

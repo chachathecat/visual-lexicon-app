@@ -930,7 +930,7 @@ test.describe("browser runtime analytics gate", () => {
 
     await page
       .getByRole("button", {
-        name: "Note Pro interest - billing not connected yet"
+        name: "I'm interested in Pro"
       })
       .click();
     await waitForDataLayerEvent(page, "vlx_pricing_interest");
@@ -958,7 +958,7 @@ test.describe("browser runtime analytics gate", () => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "networkidle" });
     await page
       .getByRole("button", {
-        name: "Note Pro interest - billing not connected yet"
+        name: "I'm interested in Pro"
       })
       .click();
     await waitForDataLayerEvent(page, "vlx_pricing_interest");

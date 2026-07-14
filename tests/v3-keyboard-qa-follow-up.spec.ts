@@ -355,7 +355,7 @@ test.describe("Track B v3 keyboard QA follow-up", () => {
     ).toHaveAttribute("href", "/dashboard");
 
     const liteInterest = page.getByRole("button", {
-      name: "Note Lite interest - billing not connected yet"
+      name: "I'm interested in Lite"
     });
 
     await expect(liteInterest).toBeEnabled();
@@ -396,7 +396,7 @@ test.describe("Track B v3 keyboard QA follow-up", () => {
     );
   });
 
-  test("pricing and paywall safety copy remains present and interest-only", async ({
+  test("pricing customer disclosure remains clear and interest-only", async ({
     page
   }) => {
     await seedKeyboardQaState(page);
@@ -405,17 +405,16 @@ test.describe("Track B v3 keyboard QA follow-up", () => {
     const pricingText = await page.locator("body").innerText();
 
     for (const phrase of [
-      "Billing is not connected yet",
-      "No checkout is live",
-      "This records beta interest only",
-      "This does not grant paid access",
-      "No real paid entitlement is active",
-      "Private/manual beta requires owner approval",
-      "Public paid beta remains No-Go"
+      "Early access preview",
+      "Paid plans aren't available to purchase yet",
+      "Interest buttons save your preference on this device only",
+      "no payment is taken",
+      "no paid features are unlocked"
     ]) {
       expect(pricingText, phrase).toContain(phrase);
     }
 
+    expect(pricingText).not.toMatch(/no-go|owner approval|entitlement|paywall/i);
     expect(pricingText).not.toMatch(/checkout enabled|billing connected/i);
     expect(pricingText).not.toMatch(/payment active|subscription active/i);
     expect(pricingText).not.toMatch(/paid access granted|paid entitlement granted/i);
