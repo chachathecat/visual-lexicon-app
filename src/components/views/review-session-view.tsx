@@ -172,7 +172,6 @@ type ReviewModeCopy = {
   emptyTitle: string;
   emptyBody: string;
   sourceLabel: string;
-  sourceDetail: string;
   modeLabel: string;
 };
 
@@ -185,7 +184,6 @@ const modeCopy = {
     emptyTitle: "No saved, due, or weak words yet",
     emptyBody: "Save a word or open a pack to begin a review.",
     sourceLabel: "Saved, due, and weak queues",
-    sourceDetail: "Built from vlx_review_state_v1 and vlx_saved_words_v1",
     modeLabel: "Saved Review"
   },
   saved: {
@@ -196,7 +194,6 @@ const modeCopy = {
     emptyTitle: "No saved words yet",
     emptyBody: "Save a word first, then return here to practice it.",
     sourceLabel: "Saved words",
-    sourceDetail: "Built from vlx_saved_words_v1",
     modeLabel: "Saved Review"
   },
   due: {
@@ -207,7 +204,6 @@ const modeCopy = {
     emptyTitle: "No due words right now",
     emptyBody: "You're caught up for now. Return to Today or save more words.",
     sourceLabel: "Due queue",
-    sourceDetail: "Due by nextDueAt from vlx_review_state_v1",
     modeLabel: "Due Review"
   },
   weak: {
@@ -218,7 +214,6 @@ const modeCopy = {
     emptyTitle: "No weak words right now",
     emptyBody: "Words appear here after a missed or uncertain answer.",
     sourceLabel: "Weak queue",
-    sourceDetail: "Selected from Weak mastery, weakScore, and misses",
     modeLabel: "Weak Review"
   },
   "weak-sprint": {
@@ -228,7 +223,6 @@ const modeCopy = {
     emptyTitle: "No weak words right now.",
     emptyBody: "Words appear here after a missed or uncertain answer.",
     sourceLabel: "Weak sprint",
-    sourceDetail: "Prioritized by weakScore, misses, and box",
     modeLabel: "Weak Sprint"
   },
   word: {
@@ -239,7 +233,6 @@ const modeCopy = {
     emptyTitle: "No focused word available",
     emptyBody: "This focused review link did not resolve to a pack word.",
     sourceLabel: "Focused word",
-    sourceDetail: "Static pack card with local SRS writeback",
     modeLabel: "Saved Review"
   },
   hub: {
@@ -249,7 +242,6 @@ const modeCopy = {
     emptyTitle: "No hub cards available",
     emptyBody: "This hub review link did not resolve to any pack cards.",
     sourceLabel: "Hub pack",
-    sourceDetail: "Static hub pack with local SRS writeback",
     modeLabel: "Saved Review"
   }
 } satisfies Record<ReviewMode, ReviewModeCopy>;
@@ -1234,7 +1226,8 @@ function getReviewPersistenceError(error: unknown): ReviewPersistenceError {
   if (error instanceof VlxReviewStorageError) {
     return {
       fatal: error.fatal,
-      message: error.message
+      message:
+        "Your answer could not be saved safely, so this card did not move forward. Retry when you're ready."
     };
   }
 
@@ -2071,7 +2064,7 @@ export function ReviewSessionView({
                   ref={feedbackActionRef}
                   type="button"
                 >
-                  {currentIndex + 1 >= questions.length ? "View summary" : "Next word"}
+                  {currentIndex + 1 >= questions.length ? "View summary" : "Next card"}
                   <ChevronRightIcon size={16} />
                 </button>
               </div>

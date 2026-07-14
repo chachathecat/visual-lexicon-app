@@ -16,7 +16,7 @@ const learningStorageKeys = [
 const learnerFacingInternalTerms =
   /nextDueAt|weakScore|\bBox [0-5]\b|box 5|real local|local saved-word storage|stale review state|no review state/i;
 const reviewInternalTerms =
-  /\bBox\b|weak score|weakScore|real weak queue count|\bSRS\b|memory state updated/i;
+  /\bBox\b|weak score|weakScore|real weak queue count|\bSRS\b|memory state updated|local storage|vlx_|rollback|malformed/i;
 
 async function seedDueWord(page: Page) {
   const now = new Date();

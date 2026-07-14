@@ -189,12 +189,12 @@ async function expectMinimumTargetSize(locator: Locator, minimumSize = 44) {
       const rect = element.getBoundingClientRect();
 
       return {
-        height: Math.round(rect.height),
+        height: rect.height,
         label:
           element.getAttribute("aria-label") ||
           element.textContent?.replace(/\s+/g, " ").trim() ||
           element.tagName,
-        width: Math.round(rect.width)
+        width: rect.width
       };
     })
   );
@@ -414,6 +414,18 @@ test.describe("Track B accessibility release gate", () => {
       await page.getByRole("button", { name: "View summary" }).click();
       await expectMinimumTargetSize(
         page.locator(".review-v2-summary .track-b-action-row").locator("a, button")
+      );
+
+      await seedCoreLoopState(page);
+      await page.goto(
+        "/review?mode=hub&hub=academic-vocabulary&limit=2",
+        { waitUntil: "networkidle" }
+      );
+      await page.locator(".review-options button").first().click();
+      await page.getByRole("button", { name: "I knew it" }).click();
+
+      await expectMinimumTargetSize(
+        page.getByRole("button", { name: "Next card" })
       );
     });
   }
