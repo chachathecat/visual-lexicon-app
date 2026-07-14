@@ -270,7 +270,7 @@ test.describe("Dashboard Figma source parity", () => {
     );
 
     const stateCards = page
-      .getByRole("region", { name: "Review evidence" })
+      .getByRole("region", { name: "Your memory progress" })
       .locator(".dashboard-v3-card");
     await expect(stateCards).toHaveCount(6);
 
@@ -295,6 +295,9 @@ test.describe("Dashboard Figma source parity", () => {
     ]) {
       expect(bodyText).not.toContain(forbidden);
     }
+    expect(bodyText).not.toMatch(
+      /nextDueAt|weakScore|box 5|real local|local saved-word storage/i
+    );
   });
 
   test("uses real visual thumbnails for the three due preview rows", async ({
