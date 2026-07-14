@@ -1,12 +1,14 @@
 # PostgreSQL 16 integration gate
 
 These fixtures exercise the migration in a disposable PostgreSQL 16 database.
-They emulate only the Supabase roles, `auth.users`, and `auth.uid()` boundary
-needed by this migration. They do not connect to Supabase or any live project.
+They emulate only the Supabase roles, `auth.users`, `auth.uid()`, and
+`auth.jwt()` boundary needed by this migration. They do not connect to Supabase
+or any live project.
 
 The gate proves:
 
 - two-account RLS isolation for both evidence tables;
+- permanent authenticated JWT access and anonymous authenticated JWT denial;
 - authenticated delete denial;
 - update immutability for review events;
 - `auth.users` owner deletion cascading to both evidence tables;

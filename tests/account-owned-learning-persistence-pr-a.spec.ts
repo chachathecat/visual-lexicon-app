@@ -130,7 +130,12 @@ test.describe("account-owned learning persistence PR A", () => {
     expect(sql).toContain("primary key (owner_account_id, event_id)");
     expect(sql).toContain("references auth.users (id)");
     expect(sql).toContain("force row level security");
-    expect(sql).toContain("using ((select auth.uid()) = owner_account_id)");
+    expect(sql.match(/\(select auth\.uid\(\)\) = owner_account_id/g)).toHaveLength(2);
+    expect(
+      sql.match(
+        /\(select \(auth\.jwt\(\) ->> 'is_anonymous'\)::boolean\) is false/g
+      )
+    ).toHaveLength(2);
     expect(sql).toContain("for select");
     expect(sql).toContain("to authenticated");
     expect(sql).toContain("revoke all on table public.account_saved_words from anon, authenticated");
@@ -501,10 +506,19 @@ test.describe("account-owned learning persistence PR A", () => {
     ).toLowerCase();
 
     expect(bootstrap).toContain("create role authenticated nologin");
+    expect(bootstrap).toContain("create function auth.jwt()");
     expect(bootstrap).toContain("create function auth.uid()");
     expect(assertions).toContain("set role authenticated");
+    expect(assertions).toContain('"is_anonymous":false');
+    expect(assertions).toContain('"is_anonymous":true');
     expect(assertions).toContain("two-account saved-word rls isolation failed");
     expect(assertions).toContain("two-account review-event rls isolation failed");
+    expect(assertions).toContain(
+      "anonymous authenticated jwt could read saved words"
+    );
+    expect(assertions).toContain(
+      "anonymous authenticated jwt could read review events"
+    );
     expect(assertions).toContain("authenticated saved-word delete was not denied");
     expect(assertions).toContain("authenticated review-event delete was not denied");
     expect(assertions).toContain("review-event update immutability was not enforced");
