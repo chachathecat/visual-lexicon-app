@@ -553,8 +553,8 @@ async function readDistributedRateLimit({
       rateLimitKey,
     });
 
-    if (result.error === "not-found") {
-      return "unavailable";
+    if (result.error) {
+      return result.error === "blocked" ? "limited" : "unavailable";
     }
 
     return result.rateLimited ? "limited" : "allowed";

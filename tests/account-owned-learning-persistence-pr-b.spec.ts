@@ -468,6 +468,19 @@ test.describe("account-owned learning persistence PR B", () => {
     });
     expect(checks).toBe(2);
     expect(summaryCalls).toBe(0);
+
+    const inconsistentBlockedResponse = await enabledHandler("digest", {
+      checkRateLimit: async () => ({
+        rateLimited: false,
+        error: "blocked",
+      }),
+    })(digestRequest());
+
+    expect(inconsistentBlockedResponse.status).toBe(429);
+    expect(await readJson(inconsistentBlockedResponse)).toEqual({
+      error: { code: "RATE_LIMITED" },
+    });
+    expect(inconsistentBlockedResponse.headers.get("retry-after")).toBe("60");
   });
 
   test("preview derives owner from getUser on the same client and returns only bounded redacted counts", async () => {
