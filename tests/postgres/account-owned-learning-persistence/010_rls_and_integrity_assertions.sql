@@ -125,6 +125,72 @@ from public.account_review_events
   \quit 1
 \endif
 
+set request.jwt.claims = '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b"}';
+
+select count(*) = 0 as missing_claim_saved_words_denied
+from public.account_saved_words
+\gset
+
+\if :missing_claim_saved_words_denied
+\else
+  \echo 'missing anonymous claim could read saved words'
+  \quit 1
+\endif
+
+select count(*) = 0 as missing_claim_review_events_denied
+from public.account_review_events
+\gset
+
+\if :missing_claim_review_events_denied
+\else
+  \echo 'missing anonymous claim could read review events'
+  \quit 1
+\endif
+
+set request.jwt.claims = '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":"false"}';
+
+select count(*) = 0 as string_false_saved_words_denied
+from public.account_saved_words
+\gset
+
+\if :string_false_saved_words_denied
+\else
+  \echo 'string false anonymous claim could read saved words'
+  \quit 1
+\endif
+
+select count(*) = 0 as string_false_review_events_denied
+from public.account_review_events
+\gset
+
+\if :string_false_review_events_denied
+\else
+  \echo 'string false anonymous claim could read review events'
+  \quit 1
+\endif
+
+set request.jwt.claims = '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":0}';
+
+select count(*) = 0 as numeric_zero_saved_words_denied
+from public.account_saved_words
+\gset
+
+\if :numeric_zero_saved_words_denied
+\else
+  \echo 'numeric zero anonymous claim could read saved words'
+  \quit 1
+\endif
+
+select count(*) = 0 as numeric_zero_review_events_denied
+from public.account_review_events
+\gset
+
+\if :numeric_zero_review_events_denied
+\else
+  \echo 'numeric zero anonymous claim could read review events'
+  \quit 1
+\endif
+
 set request.jwt.claims = '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":false}';
 
 \set ON_ERROR_STOP off

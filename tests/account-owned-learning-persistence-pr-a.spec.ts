@@ -133,9 +133,11 @@ test.describe("account-owned learning persistence PR A", () => {
     expect(sql.match(/\(select auth\.uid\(\)\) = owner_account_id/g)).toHaveLength(2);
     expect(
       sql.match(
-        /\(select \(auth\.jwt\(\) ->> 'is_anonymous'\)::boolean\) is false/g
+        /\(select auth\.jwt\(\) -> 'is_anonymous'\) = 'false'::jsonb/g
       )
     ).toHaveLength(2);
+    expect(sql).not.toContain("->> 'is_anonymous'");
+    expect(sql).not.toContain("'is_anonymous')::boolean");
     expect(sql).toContain("for select");
     expect(sql).toContain("to authenticated");
     expect(sql).toContain("revoke all on table public.account_saved_words from anon, authenticated");
@@ -511,6 +513,11 @@ test.describe("account-owned learning persistence PR A", () => {
     expect(assertions).toContain("set role authenticated");
     expect(assertions).toContain('"is_anonymous":false');
     expect(assertions).toContain('"is_anonymous":true');
+    expect(assertions).toContain('"is_anonymous":"false"');
+    expect(assertions).toContain('"is_anonymous":0');
+    expect(assertions).toContain(
+      '"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b"}'
+    );
     expect(assertions).toContain("two-account saved-word rls isolation failed");
     expect(assertions).toContain("two-account review-event rls isolation failed");
     expect(assertions).toContain(
@@ -518,6 +525,24 @@ test.describe("account-owned learning persistence PR A", () => {
     );
     expect(assertions).toContain(
       "anonymous authenticated jwt could read review events"
+    );
+    expect(assertions).toContain(
+      "missing anonymous claim could read saved words"
+    );
+    expect(assertions).toContain(
+      "missing anonymous claim could read review events"
+    );
+    expect(assertions).toContain(
+      "string false anonymous claim could read saved words"
+    );
+    expect(assertions).toContain(
+      "string false anonymous claim could read review events"
+    );
+    expect(assertions).toContain(
+      "numeric zero anonymous claim could read saved words"
+    );
+    expect(assertions).toContain(
+      "numeric zero anonymous claim could read review events"
     );
     expect(assertions).toContain("authenticated saved-word delete was not denied");
     expect(assertions).toContain("authenticated review-event delete was not denied");

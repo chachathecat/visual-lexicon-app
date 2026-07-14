@@ -8,7 +8,8 @@ or any live project.
 The gate proves:
 
 - two-account RLS isolation for both evidence tables;
-- permanent authenticated JWT access and anonymous authenticated JWT denial;
+- access only for an exact JSON boolean `is_anonymous: false` claim;
+- denial for boolean true, a missing claim, string `"false"`, and numeric `0`;
 - authenticated delete denial;
 - update immutability for review events;
 - `auth.users` owner deletion cascading to both evidence tables;
