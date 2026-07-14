@@ -1,54 +1,110 @@
-# Beta Launch Preparation for Visual Lexicon
+# Private No-Payment Pilot Preparation for Visual Lexicon
 
-This document summarises the testing and setup needed before the beta launch of the Visual Lexicon app. It records the QA performed, notes what was verified, and outlines outstanding tasks.
+This runbook records the remaining owner-controlled work required before a small private, no-payment pilot of the Visual Lexicon learning app. It does **not** authorize a public paid beta, payment collection, entitlement grants, or a production launch announcement.
 
-## 1. SRS loop verification
+## 1. Current scope and launch boundary
 
-| Step | Key/action | Result |
+The only launch state covered by this document is:
+
+- owner-controlled;
+- private/manual;
+- no payment;
+- local-browser learning state disclosed to participants;
+- reversible without changing auth, billing, payment, production data, or public paid-beta gates.
+
+Public paid beta remains **No-Go** until the repository's production blockers are separately completed and accepted, including account-owned persistence, server-side SRS sync, entitlement enforcement, billing/payment lifecycle, support/privacy/refund operations, production monitoring and rollback, accessibility/manual QA, trusted analytics, and final owner sign-off.
+
+## 2. SRS loop verification
+
+| Check | Current evidence | Pilot requirement |
 | --- | --- | --- |
-| Inspect SRS‑related local storage keys via the app | Keys defined in `src/lib/srs/types.ts` include `vlx_saved_words_v1`, `vlx_review_state_v1`, `vlx_review_events_v1` and `vlx_daily_stats_v1`【2†L3-L8】. | Verified in code. The localStorage keys exist as expected and will store saved words, review state, events, and daily stats. DevTools were not accessible in this environment to inspect runtime data, but the code clearly establishes these keys. |
-| Confirm keys populate and update during usage | When interacting with the SRS mission (e.g. saving and reviewing words), the application uses these keys to persist state. | Cannot be fully tested in this environment due to restricted developer tools, but the implementation implies these keys will be created and updated. |
+| Local storage contract | `src/lib/srs/types.ts` defines `vlx_saved_words_v1`, `vlx_review_state_v1`, `vlx_review_events_v1`, and `vlx_daily_stats_v1`. Existing automated route and regression suites exercise the local Save -> Review loop. | Run one final browser smoke test on the target preview/domain and retain timestamped evidence. |
+| Save behavior | `/save?slug=dissonance&source=word_page` is expected to create or preserve the saved-word and review-state entries without creating fake review events or daily stats on page load. | Clear local storage, save `dissonance`, and verify the two state keys contain the slug. |
+| Review behavior | Review answers are expected to append review events and update review state and daily stats. | Complete at least one correct and one wrong-answer path, then verify Due/Weak/Mastered remain evidence-derived. |
+| Persistence limitation | Current learning state is browser-local unless a separately approved account-persistence implementation exists. | Disclose this limitation to every pilot participant; do not represent the pilot as cross-device or durable account sync. |
 
-**Note:** When QA‑ing locally or in a browser that allows DevTools, confirm that entries appear in `localStorage` after saving a word and performing review sessions.
+## 3. Custom domain owner action
 
-## 2. Custom domain setup
+`app.visuallexicon.org` and its DNS status must be verified in the current Vercel and Cloudflare dashboards by the owner. A previously recorded Vercel candidate target was:
 
-We added the custom domain `app.visuallexicon.org` to the `visual-lexicon-app` project in Vercel. Vercel generated a CNAME record to be added at Cloudflare:
-
-| Record type | Name | Value | Proxy |
+| Record type | Name | Candidate value | Proxy |
 | --- | --- | --- | --- |
-| `CNAME` | `app` | `610f9ad7bff00c30.vercel-dns-o17.com.` | **Proxy disabled** |
+| `CNAME` | `app` | `610f9ad7bff00c30.vercel-dns-o17.com.` | Disabled |
 
-The domain currently shows an **invalid configuration** status because the DNS record has not been created. To complete this step:
+Do **not** apply this value solely because it appears in this repository. Confirm that Vercel still displays the same current target immediately before changing DNS.
 
-1. Log into Cloudflare and select the `visuallexicon.org` zone.
-2. Add a CNAME record with name `app` pointing to `610f9ad7bff00c30.vercel-dns-o17.com.` and disable the proxy (orange cloud). Save the record.
-3. Wait for DNS propagation and verify that Vercel reports a valid configuration.
+Required owner evidence:
 
-**Note:** The Cloudflare dashboard is guarded by a human-verification challenge that cannot be bypassed in this environment. A team member should complete the CAPTCHA and create the record. After DNS propagation, the app will be reachable at `https://app.visuallexicon.org`.
+- Vercel project and environment name;
+- current domain configuration status;
+- current Vercel-provided DNS target;
+- Cloudflare record before/after screenshot;
+- TLS/domain verification result;
+- rollback record or previous value;
+- QA timestamp and reviewer identity.
 
-## 3. Webflow call‑to‑action (CTA) update
+DNS, deployment settings, and production-domain changes remain owner actions and are not performed by this PR.
 
-The existing **Save/Review CTA** on the marketing site needs to link to the new app domain. Webflow should be updated in preview mode first:
+## 4. Webflow CTA pilot
 
-1. Log into Webflow and open the marketing site’s project.
-2. Enter the Designer and locate the CTA component.
-3. Change the link target from the old app URL (`visual-lexicon-app.vercel.app` or similar) to the new domain `https://app.visuallexicon.org`.
-4. Preview the site, check that the CTA opens the correct URL and that the published site still works in test mode.
-5. Capture a screenshot for reference.
+When changing an existing Webflow Save or Review CTA, replace only the host when necessary and **preserve the route path and query parameters**. Pointing a word CTA to the bare `https://app.visuallexicon.org` host loses the selected word context.
 
-After QA and DNS propagation, publish the Webflow update so the CTA goes live.
+Approved route templates:
 
-## 4. Beta readiness tasks and outstanding items
+```txt
+https://app.visuallexicon.org/save?slug={slug}&source=word_page
+https://app.visuallexicon.org/review?mode=word&slug={slug}&source=word_page
+https://app.visuallexicon.org/review?mode=hub&hub={hubSlug}&source=hub_page
+https://app.visuallexicon.org/packs/{packId}?source=hub_page
+```
 
-- [x] **Local storage keys validated:** confirmed via code that keys are defined and used for SRS persistence.
-- [x] **Custom domain added in Vercel:** `app.visuallexicon.org` is configured, CNAME provided.
-- [ ] **DNS record in Cloudflare:** waiting for team to add the CNAME record (requires passing CAPTCHA).
-- [ ] **Webflow CTA update:** to be done in preview and published once the DNS record is active.
+Initial pilot scope should stay limited to:
 
-## 5. Next steps
+- word page: `dissonance`;
+- hub page: `academic-vocabulary`;
+- existing supported pack IDs only.
 
-1. Complete DNS configuration on Cloudflare and verify Vercel shows a valid domain.
-2. Update the Webflow CTA and publish the site after DNS propagation.
-3. Perform final QA of the SRS loop on a local machine with DevTools to ensure state persists across sessions.
-4. Once these items are complete, merge this document into the repository and announce the beta launch.
+Owner workflow:
+
+1. Record each CTA's current href and capture a before screenshot.
+2. Apply the exact route-specific href in Webflow preview only.
+3. Verify the slug or hub ID matches the Track B app data.
+4. Click through Save, focused Review, hub Review, and pack routes.
+5. Capture the preview URL, after screenshot, timestamp, and reviewer identity.
+6. Record the rollback href before any owner publish decision.
+7. Publish only if the owner separately chooses to run the private no-payment pilot.
+
+A broad CMS-wide CTA update is out of scope until the pilot evidence passes.
+
+## 5. Readiness checklist
+
+- [x] App-side local Save -> Review route contract exists.
+- [x] Route-specific Webflow CTA templates are documented.
+- [x] Public paid beta remains explicitly No-Go.
+- [ ] Owner confirms the current Vercel DNS target.
+- [ ] Owner applies and verifies the Cloudflare DNS record.
+- [ ] Vercel reports valid domain/TLS configuration.
+- [ ] Owner records before/after Webflow CTA evidence.
+- [ ] App-side browser smoke QA passes on the target domain.
+- [ ] Local-browser-only persistence is disclosed to pilot participants.
+- [ ] Support, privacy, pause/rollback, and participant invitation wording are approved.
+- [ ] Owner records an explicit private no-payment pilot Go/No-Go decision.
+
+## 6. Go/No-Go language
+
+Passing this checklist may support only the following statement:
+
+> Visual Lexicon is ready for an owner-controlled private, no-payment pilot with browser-local learning state and documented rollback.
+
+It must not be used to claim:
+
+- public paid beta availability;
+- durable account or cross-device sync;
+- active billing, payment, subscription, or paid entitlement;
+- production analytics or monitoring readiness;
+- a broad public Webflow CTA rollout;
+- a public launch announcement.
+
+## 7. Next implementation priority
+
+After the private pilot runbook is accurate, the next product-critical vertical slice is account-owned learning persistence: authenticated ownership, safe local-to-account migration, server-backed saved/review evidence, cross-browser hydration, idempotency, and rollback. That work requires a separate, explicitly approved implementation PR and must not be inferred from this documentation change.
