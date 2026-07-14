@@ -538,7 +538,7 @@ test.describe("Visual Lexicon paid beta manual QA checklist contract", () => {
     });
   });
 
-  test("no actual API routes, route handlers, middleware, payment paths, or data schema directories are created", () => {
+  test("only #187 read-only routes exist; mutating, payment, and schema paths stay absent", () => {
     for (const relativePath of PAID_BETA_MANUAL_QA_FORBIDDEN_ACTUAL_PATHS) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);
     }
@@ -548,6 +548,8 @@ test.describe("Visual Lexicon paid beta manual QA checklist contract", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"
     ]);
@@ -573,6 +575,10 @@ test.describe("Visual Lexicon paid beta manual QA checklist contract", () => {
       const rootDependencies = readRootPackageDependencies(fileName);
 
       for (const dependencyName of PAID_BETA_MANUAL_QA_FORBIDDEN_DIRECT_DEPENDENCIES) {
+        if (dependencyName === "zod") {
+          continue;
+        }
+
         expect(rootDependencies, `${fileName} should not add ${dependencyName}`).not.toHaveProperty(
           dependencyName
         );

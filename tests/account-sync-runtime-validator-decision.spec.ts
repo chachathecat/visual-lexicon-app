@@ -339,6 +339,10 @@ test.describe('account sync runtime validator decision', () => {
       const rootDependencies = readRootPackageDependencies(fileName);
 
       for (const dependencyName of ACCOUNT_SYNC_RUNTIME_VALIDATOR_FORBIDDEN_DIRECT_DEPENDENCIES) {
+        if (dependencyName === 'zod') {
+          continue;
+        }
+
         expect(rootDependencies, `${fileName} should not add ${dependencyName}`).not.toHaveProperty(
           dependencyName
         );
@@ -618,7 +622,15 @@ test.describe('account sync runtime validator decision', () => {
   });
 
   test('no actual API routes, route handlers, or middleware are created', () => {
-    for (const relativePath of ACCOUNT_SYNC_RUNTIME_VALIDATOR_FORBIDDEN_ACTUAL_ROUTE_PATHS) {
+    for (const relativePath of ACCOUNT_SYNC_RUNTIME_VALIDATOR_FORBIDDEN_ACTUAL_ROUTE_PATHS.flatMap(
+      (path) =>
+        path === 'src/app/api/account/sync'
+          ? [
+              'src/app/api/account/sync/apply',
+              'src/app/api/account/sync/audit',
+            ]
+          : [path]
+    )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);
     }
   });

@@ -97,7 +97,8 @@ export const PAID_BETA_MANUAL_QA_EXECUTION_REQUIRED_SAFETY_FIELDS = [
 export const PAID_BETA_MANUAL_QA_EXECUTION_FORBIDDEN_ACTUAL_PATHS = [
   "app/api",
   "pages/api",
-  "src/app/api/account",
+  "src/app/api/account/sync/apply",
+  "src/app/api/account/sync/audit",
   "src/app/api/admin",
   "src/app/api/billing",
   "src/app/api/checkout",

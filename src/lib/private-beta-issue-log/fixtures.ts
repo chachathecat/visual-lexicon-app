@@ -212,7 +212,8 @@ export const PRIVATE_BETA_REQUIRED_SAFETY_FIELDS = [
 export const PRIVATE_BETA_FORBIDDEN_ACTUAL_PATHS = [
   "app/api",
   "pages/api",
-  "src/app/api/account",
+  "src/app/api/account/sync/apply",
+  "src/app/api/account/sync/audit",
   "src/app/api/admin",
   "src/app/api/billing",
   "src/app/api/checkout",

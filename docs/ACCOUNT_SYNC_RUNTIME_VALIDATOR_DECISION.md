@@ -9,6 +9,11 @@ routes, or create route handlers.
 
 Final verdict: `design_only`, not implementation-ready.
 
+Current repository note (2026-07-14): issue #187 later approved Zod 4.4.3 at
+the isolated read-only PR B validator edge. This historical PR #67 decision
+remains frozen evidence; the sync core stays validator-neutral and mutating
+routes remain unauthorized.
+
 ## Non-Goals
 
 This PR does not add Zod, Valibot, Yup, ArkType, AJV, Superstruct, or any other

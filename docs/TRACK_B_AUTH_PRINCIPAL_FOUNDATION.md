@@ -101,6 +101,11 @@ billing, payment SDKs, or production-data mutation.
   behavior is added.
 - No SRS algorithm, analytics contract, or local storage key contract changes.
 
+These bullets describe the scope of the historical auth-principal PR. The
+current repository also contains the later issue #187-approved Account Sync
+`preview` and `digest` route files. Those exports are hard default-disabled and
+read-only; no `apply` or `audit` route exists and no learning data is uploaded.
+
 ## Beta Status
 
 Public paid beta remains **No-Go**. This PR creates only the smallest

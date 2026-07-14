@@ -3,13 +3,15 @@
 Most of this directory is pure TypeScript planning and contract code for future
 Visual Lexicon Track B account persistence. The owner-approved
 `supabase-staging` directory is the first isolated-staging, read-only provider
-edge; it remains disconnected from runtime routes and mutations.
+edge. The owner-approved `read-only-preview-digest` boundary adds hard-disabled
+route files and an injectable authenticated read path; actual route exports
+remain disconnected from Supabase and mutations.
 
 The planning core does not implement real auth or import provider SDKs. The
 staging adapter reuses the existing Supabase client type only at the provider
 edge and can make bounded reads when explicitly called by a future server
-boundary. There is still no runtime route or component integration, browser
-storage write, mutating account sync, or production persistence.
+boundary. There is still no enabled runtime route, browser storage write,
+mutating account sync, or production persistence.
 
 Existing local/private beta storage remains the source of truth until real
 account persistence is implemented:
@@ -33,3 +35,7 @@ Files:
 - `supabase-staging/` contains guarded staging-only schema/RLS/rollback assets
   and a bounded read-only provider adapter. Mutations and runtime wiring are
   hard-disabled.
+- `read-only-preview-digest/` contains the Zod edge, permanent-session check,
+  bounded marker adapter, redacted response builder, and hard-disabled
+  `preview`/`digest` route factory approved by issue #187. `apply` and `audit`
+  remain absent.

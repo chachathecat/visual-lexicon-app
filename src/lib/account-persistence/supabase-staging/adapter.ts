@@ -264,6 +264,7 @@ async function readAuthenticatedOwnerAccountId(
 
     if (
       error ||
+      data.user?.is_anonymous !== false ||
       typeof accountId !== "string" ||
       !SUPABASE_ACCOUNT_ID_PATTERN.test(accountId)
     ) {

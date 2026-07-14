@@ -36,7 +36,8 @@ export const MANUAL_PAYMENT_FORBIDDEN_DIRECT_DEPENDENCIES = [
 export const MANUAL_PAYMENT_FORBIDDEN_ACTUAL_PATHS = [
   "app/api",
   "pages/api",
-  "src/app/api/account",
+  "src/app/api/account/sync/apply",
+  "src/app/api/account/sync/audit",
   "src/app/api/admin",
   "src/app/api/billing",
   "src/app/api/checkout",

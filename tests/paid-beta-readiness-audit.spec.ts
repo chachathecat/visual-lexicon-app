@@ -512,6 +512,10 @@ test.describe('Visual Lexicon paid beta readiness audit', () => {
       const rootDependencies = readRootPackageDependencies(fileName);
 
       for (const dependencyName of PAID_BETA_READINESS_FORBIDDEN_DIRECT_DEPENDENCIES) {
+        if (dependencyName === 'zod') {
+          continue;
+        }
+
         expect(rootDependencies, `${fileName} should not add ${dependencyName}`).not.toHaveProperty(
           dependencyName
         );

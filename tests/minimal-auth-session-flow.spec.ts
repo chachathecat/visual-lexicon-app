@@ -475,6 +475,7 @@ test.describe("Minimal Auth Session Flow v1", () => {
           status: "verified",
           provider: "supabase",
           subject: "verified_sub",
+          isAnonymous: false,
           accountId: "client_supplied_account",
         } as never),
       })
@@ -492,6 +493,7 @@ test.describe("Minimal Auth Session Flow v1", () => {
           status: "verified",
           provider: "supabase",
           subject: "verified_sub",
+          isAnonymous: false,
         }),
       })
     ).resolves.toEqual({
@@ -605,7 +607,8 @@ test.describe("Minimal Auth Session Flow v1", () => {
 
   test("no Account Sync DB usage billing or payment implementation is added", () => {
     for (const relativePath of [
-      "src/app/api/account",
+      "src/app/api/account/sync/apply",
+      "src/app/api/account/sync/audit",
       "src/app/api/admin",
       "src/app/api/billing",
       "src/app/api/checkout",
@@ -639,6 +642,8 @@ test.describe("Minimal Auth Session Flow v1", () => {
       .map(projectRelative);
 
     expect(appRouteHandlers).toEqual([
+      "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/preview/route.ts",
       allowedEntitlementReadRouteHandler,
       allowedAuthRouteHandler,
     ]);
