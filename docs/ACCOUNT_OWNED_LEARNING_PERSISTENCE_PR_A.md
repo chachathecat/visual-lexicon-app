@@ -14,9 +14,10 @@ PR implements only the schema/RLS and provider-adapter portion of that approval.
   owner cascade can still remove evidence when `auth.users` deletes an owner.
 - Both tables use forced RLS and owner-only `select` policies based on
   `auth.uid()`. Each policy additionally requires the Supabase JWT
-  `is_anonymous` claim to be exactly `false`, so anonymous sign-ins cannot read
-  account-owned learning evidence even though Supabase assigns them the
-  `authenticated` database role.
+  `is_anonymous` claim to be the exact JSON boolean `false`, so anonymous
+  sign-ins cannot read account-owned learning evidence even though Supabase
+  assigns them the `authenticated` database role. Missing claims and false-like
+  strings or numbers are denied without a text-to-boolean cast.
 - Unauthenticated (`anon` role) access and authenticated writes are explicitly
   revoked.
 - The Supabase adapter derives the owner with `auth.getUser()` from the same
@@ -47,10 +48,11 @@ PR implements only the schema/RLS and provider-adapter portion of that approval.
 Automated tests validate SQL invariants, authenticated-session owner derivation,
 bounded owner filtering, safe mapping, provider-error redaction, and
 malformed-row rejection. PostgreSQL 16 fixtures provide a disposable local/CI
-proof for RLS, permanent-versus-anonymous authenticated JWT handling, delete
-denial, update immutability, owner cascades, owned rollback, and collision
-failure. Dedicated Supabase staging evidence still requires two synthetic
-accounts; this PR does not claim it or touch a live database.
+proof for RLS, exact JSON boolean handling across false, true, missing,
+string-false, and numeric-zero JWT claims, delete denial, update immutability,
+owner cascades, owned rollback, and collision failure. Dedicated Supabase
+staging evidence still requires two synthetic accounts; this PR does not claim
+it or touch a live database.
 
 ## Rollback
 

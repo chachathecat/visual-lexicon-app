@@ -140,7 +140,7 @@ create policy account_saved_words_owner_select
   to authenticated
   using (
     (select auth.uid()) = owner_account_id
-    and (select (auth.jwt() ->> 'is_anonymous')::boolean) is false
+    and (select auth.jwt() -> 'is_anonymous') = 'false'::jsonb
   );
 
 create policy account_review_events_owner_select
@@ -149,7 +149,7 @@ create policy account_review_events_owner_select
   to authenticated
   using (
     (select auth.uid()) = owner_account_id
-    and (select (auth.jwt() ->> 'is_anonymous')::boolean) is false
+    and (select auth.jwt() -> 'is_anonymous') = 'false'::jsonb
   );
 
 revoke all on table public.account_saved_words from anon, authenticated;

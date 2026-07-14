@@ -10,7 +10,8 @@ Included:
   append-only `account_review_events`;
 - owner-inclusive primary keys and owner-first read indexes;
 - forced RLS with owner-only `select` policies that require both a matching
-  `auth.uid()` and a permanent-user JWT (`is_anonymous = false`);
+  `auth.uid()` and the exact JSON boolean `is_anonymous: false`; missing or
+  non-boolean false-like claims are denied without text-to-boolean casts;
 - explicit revocation of unauthenticated `anon`-role access and all
   authenticated writes;
 - a read-only, bounded Supabase adapter that derives the owner from
@@ -48,11 +49,11 @@ repository. These scripts were not applied to a live database by this PR.
 
 Disposable-database fixtures live under
 `tests/postgres/account-owned-learning-persistence`. They prove two-account RLS,
-permanent-user access, anonymous authenticated-JWT denial, authenticated delete
-denial, review-event update immutability, owner deletion cascades, an owned
-rollback, and collision failure. They emulate only the Supabase database roles
-and auth functions required for the migration and must never point at a live
-database.
+exact JSON-boolean permanent-user access, denial of true, missing, string-false,
+and numeric-zero anonymous claims, authenticated delete denial, review-event
+update immutability, owner deletion cascades, an owned rollback, and collision
+failure. They emulate only the Supabase database roles and auth functions
+required for the migration and must never point at a live database.
 
 ## Rollback
 
