@@ -384,6 +384,8 @@ test.describe("private beta dry-run smoke evidence", () => {
       (relativePath) => basename(relativePath) === "route.ts"
     );
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"
     ]);

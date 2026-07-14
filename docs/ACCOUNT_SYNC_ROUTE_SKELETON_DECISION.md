@@ -10,6 +10,11 @@ skeleton files may be proposed. It does not create the skeleton files.
 
 Final verdict: `design_only`, no route skeleton created.
 
+Current repository note (2026-07-14): issue #187 later approved only the
+hard-default-disabled, read-only `preview` and `digest` route files. This
+historical PR #69 decision remains frozen evidence; `apply` and `audit` are
+still absent and unauthorized.
+
 ## Non-Goals
 
 This PR does not add actual API routes, route handlers, middleware, runtime

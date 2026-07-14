@@ -3,9 +3,9 @@
 Track B app scaffold for `app.visuallexicon.org`.
 
 This repository is for the learning app only. It does not include Webflow
-publishing, Cloudflare Worker changes, payment, Account Sync, production data
-writes, or production deployment settings. Track B has a minimal Supabase Magic
-Link session flow for private unpaid dogfood only.
+publishing, Cloudflare Worker changes, payment, activated or mutating Account
+Sync, production data writes, or production deployment settings. Track B has a
+minimal Supabase Magic Link session flow for private unpaid dogfood only.
 
 ## Local Development
 
@@ -71,8 +71,10 @@ NEXT_PUBLIC_APP_URL=http://127.0.0.1:3006
 ```
 
 These values enable existing-user Supabase email Magic Link login only. Public
-signup remains disabled through `shouldCreateUser:false`, and no Account Sync,
-learning-data upload, entitlement, checkout, or billing behavior is added.
+signup remains disabled through `shouldCreateUser:false`. The repository has
+hard-default-disabled, read-only Account Sync `preview` and `digest` handlers,
+but no activation, learning-data upload, entitlement, checkout, or billing
+behavior.
 
 ## Verification
 
@@ -287,6 +289,7 @@ Production paid launch planning docs:
 - [Account Sync Implementation Spike Plan](docs/ACCOUNT_SYNC_IMPLEMENTATION_SPIKE_PLAN.md)
 - [Account Sync Route Skeleton Decision](docs/ACCOUNT_SYNC_ROUTE_SKELETON_DECISION.md)
 - [Account Sync Preview Digest Mock](docs/ACCOUNT_SYNC_PREVIEW_DIGEST_MOCK.md)
+- [Account-owned Learning Persistence PR B](docs/ACCOUNT_OWNED_LEARNING_PERSISTENCE_PR_B.md)
 - [Billing Entitlement Architecture](docs/BILLING_ENTITLEMENT_ARCHITECTURE.md)
 - [Billing Data Model Proposal](docs/BILLING_DATA_MODEL_PROPOSAL.md)
 - [Billing Provider Decision Record](docs/BILLING_PROVIDER_DECISION_RECORD.md)
@@ -350,10 +353,12 @@ Factory goal runway docs:
 - Local paid beta placeholder surfaces and upgrade interest capture
 - Extension bridge and multilingual alias search contracts
 
-Account Sync, real payment, Webflow publishing, Cloudflare production
-integration, production user data, and deployment settings are outside this
-repository scope. Minimal existing-user Supabase Magic Link auth is present only
-for private unpaid dogfood sessions.
+Activated or mutating Account Sync, real payment, Webflow publishing,
+Cloudflare production integration, production user data, and deployment
+settings are outside this repository scope. Only hard-default-disabled,
+read-only Account Sync `preview` and `digest` route handlers exist. Minimal
+existing-user Supabase Magic Link auth is present only for private unpaid
+dogfood sessions.
 
 ## Track B Monetization v1
 

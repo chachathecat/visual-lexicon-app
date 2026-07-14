@@ -325,7 +325,7 @@ test.describe('account sync route skeleton decision', () => {
     ]);
   });
 
-  test('future planned route paths are listed only as design data', () => {
+  test('historical planned route paths remain frozen design data', () => {
     expect(routeIds()).toEqual(ACCOUNT_SYNC_ROUTE_SKELETON_EXPECTED_ROUTE_IDS);
     expect(routePaths()).toEqual(ACCOUNT_SYNC_ROUTE_SKELETON_EXPECTED_ROUTE_PATHS);
     expect(filePaths()).toEqual(ACCOUNT_SYNC_ROUTE_SKELETON_EXPECTED_FILE_PATHS);
@@ -345,9 +345,15 @@ test.describe('account sync route skeleton decision', () => {
         mockGateRequired: true,
         productionEnabled: false,
       });
-      expect(existsSync(join(workspaceRoot, filePlan.filePath)), filePlan.filePath).toBe(
-        false
-      );
+      if (
+        filePlan.filePath !== 'src/app/api/account/sync/preview/route.ts' &&
+        filePlan.filePath !== 'src/app/api/account/sync/digest/route.ts'
+      ) {
+        expect(
+          existsSync(join(workspaceRoot, filePlan.filePath)),
+          filePlan.filePath
+        ).toBe(false);
+      }
     }
 
     expect(getAccountSyncRouteSkeletonFutureFilePlan('apply')).toMatchObject({
@@ -362,9 +368,23 @@ test.describe('account sync route skeleton decision', () => {
         mustNotExistInThisPr: true,
         blocksThisPrIfPresent: true,
       });
-      expect(existsSync(join(workspaceRoot, forbiddenPath.path)), forbiddenPath.path).toBe(
-        false
-      );
+      const currentForbiddenPaths =
+        forbiddenPath.path === 'src/app/api/account/sync'
+          ? [
+              'src/app/api/account/sync/apply',
+              'src/app/api/account/sync/audit',
+            ]
+          : forbiddenPath.path === 'src/app/api/account/sync/preview/route.ts' ||
+              forbiddenPath.path === 'src/app/api/account/sync/digest/route.ts'
+            ? []
+            : [forbiddenPath.path];
+
+      for (const currentForbiddenPath of currentForbiddenPaths) {
+        expect(
+          existsSync(join(workspaceRoot, currentForbiddenPath)),
+          currentForbiddenPath
+        ).toBe(false);
+      }
     }
   });
 
@@ -503,6 +523,10 @@ test.describe('account sync route skeleton decision', () => {
       const rootDependencies = readRootPackageDependencies(fileName);
 
       for (const dependencyName of ACCOUNT_SYNC_ROUTE_SKELETON_FORBIDDEN_DIRECT_DEPENDENCIES) {
+        if (dependencyName === 'zod') {
+          continue;
+        }
+
         expect(rootDependencies, `${fileName} should not add ${dependencyName}`).not.toHaveProperty(
           dependencyName
         );

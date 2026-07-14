@@ -28,8 +28,9 @@ Not included:
   data access;
 - no review-state, daily-stat, pack-progress, idempotency, audit, payment, or
   entitlement tables;
-- no Zod dependency yet. Request/query validation remains PR B scope at the
-  adapter edge; account-sync core remains validator-neutral.
+- PR B adds Zod 4.4.3 at the separate `read-only-preview-digest` adapter edge;
+  account-sync core remains validator-neutral. The actual preview/digest route
+  exports remain hard default-disabled.
 
 ## Staging guard
 

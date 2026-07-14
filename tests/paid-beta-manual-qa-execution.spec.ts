@@ -862,9 +862,15 @@ test.describe("paid beta manual QA safety guards", () => {
       (relativePath) => basename(relativePath) === "route.ts"
     );
 
-    expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
-      ...PAID_BETA_MANUAL_QA_EXECUTION_ALLOWED_ROUTE_HANDLERS
-    ]);
+    expect(
+      appRouteHandlers.map((path) => path.split("\\").join("/")).sort()
+    ).toEqual(
+      [
+        ...PAID_BETA_MANUAL_QA_EXECUTION_ALLOWED_ROUTE_HANDLERS,
+        "src/app/api/account/sync/digest/route.ts",
+        "src/app/api/account/sync/preview/route.ts"
+      ].sort()
+    );
   });
 
   test("no forbidden provider SDKs auth database payment or logging dependencies are added", () => {

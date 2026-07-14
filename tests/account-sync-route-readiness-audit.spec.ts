@@ -322,7 +322,15 @@ test.describe('account sync route readiness audit', () => {
   });
 
   test('no actual route file paths are created', () => {
-    for (const relativePath of ACCOUNT_SYNC_ROUTE_READINESS_FORBIDDEN_ACTUAL_ROUTE_PATHS) {
+    for (const relativePath of ACCOUNT_SYNC_ROUTE_READINESS_FORBIDDEN_ACTUAL_ROUTE_PATHS.flatMap(
+      (path) =>
+        path === 'src/app/api/account/sync'
+          ? [
+              'src/app/api/account/sync/apply',
+              'src/app/api/account/sync/audit',
+            ]
+          : [path]
+    )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);
     }
   });

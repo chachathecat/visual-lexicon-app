@@ -54,7 +54,7 @@ function createQueryClient({
         return {
           data: {
             user: authenticatedOwnerAccountId
-              ? { id: authenticatedOwnerAccountId }
+              ? { id: authenticatedOwnerAccountId, is_anonymous: false }
               : null,
           },
           error: authError,
@@ -472,6 +472,7 @@ test.describe("account-owned learning persistence PR A", () => {
     expect(adapterText).not.toContain("process.env");
     expect(adapterText).not.toContain("createVlxSupabaseServerClient");
     expect(adapterText).toContain("client.auth.getUser()");
+    expect(adapterText).toContain("data.user?.is_anonymous !== false");
     expect(adapterText).not.toContain("AccountPrincipal");
   });
 

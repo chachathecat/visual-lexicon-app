@@ -108,6 +108,7 @@ test.describe("account runtime session principal", () => {
         status: "verified",
         provider: "supabase",
         subject: "account_123",
+        isAnonymous: false,
       }),
     });
 
@@ -131,6 +132,7 @@ test.describe("account runtime session principal", () => {
             data: {
               claims: {
                 sub: "jwt_subject",
+                is_anonymous: false,
                 email: "private-email-value",
               },
             },
@@ -190,6 +192,16 @@ test.describe("account runtime session principal", () => {
     expect(mapSupabaseAuthErrorToPrincipalStatus({ code: "bad_jwt" })).toBe(
       "invalid"
     );
+
+    for (const isAnonymous of [undefined, "false", 0, null]) {
+      expectRejected(
+        createSupabasePrincipalEvidenceFromClaims({
+          sub: "permanent_user_claim_requires_exact_false",
+          is_anonymous: isAnonymous,
+        }),
+        "invalid"
+      );
+    }
   });
 
   test("expired is rejected when explicitly proven", () => {
@@ -222,6 +234,7 @@ test.describe("account runtime session principal", () => {
         status: "verified",
         provider: "supabase",
         subject: ["account_a", "account_b"],
+        isAnonymous: false,
       },
       "ambiguous"
     );
@@ -261,6 +274,7 @@ test.describe("account runtime session principal", () => {
           status: "verified",
           provider: "supabase",
           subject: "verified_jwt_sub",
+          isAnonymous: false,
           accountId: "client_supplied_account",
           email: "private-email-value",
         }) as unknown as AccountPrincipalEvidence,
@@ -282,6 +296,7 @@ test.describe("account runtime session principal", () => {
       status: "verified",
       provider: "supabase",
       subject: "verified_jwt_sub",
+      isAnonymous: false,
       access_token: "access-token-value",
       refresh_token: "refresh-token-value",
       rawJwt: "raw-jwt-value",
@@ -371,13 +386,15 @@ test.describe("account runtime session principal", () => {
     }
   });
 
-  test("only the approved auth and entitlement read route handlers and middleware are added", () => {
+  test("route inventory includes only auth, entitlement, and #187 hard-disabled read routes", () => {
     const appFiles = listFiles(join(workspaceRoot, "src", "app"));
     const routeHandlers = appFiles
       .filter((path) => /^route\.(ts|tsx|js|jsx)$/.test(basename(path)))
       .map(projectRelative);
 
     expect(routeHandlers).toEqual([
+      "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts",
     ]);
@@ -385,7 +402,8 @@ test.describe("account runtime session principal", () => {
     for (const relativePath of [
       "app/api",
       "pages/api",
-      "src/app/api/account",
+      "src/app/api/account/sync/apply",
+      "src/app/api/account/sync/audit",
       "src/app/api/admin",
       "src/app/api/billing",
       "src/app/api/checkout",
@@ -523,6 +541,9 @@ test.describe("account runtime session principal", () => {
     expect(doc).toContain("Minimal Auth Session Flow");
     expect(doc).toContain("No learning data is uploaded.");
     expect(doc).toContain("No Account Sync route exists.");
+    expect(doc).toContain(
+      "Those exports are hard default-disabled and read-only"
+    );
     expect(doc).toContain("No paid entitlement is granted.");
     expect(doc).toContain("Public paid beta remains **No-Go**.");
     expect(doc).toContain("feat/minimal-auth-session-flow-v1");

@@ -180,6 +180,9 @@ jobs:
       - name: Account persistence contract
         run: npm run test -- tests/account-owned-learning-persistence-pr-a.spec.ts --workers=1
 
+      - name: Read-only preview and digest contract
+        run: npm run test -- tests/account-owned-learning-persistence-pr-b.spec.ts --workers=1
+
       - name: Ensure PostgreSQL client
         run: |
           if ! command -v psql >/dev/null; then

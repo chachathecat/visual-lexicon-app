@@ -137,7 +137,8 @@ export const BETA_OPS_MODULE_FILES = [
 export const BETA_OPS_FORBIDDEN_ACTUAL_PATHS = [
   "app/api",
   "pages/api",
-  "src/app/api/account",
+  "src/app/api/account/sync/apply",
+  "src/app/api/account/sync/audit",
   "src/app/api/admin",
   "src/app/api/billing",
   "src/app/api/checkout",

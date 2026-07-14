@@ -684,7 +684,14 @@ test.describe('account sync db persistence decision', () => {
     for (const relativePath of [
       ...ACCOUNT_SYNC_DB_FORBIDDEN_ACTUAL_ROUTE_PATHS,
       ...ACCOUNT_SYNC_DB_FORBIDDEN_SCHEMA_AND_MIGRATION_PATHS,
-    ]) {
+    ].flatMap((path) =>
+      path === 'src/app/api/account/sync' || path === 'src/app/api/account'
+        ? [
+            'src/app/api/account/sync/apply',
+            'src/app/api/account/sync/audit',
+          ]
+        : [path]
+    )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);
     }
   });

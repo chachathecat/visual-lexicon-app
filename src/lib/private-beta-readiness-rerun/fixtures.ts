@@ -175,7 +175,8 @@ export const PRIVATE_BETA_READINESS_RERUN_REQUIRED_SAFETY_FIELDS = [
 export const PRIVATE_BETA_READINESS_RERUN_FORBIDDEN_ACTUAL_PATHS = [
   "app/api",
   "pages/api",
-  "src/app/api/account",
+  "src/app/api/account/sync/apply",
+  "src/app/api/account/sync/audit",
   "src/app/api/admin",
   "src/app/api/billing",
   "src/app/api/checkout",
@@ -270,4 +271,3 @@ export const PRIVATE_BETA_READINESS_RERUN_REQUIRED_VERDICT_FIXTURE =
 
 export const PRIVATE_BETA_READINESS_RERUN_NEXT_PR_SEQUENCE_FIXTURES =
   PRIVATE_BETA_READINESS_RERUN_NEXT_PR_SEQUENCE;
-

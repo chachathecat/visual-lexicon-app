@@ -140,6 +140,12 @@ export function createSupabasePrincipalEvidenceFromClaims(
     };
   }
 
+  if (isAnonymous !== false) {
+    return {
+      status: "invalid",
+    };
+  }
+
   return {
     status: "verified",
     provider: "supabase",
@@ -159,8 +165,10 @@ export function normalizeAccountPrincipalEvidence(
     return REJECTED_RESULTS.unsupported;
   }
 
-  if (evidence.isAnonymous === true) {
-    return REJECTED_RESULTS.anonymous;
+  if (evidence.isAnonymous !== false) {
+    return evidence.isAnonymous === true
+      ? REJECTED_RESULTS.anonymous
+      : REJECTED_RESULTS.invalid;
   }
 
   if (Array.isArray(evidence.subject)) {
