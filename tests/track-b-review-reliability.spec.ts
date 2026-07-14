@@ -1387,7 +1387,10 @@ test.describe("Track B review reliability browser flow", () => {
 
     await answerCurrentCard(page);
 
-    await expect(liveRegion).toContainText("Memory state updated");
+    await expect(liveRegion).toContainText(/Strong recall|Correct|Not yet/);
+    expect(await liveRegion.innerText()).not.toMatch(
+      /\bbox\b|weak score|weakScore|memory state updated/i
+    );
     await expect(page.locator('[role="status"]')).toHaveCount(1);
   });
 

@@ -244,11 +244,12 @@ test.describe('Review Session v3 Focus Mode', () => {
     const feedback = await answerCurrentCard(page, 'correct', 'I knew it');
 
     expect(feedback).toContain(
-      'You recalled it. This word moves closer to Mastered.',
+      'You recalled it. This memory is getting stronger.',
     );
-    expect(feedback).toMatch(/Learning - Box 1 - due in about 1 day/);
-    expect(feedback).toMatch(/mastery/i);
-    expect(feedback).toMatch(/next due/i);
+    expect(feedback).toMatch(/Learning · due in about 1 day/);
+    expect(feedback).toMatch(/memory status/i);
+    expect(feedback).toMatch(/review again/i);
+    expect(feedback).not.toMatch(/\bbox\b|weak score|weakScore/i);
 
     const events = await readLocalJson<Record<string, unknown>[]>(
       page,
@@ -313,9 +314,10 @@ test.describe('Review Session v3 Focus Mode', () => {
     const feedback = await answerCurrentCard(page, 'correct', 'I knew it');
 
     expect(feedback).toContain(
-      'This stays in Weak Words until the evidence improves.',
+      'This word will stay in your practice queue until recall feels stronger.',
     );
-    expect(feedback).toMatch(/Weak - Box 3 - due in about 7 days/);
+    expect(feedback).toMatch(/Needs more practice · due in about 7 days/);
+    expect(feedback).not.toMatch(/\bbox\b|weak score|weakScore/i);
 
     await viewSummary(page);
     await expect(page.getByTestId('review-weak-spotlight')).toBeVisible();
@@ -360,7 +362,7 @@ test.describe('Review Session v3 Focus Mode', () => {
     const correctFeedback = await answerCurrentCard(page, 'correct', 'I knew it');
 
     expect(correctFeedback).toContain(
-      'You recalled it. This word moves closer to Mastered.',
+      'You recalled it. This memory is getting stronger.',
     );
     await page.getByRole('button', { name: 'Next card' }).click();
 
@@ -378,11 +380,12 @@ test.describe('Review Session v3 Focus Mode', () => {
     await expect(summaryStats).toContainText('2');
     await expect(summaryStats).toContainText('Correct');
     await expect(summaryStats).toContainText('1');
-    await expect(summaryStats).toContainText('Wrong');
+    await expect(summaryStats).toContainText('Try again');
     await expect(summaryStats).toContainText('1');
     await expect(summaryStats).toContainText('Improved');
-    await expect(summaryStats).toContainText('moved closer to Mastered');
-    await expect(summaryStats).toContainText('Weak words');
+    await expect(summaryStats).toContainText('moved forward');
+    await expect(summaryStats).toContainText('Needs practice');
+    await expect(summaryStats).not.toContainText(/weak score|real weak|\bbox\b/i);
     await expect(page.locator('.review-v2-summary__header')).toContainText(
       'You rescued 2 words from forgetting.',
     );

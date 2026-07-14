@@ -356,8 +356,10 @@ test.describe("Track B accessibility release gate", () => {
     const liveRegion = page.getByTestId("review-live-region");
     await expect(liveRegion).toHaveAttribute("role", "status");
     await expect(liveRegion).toHaveAttribute("aria-live", "polite");
-    await expect(liveRegion).toContainText(/Correct.*Dissonance/i);
-    await expect(liveRegion).toContainText("Memory state updated");
+    await expect(liveRegion).toContainText(/Strong recall.*Dissonance/i);
+    expect(await liveRegion.innerText()).not.toMatch(
+      /\bbox\b|weak score|weakScore|memory state updated/i
+    );
     await expect(page.locator('[role="status"]')).toHaveCount(1);
 
     await seedCoreLoopState(page);
@@ -373,10 +375,10 @@ test.describe("Track B accessibility release gate", () => {
     await page.getByRole("button", { name: "I forgot" }).click();
 
     await expect(page.getByTestId("review-live-region")).toContainText(
-      /Wrong.*Dissonance/i
+      /Not yet.*Dissonance/i
     );
-    await expect(page.getByTestId("review-live-region")).toContainText(
-      "Memory state updated"
+    expect(await page.getByTestId("review-live-region").innerText()).not.toMatch(
+      /\bbox\b|weak score|weakScore|memory state updated/i
     );
     await expect(page.locator('[role="status"]')).toHaveCount(1);
   });

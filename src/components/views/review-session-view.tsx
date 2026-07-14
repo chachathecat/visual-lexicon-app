@@ -183,8 +183,7 @@ const modeCopy = {
     description:
       "One card, one question, one answer, confidence, feedback, next card, then summary.",
     emptyTitle: "No saved, due, or weak words yet",
-    emptyBody:
-      "Save a word or open a pack before starting review. The app is not inventing review work.",
+    emptyBody: "Save a word or open a pack to begin a review.",
     sourceLabel: "Saved, due, and weak queues",
     sourceDetail: "Built from vlx_review_state_v1 and vlx_saved_words_v1",
     modeLabel: "Saved Review"
@@ -193,10 +192,9 @@ const modeCopy = {
     eyebrow: "Saved Review",
     title: "Recall words from your saved library.",
     description:
-      "One saved card at a time. Confidence is required before memory state updates.",
+      "One saved card at a time. Choose an answer, then say how confident you felt.",
     emptyTitle: "No saved words yet",
-    emptyBody:
-      "Saved words appear here after a word is added to the local review loop.",
+    emptyBody: "Save a word first, then return here to practice it.",
     sourceLabel: "Saved words",
     sourceDetail: "Built from vlx_saved_words_v1",
     modeLabel: "Saved Review"
@@ -205,10 +203,9 @@ const modeCopy = {
     eyebrow: "Due Review",
     title: "Review the cards due now.",
     description:
-      "One due card at a time. Each answer records confidence and updates memory state.",
+      "One due card at a time. Choose an answer, then say how confident you felt.",
     emptyTitle: "No due words right now",
-    emptyBody:
-      "No due words were found in vlx_review_state_v1. Return to Today or save more words to keep the loop moving.",
+    emptyBody: "You're caught up for now. Return to Today or save more words.",
     sourceLabel: "Due queue",
     sourceDetail: "Due by nextDueAt from vlx_review_state_v1",
     modeLabel: "Due Review"
@@ -217,10 +214,9 @@ const modeCopy = {
     eyebrow: "Weak Review",
     title: "Repair fragile recall.",
     description:
-      "One weak card at a time, using real mistake evidence from memory state.",
+      "Practice one word at a time, starting with the ones that need the most attention.",
     emptyTitle: "No weak words right now",
-    emptyBody:
-      "Weak words appear after missed or fragile recall is stored locally. This page does not create fake weak work.",
+    emptyBody: "Words appear here after a missed or uncertain answer.",
     sourceLabel: "Weak queue",
     sourceDetail: "Selected from Weak mastery, weakScore, and misses",
     modeLabel: "Weak Review"
@@ -228,11 +224,9 @@ const modeCopy = {
   "weak-sprint": {
     eyebrow: "Weak Sprint",
     title: "A five-card sprint for fragile recall.",
-    description:
-      "One weak card at a time, limited to real local weak-word evidence.",
+    description: "Practice up to five words that need the most attention.",
     emptyTitle: "No weak words right now.",
-    emptyBody:
-      "Weak sprints appear after missed or fragile recall is stored locally.",
+    emptyBody: "Words appear here after a missed or uncertain answer.",
     sourceLabel: "Weak sprint",
     sourceDetail: "Prioritized by weakScore, misses, and box",
     modeLabel: "Weak Sprint"
@@ -241,7 +235,7 @@ const modeCopy = {
     eyebrow: "Focused Review",
     title: "Review one word in focus.",
     description:
-      "One focused card. Answer, mark confidence, and update memory state locally.",
+      "One focused card. Choose an answer, then say how confident you felt.",
     emptyTitle: "No focused word available",
     emptyBody: "This focused review link did not resolve to a pack word.",
     sourceLabel: "Focused word",
@@ -251,8 +245,7 @@ const modeCopy = {
   hub: {
     eyebrow: "Hub Review",
     title: "Review a vocabulary hub.",
-    description:
-      "One hub card at a time from static pack data with local memory-state writeback.",
+    description: "Practice one card at a time from this vocabulary group.",
     emptyTitle: "No hub cards available",
     emptyBody: "This hub review link did not resolve to any pack cards.",
     sourceLabel: "Hub pack",
@@ -265,12 +258,12 @@ const confidenceOptions = [
   {
     value: "knew",
     label: "I knew it",
-    detail: "Confident recall can improve the box when it is fast enough."
+    detail: "Confident recall can earn a longer gap before review."
   },
   {
     value: "guessed",
     label: "I guessed",
-    detail: "Guessed correct answers do not advance the box."
+    detail: "Uncertain answers stay close for another practice round."
   },
   {
     value: "forgot",
@@ -458,7 +451,7 @@ function getClue(question: ReviewQuestion) {
   return (
     question.definition ??
     question.memoryHook ??
-    "Use your saved memory state to recall this word."
+    "Use the clue to recall this word."
   );
 }
 
@@ -976,7 +969,7 @@ function getAnswerScheduleExplanation(answer: SessionAnswer) {
       ? `due ${formatDateLabel(answer.nextDueAt) ?? "soon"}`
       : "not scheduled");
 
-  return `${answer.masteryAfter} - Box ${answer.boxAfter} - ${dueTiming}`;
+  return `${formatLearnerMemoryStatus(answer.masteryAfter)} · ${dueTiming}`;
 }
 
 function getNextReviewMessage(nextDueAt?: string, word?: string) {
@@ -1009,20 +1002,20 @@ function formatWordCount(value: number) {
 
 function getSessionSummaryHeadline(summary: SessionSummary) {
   if (summary.reviewed === 0) {
-    return "No committed answers were saved.";
+    return "No answers were completed.";
   }
 
   return `You rescued ${formatWordCount(summary.reviewed)} from forgetting.`;
 }
 
 function getSessionSummaryEvidenceCopy(summary: SessionSummary) {
-  const closerCopy = `${formatWordCount(summary.movedForward)} moved closer to Mastered.`;
-  const weakCopy =
+  const progressCopy = `${formatWordCount(summary.movedForward)} moved closer to long-term memory.`;
+  const practiceCopy =
     summary.weakRemaining > 0
-      ? `${summary.weakRemaining} ${summary.weakRemaining === 1 ? "weak word needs" : "weak words need"} one more review soon.`
-      : "No weak words remain in the current weak queue.";
+      ? `${summary.weakRemaining} ${summary.weakRemaining === 1 ? "word needs" : "words need"} more practice soon.`
+      : "Nothing else needs extra practice right now.";
 
-  return `${closerCopy} ${weakCopy}`;
+  return `${progressCopy} ${practiceCopy}`;
 }
 
 function formatConfidence(confidence: VlxReviewConfidence) {
@@ -1037,8 +1030,34 @@ function formatConfidence(confidence: VlxReviewConfidence) {
   return "I forgot";
 }
 
-function formatPercent(value: number) {
-  return `${Math.round(value * 100)}%`;
+function formatLearnerMemoryStatus(mastery: VlxMasteryLabel) {
+  if (mastery === "Weak") {
+    return "Needs more practice";
+  }
+
+  if (mastery === "New") {
+    return "Just started";
+  }
+
+  if (mastery === "Strong") {
+    return "Getting stronger";
+  }
+
+  if (mastery === "Mastered") {
+    return "Remembered over time";
+  }
+
+  return "Learning";
+}
+
+function getAnswerProgressLabel(answer: SessionAnswer) {
+  if (answer.movedForward) {
+    return "Moved forward";
+  }
+
+  return answer.result === "wrong"
+    ? "Another try will help"
+    : "Kept in practice";
 }
 
 function getReviewFeedbackKind({
@@ -1067,23 +1086,23 @@ function getReviewFeedbackKind({
 
 function getFeedbackLabel(kind: ReviewFeedbackKind) {
   if (kind === "correct-fast") {
-    return "Correct fast";
+    return "Strong recall";
   }
 
   if (kind === "correct-slow") {
-    return "Correct slow";
+    return "Correct";
   }
 
   if (kind === "guessed") {
-    return "Guessed";
+    return "Correct — keep practicing";
   }
 
-  return "Wrong";
+  return "Not yet";
 }
 
 function getFeedbackTitle(kind: ReviewFeedbackKind) {
   if (kind === "correct-fast") {
-    return "You recalled it. This word moves closer to Mastered.";
+    return "You recalled it. This memory is getting stronger.";
   }
 
   if (kind === "correct-slow") {
@@ -1108,7 +1127,7 @@ function getFeedbackExplanation(
       : "This feedback uses only the existing static card data.";
 
   if (kind === "correct-fast") {
-    return `${hook} Fast confident recall can move the box forward and schedule a longer gap.`;
+    return `${hook} Fast, confident recall earned a longer gap before the next review.`;
   }
 
   if (kind === "correct-slow") {
@@ -1116,10 +1135,10 @@ function getFeedbackExplanation(
   }
 
   if (kind === "guessed") {
-    return `${hook} Guessed correct answers are recorded, but they do not inflate the SRS box.`;
+    return `${hook} Because the answer felt uncertain, this word will stay close for another practice round.`;
   }
 
-  return `${hook} Wrong answers increase weakness and bring the card back sooner.`;
+  return `${hook} A missed answer brings the word back sooner so you can try again.`;
 }
 
 function formatToken(value?: string) {
@@ -1204,11 +1223,11 @@ function getReviewAnswerLiveMessage(answer: SessionAnswer) {
     ? `Next due ${formatDateLabel(answer.nextDueAt) ?? "soon"}.`
     : "Next due was not scheduled.";
 
-  return `${result}. ${answer.word}. Memory state updated to ${answer.masteryAfter}. Box ${answer.boxBefore} to ${answer.boxAfter}. Weak score ${formatPercent(answer.weakScoreAfter)}. ${nextDue}`;
+  return `${result}. ${answer.word}. ${formatLearnerMemoryStatus(answer.masteryAfter)}. ${getAnswerProgressLabel(answer)}. ${nextDue}`;
 }
 
 function getReviewSummaryLiveMessage(summary: SessionSummary) {
-  return `Session complete. ${summary.reviewed} reviewed. ${summary.correct} correct. ${summary.wrong} wrong. ${summary.weakRemaining} weak words remain.`;
+  return `Session complete. ${summary.reviewed} reviewed. ${summary.correct} correct. ${summary.wrong} need another look. ${summary.weakRemaining} ${summary.weakRemaining === 1 ? "word needs" : "words need"} more practice.`;
 }
 
 function getReviewPersistenceError(error: unknown): ReviewPersistenceError {
@@ -1222,7 +1241,7 @@ function getReviewPersistenceError(error: unknown): ReviewPersistenceError {
   return {
     fatal: false,
     message:
-      "Memory state could not be saved. Your card did not advance; retry saving this answer."
+      "Your answer could not be saved, so this card did not move forward. Try again."
   };
 }
 
@@ -1304,7 +1323,7 @@ export function ReviewSessionView({
     useState<SummaryContinuePack | null>(null);
   const [queueLabel, setQueueLabel] = useState(copy.sourceLabel);
   const [liveMessage, setLiveMessage] = useState(
-    "Loading review state from local storage."
+    "Loading your review."
   );
   const [focusTarget, setFocusTarget] = useState<
     | "first-option"
@@ -1785,8 +1804,8 @@ export function ReviewSessionView({
 
         {status === "loading" ? (
           <section className="review-v2-empty" aria-busy="true">
-            <h2>Loading review state</h2>
-            <p>Reading saved words and memory state from local storage.</p>
+            <h2>Loading your review</h2>
+            <p>Getting your saved words and practice progress ready.</p>
           </section>
         ) : null}
 
@@ -1902,7 +1921,7 @@ export function ReviewSessionView({
                       </h3>
                       <p>
                         {currentQuestion.definition ??
-                          "This answer updated the local memory state."}
+                          "Your answer was saved for the next review."}
                       </p>
                     </div>
                   </div>
@@ -1945,7 +1964,7 @@ export function ReviewSessionView({
                   How did that recall feel?
                 </h3>
                 <p>
-                  Choose one before this answer is saved to memory state.
+                  Choose one so we can plan when this word should return.
                 </p>
                 <div className="review-v2-confidence__buttons">
                   {confidenceOptions.map((option) => (
@@ -1999,14 +2018,16 @@ export function ReviewSessionView({
                   <p>{currentAnswer.explanation}</p>
                   {hasWeakEvidence(currentAnswer) ? (
                     <p className="review-v2-feedback__weak-note">
-                      This stays in Weak Words until the evidence improves.
+                      This word will stay in your practice queue until recall
+                      feels stronger.
                     </p>
                   ) : null}
                   <p className="review-v2-feedback__schedule">
                     {getAnswerScheduleExplanation(currentAnswer)}
                   </p>
                   <p className="sr-only">
-                    Memory state updated from this answer and confidence.
+                    Your practice schedule was updated from this answer and
+                    confidence.
                   </p>
                   <dl className="review-v2-feedback__state">
                     <div>
@@ -2018,17 +2039,17 @@ export function ReviewSessionView({
                       <dd>{formatConfidence(currentAnswer.confidence)}</dd>
                     </div>
                     <div>
-                      <dt>Box</dt>
+                      <dt>Progress</dt>
+                      <dd>{getAnswerProgressLabel(currentAnswer)}</dd>
+                    </div>
+                    <div>
+                      <dt>Memory status</dt>
                       <dd>
-                        {currentAnswer.boxBefore} to {currentAnswer.boxAfter}
+                        {formatLearnerMemoryStatus(currentAnswer.masteryAfter)}
                       </dd>
                     </div>
                     <div>
-                      <dt>Mastery</dt>
-                      <dd>{currentAnswer.masteryAfter}</dd>
-                    </div>
-                    <div>
-                      <dt>Next due</dt>
+                      <dt>Review again</dt>
                       <dd>
                         {formatDueTiming(currentAnswer.nextDueAt) ??
                           (currentAnswer.nextDueAt
@@ -2083,37 +2104,37 @@ export function ReviewSessionView({
                 data-testid="review-summary-stats"
               >
                 <MetricPill
-                  detail="answers committed"
+                  detail="completed this session"
                   label="Reviewed"
                   value={summary.reviewed}
                 />
                 <MetricPill
-                  detail="answers marked correct"
+                  detail="remembered correctly"
                   label="Correct"
                   tone="strong"
                   value={summary.correct}
                 />
                 <MetricPill
-                  detail="answers marked wrong"
-                  label="Wrong"
+                  detail="needs another look"
+                  label="Try again"
                   tone="weak"
                   value={summary.wrong}
                 />
                 <MetricPill
-                  detail="moved closer to Mastered"
+                  detail="moved forward"
                   label="Improved"
                   tone="learning"
                   value={summary.movedForward}
                 />
                 <MetricPill
-                  detail="real weak queue count"
-                  label="Weak words"
+                  detail="in your practice queue"
+                  label="Needs practice"
                   tone="weak"
                   value={summary.weakRemaining}
                 />
                 <MetricPill
-                  detail="still needs review evidence"
-                  label="Still weak"
+                  detail="needs another session"
+                  label="Review again"
                   tone="weak"
                   value={summary.stillWeak}
                 />
@@ -2124,16 +2145,15 @@ export function ReviewSessionView({
                   className="review-v2-weak-spotlight"
                   data-testid="review-weak-spotlight"
                 >
-                  <p className="track-b-eyebrow">Weak spotlight</p>
+                  <p className="track-b-eyebrow">Practice next</p>
                   <h4>{summary.weakSpotlight.word}</h4>
                   <p>
                     {summary.weakSpotlight.result === "wrong"
-                      ? "Missed in this session."
-                      : "Still weak after this review."}{" "}
-                    Weak score {formatPercent(summary.weakSpotlight.weakScore)}.
+                      ? "This one was missed today."
+                      : "You recalled it, but another round will help."}{" "}
                     {summary.weakSpotlight.nextDueAt
-                      ? ` ${formatDueTiming(summary.weakSpotlight.nextDueAt) ?? "Due soon"}.`
-                      : ""}
+                      ? `We'll bring it back ${(formatDueTiming(summary.weakSpotlight.nextDueAt) ?? "due soon").replace(/^due /, "")}.`
+                      : "It will stay in your practice queue."}
                   </p>
                 </aside>
               ) : null}

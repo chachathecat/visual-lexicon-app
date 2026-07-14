@@ -1671,6 +1671,14 @@ select {
   box-shadow: var(--vlx-track-b-focus-shadow);
 }
 
+.review-v2-summary__header .review-v2-focus-anchor:focus {
+  margin-inline-start: -12px;
+  padding-inline-start: 12px;
+  border-radius: 2px;
+  outline: none;
+  box-shadow: inset 4px 0 0 var(--vlx-track-b-coral-deep);
+}
+
 .review-v2-confidence {
   text-align: center;
 }
@@ -2378,6 +2386,19 @@ select {
   border-color: var(--vlx-track-b-accent);
   background: var(--vlx-track-b-accent);
   color: var(--vlx-track-b-surface);
+}
+
+.track-b-nav-link--system {
+  color: #7a6b5d;
+  cursor: default;
+  pointer-events: none;
+}
+
+.track-b-nav-list__separator {
+  width: 1px;
+  height: 16px;
+  margin: 0 10px;
+  background: rgba(44, 24, 16, 0.12);
 }
 
 .track-b-nav-link__label {
@@ -4346,7 +4367,7 @@ select {
 
 .saved-v2-status-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--vlx-track-b-space-sm);
 }
 
@@ -5307,6 +5328,7 @@ select {
     --vlx-track-b-bottom-nav-reserved: calc(
       64px + env(safe-area-inset-bottom, 0px)
     );
+    padding-bottom: var(--vlx-track-b-bottom-nav-reserved);
   }
 
   .track-b-shell__desktop-nav,
@@ -5478,7 +5500,7 @@ select {
   .dashboard-v3-mission {
     align-content: start;
     gap: 16px;
-    min-height: 0;
+    min-height: calc(100vh - 88px);
     padding: 20px;
   }
 
@@ -5492,7 +5514,7 @@ select {
   }
 
   .dashboard-v3-mission__stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .dashboard-v3-mission__copy {
@@ -5517,13 +5539,7 @@ select {
   }
 
   .dashboard-v3-mission__stats span {
-    min-height: 72px;
-    padding: 12px;
-  }
-
-  .dashboard-v3-mission__stats span:last-child strong {
-    font-size: 1.15rem;
-    white-space: nowrap;
+    min-height: 64px;
   }
 
   .dashboard-v3-primary-cta {
@@ -5679,12 +5695,9 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .saved-v2-status-grid,
   .saved-v2-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .saved-v2-status-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .dashboard-v2-word-card {

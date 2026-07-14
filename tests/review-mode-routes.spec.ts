@@ -613,7 +613,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
       page.getByRole('heading', { name: 'How did that recall feel?' }),
     ).toBeVisible();
     await expect(page.locator('body')).toContainText(
-      'One saved card at a time. Confidence is required before memory state updates.',
+      'One saved card at a time. Choose an answer, then say how confident you felt.',
     );
     await expect(page.locator('.track-b-page-header__aside')).toHaveCount(0);
     await expect(page.getByRole('button', { name: /I knew it/i })).toBeVisible();
@@ -631,7 +631,7 @@ test.describe('Visual Lexicon review route mode contract', () => {
     await page.getByRole('button', { name: /I guessed/i }).click();
     await expect(page.locator('.review-feedback')).toBeVisible();
     await expect(page.locator('.review-feedback')).toContainText(
-      'Memory state updated from this answer and confidence.',
+      'Your practice schedule was updated from this answer and confidence.',
     );
 
     const event = await expectLastReviewEvent(page);
@@ -725,11 +725,11 @@ test.describe('Visual Lexicon review route mode contract', () => {
     });
 
     await answerCurrentCard(page, 'correct', /I knew it/i);
-    await expect(page.locator('.review-feedback')).toContainText(/Correct/);
+    await expect(page.locator('.review-feedback')).toContainText(/Strong recall/);
     await page.getByRole('button', { name: 'Next card' }).click();
 
     await answerCurrentCard(page, 'wrong', /I forgot/i);
-    await expect(page.locator('.review-feedback')).toContainText('Wrong');
+    await expect(page.locator('.review-feedback')).toContainText('Not yet');
 
     const events = await readLocalJson<Record<string, unknown>[]>(
       page,
@@ -759,9 +759,10 @@ test.describe('Visual Lexicon review route mode contract', () => {
     await expect(summaryStats).toContainText('2');
     await expect(summaryStats).toContainText('Correct');
     await expect(summaryStats).toContainText('1');
-    await expect(summaryStats).toContainText('Wrong');
+    await expect(summaryStats).toContainText('Try again');
     await expect(summaryStats).toContainText('Improved');
-    await expect(summaryStats).toContainText('Still weak');
+    await expect(summaryStats).toContainText('Review again');
+    await expect(summaryStats).not.toContainText(/weak score|real weak|\bbox\b/i);
     await expect(page.locator('.review-v2-summary__header')).toContainText(
       /Obfuscate is next due|Next review is due/,
     );
