@@ -92,6 +92,11 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
         run: npm run test -- tests/world-class-ux-acceptance.spec.ts --workers=1
 
+      - name: UX-E automated evidence proxy
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
+        run: npm run test -- tests/ux-e-automated-evidence.spec.ts --workers=1
+
       - name: Track B accessibility release gate
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
@@ -238,5 +243,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: visual-playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
           if-no-files-found: ignore
