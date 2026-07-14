@@ -99,6 +99,8 @@ export type VlxAccountLearningDigestResponse = {
 
 export type VlxAccountLearningReadErrorCode =
   | "ROUTE_DISABLED"
+  | "RATE_LIMITED"
+  | "RATE_LIMIT_UNAVAILABLE"
   | "MALFORMED_REQUEST"
   | "REQUEST_TOO_LARGE"
   | "UNSUPPORTED_MEDIA_TYPE"

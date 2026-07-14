@@ -5,13 +5,13 @@ It contains Zod validation, authoritative Supabase session verification, a
 bounded marker-only Supabase adapter, redacted response assembly, and an
 injectable route handler for `preview` and `digest`.
 
-The actual Next.js route exports are hard default-disabled. Environment values
-cannot enable them: the factory defaults to a constant disabled access policy.
-`readAccountLearningStagingReadAccess()` documents and tests a future
-activation gate that requires both `staging_read_only` mode and an expected
-Supabase project ref matching `NEXT_PUBLIC_SUPABASE_URL`, plus exact
-`VERCEL_ENV=preview`; wiring that policy to the route exports requires another
-reviewed code change.
+The actual Next.js route exports are hard default-disabled and now use the
+owner-approved staging activation policy. Reads require exact
+`staging_read_only` mode, an expected Supabase project ref matching
+`NEXT_PUBLIC_SUPABASE_URL`, exact `VERCEL_ENV=preview`, an exact non-main Git
+branch match, an explicit production-project-ref exclusion, a 32-byte-minimum
+server HMAC secret, the platform-provided `VERCEL=1` marker, and two configured
+Vercel Firewall rate limits. Any missing or unavailable control fails closed.
 
 ## Request boundary
 
@@ -65,6 +65,15 @@ Success and error responses are `private, no-store`, vary on `Cookie`, use
 `nosniff`, and are bounded. Every success states that server/browser mutation
 and paid-entitlement grants are false.
 
+## Distributed rate limits
+
+The handler checks a HMAC-derived IP key before request processing and a
+separate HMAC-derived owner key after authoritative authentication but before
+Supabase evidence reads. It uses Vercel Firewall IDs
+`vlx-account-learning-read-ip-v1` and
+`vlx-account-learning-read-owner-v1`. Missing rules, missing trusted client IP,
+or provider errors return a redacted 503; reached limits return a redacted 429.
+
 ## Hard stops
 
 - `apply` is hard-disabled and has no route file.
@@ -72,4 +81,5 @@ and paid-entitlement grants are false.
 - There are no insert, upsert, update, delete, or RPC adapter methods.
 - There is no browser storage read or write.
 - There is no billing, checkout, subscription, payment, or entitlement path.
-- No staging or production database was contacted or changed by this work.
+- Source wiring alone does not contact or change a staging or production
+  database.

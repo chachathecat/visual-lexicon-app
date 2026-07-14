@@ -57,9 +57,11 @@ const forbiddenDependencyFragments = [
 const approvedRuntimeDependencies = [
   "@supabase/ssr",
   "@supabase/supabase-js",
+  "@vercel/firewall",
   "next",
   "react",
-  "react-dom"
+  "react-dom",
+  "zod"
 ] as const;
 
 const forbiddenPaidAccessClaims =

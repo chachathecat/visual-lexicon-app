@@ -99,9 +99,12 @@ Every success and error response includes `Cache-Control: private, no-store`,
 
 ## Activation and next gate
 
-Activation is not an environment-only operation in this PR. It requires a new
-reviewed change to wire the dual staging guard into the actual route exports,
-plus a dedicated cursor HMAC secret, synthetic accounts, and isolated-staging
-evidence, plus distributed account/IP read throttling. Mutating PR C remains
-unauthorized until a separate owner approval, kill switch,
-idempotency, rollback, monitoring, and manual QA gates are complete.
+This document records the historical PR B state. On 2026-07-14 the owner later
+approved a separate dedicated-staging, read-only activation gate. The follow-up
+source change wires the actual exports only through exact preview, project-ref,
+non-main branch, strong-HMAC, and distributed IP/owner Firewall controls. Live
+staging application and synthetic two-account evidence remain external
+execution steps and must not be claimed until verified.
+
+Mutating PR C remains unauthorized until a separate owner approval, kill
+switch, idempotency, rollback, monitoring, and manual QA gates are complete.

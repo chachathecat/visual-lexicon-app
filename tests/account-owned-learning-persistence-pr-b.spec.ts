@@ -13,6 +13,7 @@ import {
   createAccountLearningReadOnlyRouteHandler,
   readAccountLearningStagingReadAccess,
   readAuthenticatedPermanentOwner,
+  type VlxAccountLearningReadDependencies,
 } from "../src/lib/account-persistence/read-only-preview-digest/server";
 import {
   readSupabaseAccountLearningSummary,
@@ -32,6 +33,10 @@ const enabledAccess = {
   enabled: true,
   target: "isolated_staging",
   expectedProjectRefMatched: true,
+  productionProjectRefExcluded: true,
+  expectedBranchMatched: true,
+  vercelPlatformConfirmed: true,
+  hmacSecretConfigured: true,
 } as const;
 
 const validPreviewBody = {
@@ -165,6 +170,7 @@ function previewRequest(body: unknown = validPreviewBody, headers = {}) {
     headers: {
       "Content-Type": "application/json",
       Origin: requestOrigin,
+      "x-forwarded-for": "203.0.113.10",
       ...headers,
     },
     body: typeof body === "string" ? body : JSON.stringify(body),
@@ -172,7 +178,9 @@ function previewRequest(body: unknown = validPreviewBody, headers = {}) {
 }
 
 function digestRequest(search = "") {
-  return new Request(`${requestOrigin}/api/account/sync/digest${search}`);
+  return new Request(`${requestOrigin}/api/account/sync/digest${search}`, {
+    headers: { "x-forwarded-for": "203.0.113.10" },
+  });
 }
 
 async function readJson(response: Response) {
@@ -186,6 +194,7 @@ function enabledHandler(
     readSummary?: typeof readSupabaseAccountLearningSummary;
     createClient?: () => Promise<SupabaseClient | null>;
     cursorHmacSecret?: string | null;
+    checkRateLimit?: VlxAccountLearningReadDependencies["checkRateLimit"];
   } = {}
 ) {
   const { client = makeClient().client } = options;
@@ -194,6 +203,8 @@ function enabledHandler(
     readAccess: () => enabledAccess,
     createClient: options.createClient ?? (async () => client),
     readSummary: options.readSummary ?? (async () => successfulSummary()),
+    checkRateLimit:
+      options.checkRateLimit ?? (async () => ({ rateLimited: false })),
     cursorHmacSecret: options.cursorHmacSecret ?? cursorHmacSecret,
   });
 }
@@ -206,7 +217,7 @@ function expectSecurityHeaders(response: Response) {
 }
 
 test.describe("account-owned learning persistence PR B", () => {
-  test("actual preview and digest route exports remain hard default-disabled", async () => {
+  test("actual preview and digest route exports remain disabled without staging activation env", async () => {
     const [previewResponse, digestResponse] = await Promise.all([
       previewRoute.POST(previewRequest()),
       digestRoute.GET(digestRequest()),
@@ -235,6 +246,10 @@ test.describe("account-owned learning persistence PR B", () => {
     > = [
       () => ({ ...enabledAccess, target: "disabled" }),
       () => ({ ...enabledAccess, expectedProjectRefMatched: false }),
+      () => ({ ...enabledAccess, productionProjectRefExcluded: false }),
+      () => ({ ...enabledAccess, expectedBranchMatched: false }),
+      () => ({ ...enabledAccess, vercelPlatformConfirmed: false }),
+      () => ({ ...enabledAccess, hmacSecretConfigured: false }),
       () => {
         throw new Error("private access configuration detail");
       },
@@ -256,18 +271,28 @@ test.describe("account-owned learning persistence PR B", () => {
     expect(clientCreations).toBe(0);
   });
 
-  test("future staging activation requires mode and exact Supabase project-ref guards", () => {
+  test("staging activation requires mode, exact project ref, preview runtime, and a strong server secret", () => {
     const matching = readAccountLearningStagingReadAccess({
       VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
       VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+      VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+      VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+        "release/account-read-only-staging-activation",
+      VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
       NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
       VERCEL_ENV: "preview",
+      VERCEL: "1",
+      VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
     });
 
     expect(matching).toEqual({
       enabled: true,
       target: "isolated_staging",
       expectedProjectRefMatched: true,
+      productionProjectRefExcluded: true,
+      expectedBranchMatched: true,
+      vercelPlatformConfirmed: true,
+      hmacSecretConfigured: true,
     });
 
     for (const env of [
@@ -275,22 +300,183 @@ test.describe("account-owned learning persistence PR B", () => {
       {
         VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
         VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "wrong-project",
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+          "release/account-read-only-staging-activation",
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
         NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+        VERCEL: "1",
+        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
       },
       {
         VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
         VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+          "release/account-read-only-staging-activation",
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
         NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+        VERCEL: "1",
+        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
       },
       {
         VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
         VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+          "release/account-read-only-staging-activation",
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
         NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
         VERCEL_ENV: "production",
+        VERCEL: "1",
+        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
+      },
+      {
+        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
+        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+          "release/account-read-only-staging-activation",
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: "too-short",
+        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+        VERCEL_ENV: "preview",
+        VERCEL: "1",
+        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
+      },
+      {
+        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
+        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+          "release/account-read-only-staging-activation",
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
+        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+        VERCEL_ENV: "preview",
+        VERCEL: "1",
+        VERCEL_GIT_COMMIT_REF: "feature/unapproved-preview",
+      },
+      {
+        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
+        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxstaging",
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+          "release/account-read-only-staging-activation",
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
+        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+        VERCEL_ENV: "preview",
+        VERCEL: "1",
+        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
+      },
+      {
+        VLX_ACCOUNT_LEARNING_READ_MODE: "staging_read_only",
+        VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF: "vlxstaging",
+        VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF: "vlxproduction",
+        VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH:
+          "release/account-read-only-staging-activation",
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET: cursorHmacSecret,
+        NEXT_PUBLIC_SUPABASE_URL: "https://vlxstaging.supabase.co",
+        VERCEL_ENV: "preview",
+        VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
       },
     ]) {
       expect(readAccountLearningStagingReadAccess(env).enabled).toBe(false);
     }
+  });
+
+  test("distributed IP and owner limits run in order with only HMAC-derived keys", async () => {
+    const rateLimitCalls: Array<{ id: string; key: string }> = [];
+    const response = await enabledHandler("digest", {
+      checkRateLimit: async (id, options) => {
+        rateLimitCalls.push({ id, key: options?.rateLimitKey ?? "" });
+        return { rateLimited: false };
+      },
+    })(digestRequest());
+
+    expect(response.status).toBe(200);
+    expect(rateLimitCalls.map((call) => call.id)).toEqual([
+      "vlx-account-learning-read-ip-v1",
+      "vlx-account-learning-read-owner-v1",
+    ]);
+    expect(rateLimitCalls[0]?.key).toMatch(/^vlx-ip-[a-f0-9]{64}$/);
+    expect(rateLimitCalls[1]?.key).toMatch(/^vlx-owner-[a-f0-9]{64}$/);
+    expect(JSON.stringify(rateLimitCalls)).not.toContain("203.0.113.10");
+    expect(JSON.stringify(rateLimitCalls)).not.toContain(ownerAccountId);
+  });
+
+  test("missing or unconfigured distributed limits fail closed and never read evidence", async () => {
+    let clientCreations = 0;
+    const createClient = async () => {
+      clientCreations += 1;
+      return makeClient().client;
+    };
+    const missingIpResponse = await enabledHandler("digest", {
+      createClient,
+    })(new Request(`${requestOrigin}/api/account/sync/digest`));
+    const unconfiguredResponse = await enabledHandler("digest", {
+      createClient,
+      checkRateLimit: async () => ({
+        rateLimited: false,
+        error: "not-found",
+      }),
+    })(digestRequest());
+    const unavailableResponse = await enabledHandler("digest", {
+      createClient,
+      checkRateLimit: async () => {
+        throw new Error("private firewall detail");
+      },
+    })(digestRequest());
+
+    for (const response of [
+      missingIpResponse,
+      unconfiguredResponse,
+      unavailableResponse,
+    ]) {
+      expect(response.status).toBe(503);
+      expect(await readJson(response)).toEqual({
+        error: { code: "RATE_LIMIT_UNAVAILABLE" },
+      });
+      expectSecurityHeaders(response);
+    }
+    expect(clientCreations).toBe(0);
+  });
+
+  test("IP and owner limits return a redacted 429 before evidence reads", async () => {
+    let clientCreations = 0;
+    const ipLimited = await enabledHandler("digest", {
+      createClient: async () => {
+        clientCreations += 1;
+        return makeClient().client;
+      },
+      checkRateLimit: async () => ({ rateLimited: true }),
+    })(digestRequest());
+
+    expect(ipLimited.status).toBe(429);
+    expect(ipLimited.headers.get("retry-after")).toBe("60");
+    expect(await readJson(ipLimited)).toEqual({
+      error: { code: "RATE_LIMITED" },
+    });
+    expect(clientCreations).toBe(0);
+
+    let checks = 0;
+    let summaryCalls = 0;
+    const ownerLimited = await enabledHandler("digest", {
+      checkRateLimit: async () => {
+        checks += 1;
+        return { rateLimited: checks === 2 };
+      },
+      readSummary: async () => {
+        summaryCalls += 1;
+        return successfulSummary();
+      },
+    })(digestRequest());
+
+    expect(ownerLimited.status).toBe(429);
+    expect(ownerLimited.headers.get("retry-after")).toBe("60");
+    expect(await readJson(ownerLimited)).toEqual({
+      error: { code: "RATE_LIMITED" },
+    });
+    expect(checks).toBe(2);
+    expect(summaryCalls).toBe(0);
   });
 
   test("preview derives owner from getUser on the same client and returns only bounded redacted counts", async () => {
@@ -495,7 +681,11 @@ test.describe("account-owned learning persistence PR B", () => {
     const mediaTypeResponse = await handler(
       new Request(`${requestOrigin}/api/account/sync/preview`, {
         method: "POST",
-        headers: { Origin: requestOrigin, "Content-Type": "text/plain" },
+        headers: {
+          Origin: requestOrigin,
+          "Content-Type": "text/plain",
+          "x-forwarded-for": "203.0.113.10",
+        },
         body: JSON.stringify(validPreviewBody),
       })
     );
@@ -520,7 +710,11 @@ test.describe("account-owned learning persistence PR B", () => {
     const queryResponse = await handler(
       new Request(`${requestOrigin}/api/account/sync/preview?accountId=${ownerAccountId}`, {
         method: "POST",
-        headers: { Origin: requestOrigin, "Content-Type": "application/json" },
+        headers: {
+          Origin: requestOrigin,
+          "Content-Type": "application/json",
+          "x-forwarded-for": "203.0.113.10",
+        },
         body: JSON.stringify(validPreviewBody),
       })
     );
@@ -762,16 +956,15 @@ test.describe("account-owned learning persistence PR B", () => {
     expectSecurityHeaders(invalid);
   });
 
-  test("opaque cursors require a strong server secret and stay null for incomplete pages", async () => {
+  test("a weak runtime secret fails closed before rate limiting or provider access", async () => {
     const weakSecretHandler = enabledHandler("digest", {
       cursorHmacSecret: "too-short",
     });
-    const weakSecretBody = await readJson(
-      await weakSecretHandler(digestRequest())
-    );
+    const weakSecretResponse = await weakSecretHandler(digestRequest());
 
-    expect(weakSecretBody).toMatchObject({
-      cursors: { savedWords: null, reviewEvents: null },
+    expect(weakSecretResponse.status).toBe(503);
+    expect(await readJson(weakSecretResponse)).toEqual({
+      error: { code: "ROUTE_DISABLED" },
     });
   });
 
@@ -802,6 +995,7 @@ test.describe("account-owned learning persistence PR B", () => {
     );
 
     expect(packageJson.dependencies.zod).toBe("4.4.3");
+    expect(packageJson.dependencies["@vercel/firewall"]).toBe("1.2.1");
     expect(validatorText).toContain('from "zod"');
     expect(serverText).not.toContain('from "zod"');
     expect(adapterText).not.toContain('from "zod"');

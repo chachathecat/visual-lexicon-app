@@ -708,6 +708,8 @@ test.describe('account sync implementation spike plan', () => {
 
     delete historicalPackageJsonDependencies.zod;
     delete historicalPackageLockDependencies.zod;
+    delete historicalPackageJsonDependencies['@vercel/firewall'];
+    delete historicalPackageLockDependencies['@vercel/firewall'];
     delete historicalPackageJsonDevDependencies['axe-core'];
     delete historicalPackageLockDevDependencies['axe-core'];
 
