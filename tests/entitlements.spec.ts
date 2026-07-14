@@ -141,11 +141,9 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
         name: 'Choose how you want to remember.',
       }),
     ).toBeVisible();
+    await expect(page.locator('body')).toContainText('Start free today');
     await expect(page.locator('body')).toContainText(
-      'Pro sells memory management',
-    );
-    await expect(page.locator('body')).toContainText(
-      'Billing is not connected yet',
+      "Paid plans aren't available to purchase yet",
     );
 
     const freePlan = page.locator('[data-plan-id="free"]');
@@ -192,17 +190,17 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     ).toHaveAttribute('href', '/dashboard');
     await expect(
       page.getByRole('button', {
-        name: 'Note Lite interest - billing not connected yet',
+        name: "I'm interested in Lite",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', {
-        name: 'Note Exam Pack interest - billing not connected yet',
+        name: "I'm interested in Exam Pack",
       }),
     ).toBeVisible();
     await expect(
@@ -210,17 +208,17 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     ).toHaveCount(0);
     await expect(
       page.getByRole('link', {
-        name: 'Note Lite interest - billing not connected yet',
+        name: "I'm interested in Lite",
       }),
     ).toHaveCount(0);
     await expect(
       page.getByRole('link', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       }),
     ).toHaveCount(0);
     await expect(
       page.getByRole('link', {
-        name: 'Note Exam Pack interest - billing not connected yet',
+        name: "I'm interested in Exam Pack",
       }),
     ).toHaveCount(0);
 
@@ -232,11 +230,11 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
 
     await page
       .getByRole('button', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       })
       .click();
     await expect(
-      page.getByText('Paid beta interest noted locally. Billing is not connected yet.'),
+      page.getByText('Interest saved on this device. No charge was made'),
     ).toBeVisible();
     await expect
       .poll(async () => {
@@ -301,17 +299,17 @@ test.describe('Visual Lexicon local entitlement skeleton', () => {
     ).toHaveAttribute('href', '/dashboard');
     await expect(
       page.getByRole('button', {
-        name: 'Note Lite interest - billing not connected yet',
+        name: "I'm interested in Lite",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', {
-        name: 'Note Exam Pack interest - billing not connected yet',
+        name: "I'm interested in Exam Pack",
       }),
     ).toBeVisible();
     await expect(

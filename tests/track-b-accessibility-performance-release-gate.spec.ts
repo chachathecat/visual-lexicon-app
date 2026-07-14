@@ -374,7 +374,7 @@ test.describe("Track B accessibility / performance release gate", () => {
     ).toHaveAttribute("href", "/dashboard");
     await expect(
       page.getByRole("button", {
-        name: "Note Lite interest - billing not connected yet"
+        name: "I'm interested in Lite"
       })
     ).toBeVisible();
 
@@ -394,7 +394,7 @@ test.describe("Track B accessibility / performance release gate", () => {
     ).toHaveAttribute("href", academicPreviewReviewHref);
   });
 
-  test("/pricing safety copy remains visible and does not claim paid access", async ({
+  test("/pricing early-access copy remains clear and interest-only", async ({
     page
   }) => {
     await seedReleaseGateState(page);
@@ -402,20 +402,20 @@ test.describe("Track B accessibility / performance release gate", () => {
 
     const bodyText = await page.locator("body").innerText();
 
-    expect(bodyText).toMatch(/Public paid beta No-Go/i);
-    expect(bodyText).toContain("Billing is not connected yet");
-    expect(bodyText).toContain("No checkout is live");
-    expect(bodyText).toContain("No real paid entitlement is active");
-    expect(bodyText).toContain("Public paid beta remains No-Go");
+    expect(bodyText).toContain("Early access preview");
+    expect(bodyText).toContain("Paid plans aren't available to purchase yet");
+    expect(bodyText).toContain("no payment is taken");
+    expect(bodyText).toContain("no paid features are unlocked");
+    expect(bodyText).not.toMatch(/no-go|owner approval|entitlement|paywall/i);
     expect(bodyText).not.toMatch(forbiddenPaidAccessClaims);
 
     await page
       .getByRole("button", {
-        name: "Note Lite interest - billing not connected yet"
+        name: "I'm interested in Lite"
       })
       .click();
     await expect(page.locator(".upgrade-placeholder__note")).toContainText(
-      "Paid beta interest noted locally. Billing is not connected yet."
+      "Interest saved on this device. No charge was made"
     );
 
     const localPlanState = await page.evaluate(() =>

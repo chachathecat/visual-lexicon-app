@@ -9,7 +9,7 @@ begin
 end
 $$;
 
-create table if not exists public.account_saved_words (
+create table public.account_saved_words (
   owner_account_id uuid not null references auth.users (id) on delete cascade,
   slug text not null,
   word text not null,
@@ -44,7 +44,7 @@ create table if not exists public.account_saved_words (
     )
 );
 
-create table if not exists public.account_review_events (
+create table public.account_review_events (
   owner_account_id uuid not null references auth.users (id) on delete cascade,
   event_id text not null,
   session_id text not null,
@@ -109,13 +109,13 @@ create table if not exists public.account_review_events (
     check (weak_score_after between 0 and 1)
 );
 
-create index if not exists account_saved_words_owner_saved_at_idx
+create index account_saved_words_owner_saved_at_idx
   on public.account_saved_words (owner_account_id, saved_at, slug);
 
-create index if not exists account_review_events_owner_created_at_idx
+create index account_review_events_owner_created_at_idx
   on public.account_review_events (owner_account_id, created_at, event_id);
 
-create or replace function public.vlx_reject_account_review_event_mutation()
+create function public.vlx_reject_account_review_event_mutation()
 returns trigger
 language plpgsql
 set search_path = ''
@@ -125,11 +125,8 @@ begin
 end;
 $$;
 
-drop trigger if exists account_review_events_append_only
-  on public.account_review_events;
-
 create trigger account_review_events_append_only
-before update or delete on public.account_review_events
+before update on public.account_review_events
 for each row execute function public.vlx_reject_account_review_event_mutation();
 
 alter table public.account_saved_words enable row level security;
@@ -137,16 +134,12 @@ alter table public.account_saved_words force row level security;
 alter table public.account_review_events enable row level security;
 alter table public.account_review_events force row level security;
 
-drop policy if exists account_saved_words_owner_select
-  on public.account_saved_words;
 create policy account_saved_words_owner_select
   on public.account_saved_words
   for select
   to authenticated
   using ((select auth.uid()) = owner_account_id);
 
-drop policy if exists account_review_events_owner_select
-  on public.account_review_events;
 create policy account_review_events_owner_select
   on public.account_review_events
   for select
@@ -162,8 +155,10 @@ revoke all on function public.vlx_reject_account_review_event_mutation()
   from public, anon, authenticated;
 
 comment on table public.account_saved_words is
-  'VLX isolated staging owner-scoped saved-word evidence; runtime writes disabled';
+  'vlx:migration-owner=001_account_learning_evidence;object=public.account_saved_words';
 comment on table public.account_review_events is
-  'VLX isolated staging append-only review evidence; runtime writes disabled';
+  'vlx:migration-owner=001_account_learning_evidence;object=public.account_review_events';
+comment on function public.vlx_reject_account_review_event_mutation() is
+  'vlx:migration-owner=001_account_learning_evidence;object=public.vlx_reject_account_review_event_mutation()';
 
 commit;

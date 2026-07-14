@@ -87,6 +87,11 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
         run: npm run test:packs
 
+      - name: World-class UX acceptance
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
+        run: npm run test -- tests/world-class-ux-acceptance.spec.ts --workers=1
+
       - name: Track B accessibility release gate
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
@@ -129,6 +134,81 @@ jobs:
           name: next-server-log
           path: next-server.log
           if-no-files-found: ignore
+
+  account-persistence-postgres:
+    name: Account Persistence PostgreSQL Gate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vlx_integration
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vlx_integration"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: vlx_integration
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Account persistence contract
+        run: npm run test -- tests/account-owned-learning-persistence-pr-a.spec.ts --workers=1
+
+      - name: Ensure PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+
+      - name: PostgreSQL RLS, integrity, and owned rollback
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/postgres/account-owned-learning-persistence/000_bootstrap.sql
+
+          PGOPTIONS="-c vlx.account_persistence_target=staging" \
+            psql -v ON_ERROR_STOP=1 \
+              -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_up.sql \
+              -f tests/postgres/account-owned-learning-persistence/010_rls_and_integrity_assertions.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_down.sql \
+              -f tests/postgres/account-owned-learning-persistence/020_rollback_assertions.sql
+
+      - name: PostgreSQL collision fails closed
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/postgres/account-owned-learning-persistence/030_collision_setup.sql
+
+          if PGOPTIONS="-c vlx.account_persistence_target=staging" \
+            psql -v ON_ERROR_STOP=1 \
+              -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_up.sql; then
+            echo "Migration unexpectedly replaced a colliding object."
+            exit 1
+          fi
+
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/postgres/account-owned-learning-persistence/040_collision_assertions.sql
 
   visual-screenshots:
     name: Visual Screenshot Parity

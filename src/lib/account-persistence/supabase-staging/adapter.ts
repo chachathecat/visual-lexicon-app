@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { AccountPrincipal } from "@/lib/account-runtime/types";
 import type { VlxAccountSyncReviewEventEvidence } from "@/lib/account-persistence/sync-conflicts/conflict-types";
 import type {
   VlxQuestionType,
@@ -88,7 +87,7 @@ const REVIEW_CONFIDENCE = new Set<VlxReviewConfidence>([
 ]);
 
 export type VlxSupabaseStagingReadErrorCode =
-  | "invalid_server_principal"
+  | "invalid_authenticated_session"
   | "invalid_limit"
   | "provider_query_failed"
   | "invalid_provider_payload";
@@ -142,16 +141,14 @@ export type VlxSupabaseStagingLearningEvidenceAdapter = {
   readonly runtimeConnected: typeof VLX_ACCOUNT_LEARNING_PERSISTENCE_RUNTIME_CONNECTED;
   readonly mutationsEnabled: typeof VLX_ACCOUNT_LEARNING_MUTATIONS_ENABLED;
   readOwnerSavedWords(
-    principal: AccountPrincipal,
     options?: { limit?: number }
   ): Promise<VlxSupabaseStagingReadResult<VlxSupabaseStagingSavedWordsPage>>;
   readOwnerReviewEvents(
-    principal: AccountPrincipal,
     options?: { limit?: number }
   ): Promise<VlxSupabaseStagingReadResult<VlxSupabaseStagingReviewEventsPage>>;
 };
 
-type VlxSupabaseReadClient = Pick<SupabaseClient, "from">;
+type VlxSupabaseReadClient = Pick<SupabaseClient, "auth" | "from">;
 
 type SavedWordRow = {
   owner_account_id: string;
@@ -258,11 +255,25 @@ function isIsoTimestamp(value: unknown): value is string {
   );
 }
 
-function hasValidPrincipal(principal: AccountPrincipal) {
-  return (
-    principal.provider === "supabase" &&
-    SUPABASE_ACCOUNT_ID_PATTERN.test(principal.accountId)
-  );
+async function readAuthenticatedOwnerAccountId(
+  client: VlxSupabaseReadClient
+): Promise<string | null> {
+  try {
+    const { data, error } = await client.auth.getUser();
+    const accountId = data.user?.id;
+
+    if (
+      error ||
+      typeof accountId !== "string" ||
+      !SUPABASE_ACCOUNT_ID_PATTERN.test(accountId)
+    ) {
+      return null;
+    }
+
+    return accountId;
+  } catch {
+    return null;
+  }
 }
 
 function readLimit({
@@ -396,16 +407,7 @@ export function createSupabaseStagingLearningEvidenceAdapter({
     runtimeConnected: VLX_ACCOUNT_LEARNING_PERSISTENCE_RUNTIME_CONNECTED,
     mutationsEnabled: VLX_ACCOUNT_LEARNING_MUTATIONS_ENABLED,
 
-    async readOwnerSavedWords(principal, options = {}) {
-      if (!hasValidPrincipal(principal)) {
-        return rejected({
-          code: "invalid_server_principal",
-          message: "A verified Supabase server principal is required.",
-          retryable: false,
-          callsNetwork: false,
-        });
-      }
-
+    async readOwnerSavedWords(options = {}) {
       const limit = readLimit({
         requested: options.limit,
         fallback: VLX_ACCOUNT_SAVED_WORDS_DEFAULT_LIMIT,
@@ -421,13 +423,37 @@ export function createSupabaseStagingLearningEvidenceAdapter({
         });
       }
 
-      const { data, error } = await client
-        .from(VLX_ACCOUNT_SAVED_WORDS_TABLE)
-        .select(SAVED_WORD_COLUMNS)
-        .eq("owner_account_id", principal.accountId)
-        .order("saved_at", { ascending: true })
-        .order("slug", { ascending: true })
-        .limit(limit);
+      const ownerAccountId = await readAuthenticatedOwnerAccountId(client);
+
+      if (!ownerAccountId) {
+        return rejected({
+          code: "invalid_authenticated_session",
+          message: "A verified Supabase session is required.",
+          retryable: false,
+          callsNetwork: true,
+        });
+      }
+
+      let response: { data: unknown; error: unknown };
+
+      try {
+        response = await client
+          .from(VLX_ACCOUNT_SAVED_WORDS_TABLE)
+          .select(SAVED_WORD_COLUMNS)
+          .eq("owner_account_id", ownerAccountId)
+          .order("saved_at", { ascending: true })
+          .order("slug", { ascending: true })
+          .limit(limit);
+      } catch {
+        return rejected({
+          code: "provider_query_failed",
+          message: "The saved-word evidence query failed.",
+          retryable: true,
+          callsNetwork: true,
+        });
+      }
+
+      const { data, error } = response;
 
       if (error) {
         return rejected({
@@ -450,7 +476,7 @@ export function createSupabaseStagingLearningEvidenceAdapter({
       const items: VlxSavedWord[] = [];
 
       for (const [rowIndex, value] of data.entries()) {
-        const row = parseSavedWordRow(value, principal.accountId);
+        const row = parseSavedWordRow(value, ownerAccountId);
 
         if (!row) {
           return rejected({
@@ -466,23 +492,14 @@ export function createSupabaseStagingLearningEvidenceAdapter({
       }
 
       return accepted({
-        ownerAccountId: principal.accountId,
+        ownerAccountId,
         items,
         limit,
         bounded: true,
       });
     },
 
-    async readOwnerReviewEvents(principal, options = {}) {
-      if (!hasValidPrincipal(principal)) {
-        return rejected({
-          code: "invalid_server_principal",
-          message: "A verified Supabase server principal is required.",
-          retryable: false,
-          callsNetwork: false,
-        });
-      }
-
+    async readOwnerReviewEvents(options = {}) {
       const limit = readLimit({
         requested: options.limit,
         fallback: VLX_ACCOUNT_REVIEW_EVENTS_DEFAULT_LIMIT,
@@ -498,13 +515,37 @@ export function createSupabaseStagingLearningEvidenceAdapter({
         });
       }
 
-      const { data, error } = await client
-        .from(VLX_ACCOUNT_REVIEW_EVENTS_TABLE)
-        .select(REVIEW_EVENT_COLUMNS)
-        .eq("owner_account_id", principal.accountId)
-        .order("created_at", { ascending: true })
-        .order("event_id", { ascending: true })
-        .limit(limit);
+      const ownerAccountId = await readAuthenticatedOwnerAccountId(client);
+
+      if (!ownerAccountId) {
+        return rejected({
+          code: "invalid_authenticated_session",
+          message: "A verified Supabase session is required.",
+          retryable: false,
+          callsNetwork: true,
+        });
+      }
+
+      let response: { data: unknown; error: unknown };
+
+      try {
+        response = await client
+          .from(VLX_ACCOUNT_REVIEW_EVENTS_TABLE)
+          .select(REVIEW_EVENT_COLUMNS)
+          .eq("owner_account_id", ownerAccountId)
+          .order("created_at", { ascending: true })
+          .order("event_id", { ascending: true })
+          .limit(limit);
+      } catch {
+        return rejected({
+          code: "provider_query_failed",
+          message: "The review-event evidence query failed.",
+          retryable: true,
+          callsNetwork: true,
+        });
+      }
+
+      const { data, error } = response;
 
       if (error) {
         return rejected({
@@ -527,7 +568,7 @@ export function createSupabaseStagingLearningEvidenceAdapter({
       const items: VlxAccountSyncReviewEventEvidence[] = [];
 
       for (const [rowIndex, value] of data.entries()) {
-        const row = parseReviewEventRow(value, principal.accountId);
+        const row = parseReviewEventRow(value, ownerAccountId);
 
         if (!row) {
           return rejected({
@@ -543,7 +584,7 @@ export function createSupabaseStagingLearningEvidenceAdapter({
       }
 
       return accepted({
-        ownerAccountId: principal.accountId,
+        ownerAccountId,
         items,
         limit,
         bounded: true,

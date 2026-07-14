@@ -413,7 +413,7 @@ test.describe('Visual Lexicon paid beta analytics events', () => {
 
     await page
       .getByRole('button', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       })
       .click();
     await waitForDataLayerEvent(page, 'vlx_pricing_interest');

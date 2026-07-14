@@ -809,20 +809,22 @@ test.describe("paid beta manual QA browser execution", () => {
 
     const pricingUrl = page.url();
 
-    await expect(page.locator("body")).toContainText("Billing is not connected yet");
-    await expect(page.locator("body")).toContainText("No checkout is live");
+    await expect(page.locator("body")).toContainText(
+      "Paid plans aren't available to purchase yet"
+    );
+    await expect(page.locator("body")).toContainText("no payment is taken");
 
     for (const label of [
-      "Note Lite interest - billing not connected yet",
-      "Note Pro interest - billing not connected yet",
-      "Note Exam Pack interest - billing not connected yet"
+      "I'm interested in Lite",
+      "I'm interested in Pro",
+      "I'm interested in Exam Pack"
     ]) {
       await page.getByRole("button", { name: label }).click();
     }
 
     await expect(page).toHaveURL(pricingUrl);
     await expect(
-      page.getByText("Paid beta interest noted locally. Billing is not connected yet.")
+      page.getByText("Interest saved on this device. No charge was made")
     ).toHaveCount(3);
 
     const interestRecords = await readLocalJson<ReviewEvent[]>(

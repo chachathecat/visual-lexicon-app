@@ -27,109 +27,63 @@ const tiers = [
   {
     id: "free",
     name: "Free",
-    cadence: "$0 local starter",
+    cadence: "$0 · Available now",
     outcome: VLX_PLAN_DEFINITIONS.free.outcome,
-    detail:
-      "Turn the first words you save into a real local review queue before any paid beta access exists.",
+    detail: "Start a visual review habit with the words you save.",
     features: [
-      "Save the first visual words into local review",
+      "Save visual words for review",
       "Practice short active-recall sessions",
-      "See Due, Weak, and Mastered only from real review state"
+      "Track what's due, weak, and mastered"
     ],
     cta: "Start free review"
   },
   {
     id: "lite",
     name: "Lite",
-    cadence: "Paid beta interest",
+    cadence: "Early access preview",
     outcome: VLX_PLAN_DEFINITIONS.lite.outcome,
     detail:
       "For learners who want saved words to keep moving through daily due and weak review.",
     features: [
-      "Expanded save and review capacity positioning",
-      "Daily due queue and weak-word habit emphasis",
-      "No real paid entitlement is active"
+      "Save more words as your library grows",
+      "Keep daily due and weak-word practice moving",
+      "Build a consistent review habit"
     ],
-    cta: "Note Lite interest - billing not connected yet",
-    ariaLabel: "Note Lite interest - billing not connected yet",
+    cta: "I'm interested in Lite",
+    ariaLabel: "I'm interested in Lite",
     primary: true
   },
   {
     id: "pro",
     name: "Pro",
-    cadence: "Paid beta interest",
+    cadence: "Early access preview",
     outcome: VLX_PLAN_DEFINITIONS.pro.outcome,
     detail:
       "For learners using mistake history and weak state to repair recall before Academic, IELTS, and GRE work.",
     features: [
-      "Weak Sprint and mastery export positioning",
-      "Exam-prep review and pack access planning",
-      "AI mistake explanations are planned for a future approved implementation"
+      "Repair weak words with focused practice",
+      "Prepare with Academic, IELTS, and GRE packs",
+      "Get clearer help with recurring mistakes"
     ],
-    cta: "Note Pro interest - billing not connected yet",
-    ariaLabel: "Note Pro interest - billing not connected yet"
+    cta: "I'm interested in Pro",
+    ariaLabel: "I'm interested in Pro"
   },
   {
     id: "exam_pack",
     name: "Exam Pack",
-    cadence: "Planned add-on interest",
+    cadence: "Add-on preview",
     outcome: "Follow a guided visual vocabulary plan.",
     detail:
       "A guided 30-day visual vocabulary plan tied to preview, review, mistakes, and weak repair.",
     features: [
-      "Academic Vocabulary, IELTS Writing, and GRE Visual Verbal positioning",
-      "Preview continues to real review evidence before any future access claim",
-      "No in-app purchase or full-pack access is active"
+      "Choose an Academic, IELTS, or GRE study path",
+      "Move from preview to review and weak-word repair",
+      "Follow a focused 30-day routine"
     ],
-    cta: "Note Exam Pack interest - billing not connected yet",
-    ariaLabel: "Note Exam Pack interest - billing not connected yet"
+    cta: "I'm interested in Exam Pack",
+    ariaLabel: "I'm interested in Exam Pack"
   }
 ] as const satisfies readonly PricingOption[];
-
-const paywallReasons = [
-  {
-    id: "save_limit",
-    title: "Save limit",
-    body:
-      "Your memory library is full. Lite is planned for expanded saved words and daily review capacity."
-  },
-  {
-    id: "review_limit",
-    title: "Review limit",
-    body:
-      "You rescued today's free cards. Lite lets you keep reviewing before words fade."
-  },
-  {
-    id: "pack_preview_end",
-    title: "Pack preview end",
-    body:
-      "You started the 30-day Academic plan. Pro guided pack access is planned for a future owner-gated beta."
-  },
-  {
-    id: "weak_words_sprint_locked",
-    title: "Weak Sprint locked",
-    body:
-      "You have weak words waiting. Pro is planned for focused weak-word practice after owner approval."
-  },
-  {
-    id: "mastery_export_locked",
-    title: "Memory export locked",
-    body:
-      "Pro export is planned for using delayed-recall history outside the app, not a shortcut."
-  },
-  {
-    id: "no_watermark_download",
-    title: "No-watermark export planned",
-    body:
-      "No-watermark export is planned for a future approved implementation while Pro adds exam-ready export support."
-  },
-  {
-    id: "mistake_explanation_locked",
-    title: "Future AI mistake explanation planned",
-    body:
-      "AI mistake explanations are planned for a future approved implementation after the SRS loop works."
-  }
-] as const;
 
 function TierCard({ tier }: { tier: (typeof tiers)[number] }) {
   const isPrimary = "primary" in tier && tier.primary === true;
@@ -188,13 +142,12 @@ export default function PricingPage() {
         >
           <div className="pricing-v2-beta-hero__pill">
             <span aria-hidden="true" />
-            Public paid beta No-Go
+            Early access preview
           </div>
           <h1 id="pricing-v2-heading">Choose how you want to remember.</h1>
           <p>
-            Pro sells memory management: weak-word repair, guided exam prep,
-            and review momentum before words fade. Billing is not connected
-            yet, and upgrade actions record beta interest only.
+            Start free today, or explore the plans we&apos;re shaping for deeper
+            review and exam prep. Paid plans aren&apos;t available to purchase yet.
           </p>
         </header>
 
@@ -204,31 +157,14 @@ export default function PricingPage() {
           ))}
         </section>
 
-        <section
-          className="pricing-v2-trigger-panel"
-          aria-labelledby="pricing-v2-trigger-heading"
+        <p
+          aria-label="Early access terms"
+          className="pricing-v2-note"
+          role="note"
         >
-          <div>
-            <span className="eyebrow">Why paywalls appear</span>
-            <h2 className="section-title" id="pricing-v2-trigger-heading">
-              Paywalls follow learning evidence.
-            </h2>
-          </div>
-          <div className="pricing-v2-trigger-grid">
-            {paywallReasons.map((reason) => (
-              <article data-paywall-reason={reason.id} key={reason.id}>
-                <h3>{reason.title}</h3>
-                <p>{reason.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <p className="pricing-v2-note">
-          Billing is not connected yet. No checkout is live. This records beta
-          interest only. This does not grant paid access. No real paid
-          entitlement is active. Public paid beta remains No-Go. Private/manual
-          beta requires owner approval.
+          Lite, Pro, and Exam Pack are previews and aren&apos;t available to buy
+          yet. Interest buttons save your preference on this device only—no
+          payment is taken and no paid features are unlocked.
         </p>
       </div>
     </TrackBAppShell>

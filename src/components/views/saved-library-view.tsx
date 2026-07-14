@@ -47,15 +47,15 @@ const savedLibraryTabs = [
     description: "ready now",
     emptyTitle: "No words due right now.",
     emptyBody:
-      "Due words require a saved card with review state and nextDueAt at or before now."
+      "You're caught up. Come back after your next review is ready."
   },
   {
     id: "weak",
     label: "Weak",
     description: "needs repair",
-    emptyTitle: "No weak words yet. Wrong answers will appear here.",
+    emptyTitle: "No words need extra practice right now.",
     emptyBody:
-      "Weak words require Weak mastery, weakScore, or wrong-answer evidence."
+      "Keep reviewing. Words that need extra practice will appear here."
   },
   {
     id: "new",
@@ -63,7 +63,7 @@ const savedLibraryTabs = [
     description: "not reviewed",
     emptyTitle: "Save a word to start your memory queue.",
     emptyBody:
-      "Saved-only words stay New until review state records meaningful progress."
+      "Save a word from a word page or pack to begin."
   },
   {
     id: "learning",
@@ -71,15 +71,15 @@ const savedLibraryTabs = [
     description: "in progress",
     emptyTitle: "Review saved words to build learning progress.",
     emptyBody:
-      "Learning words require review state that is not Weak or Mastered."
+      "Complete a review and the words you are building will appear here."
   },
   {
     id: "mastered",
     label: "Mastered",
     description: "delayed recall",
-    emptyTitle: "Mastered words appear after delayed recall evidence.",
+    emptyTitle: "Keep reviewing to build lasting recall.",
     emptyBody:
-      "Mastered words require Mastered mastery and box 5 from review state."
+      "Keep reviewing over time. Strong delayed recall will move words here."
   },
   {
     id: "all",
@@ -87,13 +87,13 @@ const savedLibraryTabs = [
     description: "saved cards",
     emptyTitle: "Your saved words will appear here.",
     emptyBody:
-      "The saved library reads vlx_saved_words_v1 without writing review progress."
+      "Save a word from a word page or pack to build your library."
   }
 ] as const;
 
 type SavedLibraryTabId = (typeof savedLibraryTabs)[number]["id"];
 type ReviewStateStatus = "valid" | "missing" | "stale";
-type MasteryDisplay = VlxMasteryLabel | "Unknown state";
+type MasteryDisplay = VlxMasteryLabel | "Needs review";
 type MemoryTone =
   | "due"
   | "weak"
@@ -426,7 +426,7 @@ function toSavedLibraryCard(
   const masteryLabel: MasteryDisplay =
     reviewStateStatus === "stale" ||
     (reviewState?.mastery === "Mastered" && reviewState.box !== 5)
-      ? "Unknown state"
+      ? "Needs review"
       : reviewState?.mastery ?? "New";
 
   return {
@@ -658,10 +658,6 @@ function formatSourceLabel(source?: string) {
     .join(" ");
 }
 
-function formatWeakScore(value: number) {
-  return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
-}
-
 function getReviewHref(card: SavedLibraryCard) {
   if (card.isDue) {
     return "/review/due";
@@ -741,30 +737,27 @@ function CardMeta({ word }: { word: SavedLibraryCard }) {
     <div className="saved-v2-token-row" aria-label={`${word.word} memory details`}>
       <span className="saved-v2-token">{formatHubLabel(word.hub)}</span>
       {state ? (
-        <span className="saved-v2-token">Box {state.box}</span>
+        <span className="saved-v2-token">
+          {word.isDue
+            ? "Ready to review"
+            : dueDate
+              ? `Next review ${dueDate}`
+              : "Review when you're ready"}
+        </span>
       ) : word.reviewStateStatus === "stale" ? (
         <span className="saved-v2-token saved-v2-token--warning">
-          Stale review state
+          Review history needs refresh
         </span>
       ) : (
-        <span className="saved-v2-token">No review state yet</span>
+        <span className="saved-v2-token">Ready for first review</span>
       )}
-      <span className="saved-v2-token">{reviewCountLabel}</span>
       <span className="saved-v2-token">
-        {dueDate ? `Next due ${dueDate}` : "No due date yet"}
+        {state
+          ? reviewCountLabel
+          : savedDate
+            ? `Saved ${savedDate}`
+            : sourceLabel ?? "Saved word"}
       </span>
-      {state && state.wrong > 0 ? (
-        <span className="saved-v2-token saved-v2-token--weak">
-          {state.wrong} wrong
-        </span>
-      ) : null}
-      {state && state.weakScore > 0 ? (
-        <span className="saved-v2-token saved-v2-token--weak">
-          Weak score {formatWeakScore(state.weakScore)}
-        </span>
-      ) : null}
-      {savedDate ? <span className="saved-v2-token">Saved {savedDate}</span> : null}
-      {sourceLabel ? <span className="saved-v2-token">{sourceLabel}</span> : null}
     </div>
   );
 }
@@ -888,7 +881,7 @@ function SavedLibraryLoading() {
     <TrackBAppShell activeItemId="saved" currentPath="/saved">
       <div className="saved-v2-queue">
         <TrackBEmptyState
-          body="Reading saved words, review state, review events, and daily stats from local storage."
+          body="Getting your saved words ready."
           title="Loading memory queue"
         />
       </div>
@@ -1005,7 +998,7 @@ export function SavedLibraryView() {
           <SavedQueueStatCard
             count={snapshot.tabs.due.length}
             label="Due"
-            note="nextDueAt is ready"
+            note="ready to review"
             state="due"
           />
           <SavedQueueStatCard
@@ -1019,24 +1012,6 @@ export function SavedLibraryView() {
             label="New"
             note="not reviewed yet"
             state="new"
-          />
-          <SavedQueueStatCard
-            count={snapshot.tabs.learning.length}
-            label="Learning"
-            note="in progress"
-            state="learning"
-          />
-          <SavedQueueStatCard
-            count={snapshot.tabs.mastered.length}
-            label="Mastered"
-            note="box 5 only"
-            state="mastered"
-          />
-          <SavedQueueStatCard
-            count={snapshot.tabs.all.length}
-            label="All saved"
-            note="saved cards"
-            state="all"
           />
         </section>
 

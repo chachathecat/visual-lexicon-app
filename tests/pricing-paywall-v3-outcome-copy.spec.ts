@@ -78,17 +78,20 @@ test.describe("Pricing / Paywall v3 outcome copy", () => {
     );
   });
 
-  test("pricing safety copy keeps public paid beta No-Go and owner-gated", async ({
+  test("pricing uses customer-facing early-access and no-purchase copy", async ({
     page
   }) => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "networkidle" });
 
     const bodyText = await page.locator("body").innerText();
 
-    expect(bodyText).toMatch(/public paid beta no-go/i);
-    expect(bodyText).toContain("Public paid beta remains No-Go");
-    expect(bodyText).toContain("Private/manual beta requires owner approval");
-    expect(bodyText).toContain("No real paid entitlement is active");
+    expect(bodyText).toContain("Early access preview");
+    expect(bodyText).toContain("Paid plans aren't available to purchase yet");
+    expect(bodyText).toContain("aren't available to buy yet");
+    expect(bodyText).toContain("no payment is taken");
+    expect(bodyText).toContain("no paid features are unlocked");
+    expect(bodyText).not.toMatch(/no-go|owner approval|entitlement|paywall/i);
+    await expect(page.locator(".pricing-v2-trigger-panel")).toHaveCount(0);
     expect(bodyText).not.toMatch(forbiddenRealEntitlementClaims);
   });
 

@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { AccountPrincipal } from "../src/lib/account-runtime/types";
 import {
   VLX_ACCOUNT_LEARNING_MUTATIONS_ENABLED,
   VLX_ACCOUNT_LEARNING_PERSISTENCE_RUNTIME_CONNECTED,
@@ -18,12 +17,8 @@ const workspaceRoot = process.cwd();
 const ownerAccountId = "6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b";
 const otherAccountId = "74d2da4e-5947-49ef-a24d-659c5e95f08d";
 
-const principal: AccountPrincipal = {
-  accountId: ownerAccountId,
-  provider: "supabase",
-};
-
 type QueryCall =
+  | { kind: "getUser" }
   | { kind: "from"; table: string }
   | { kind: "select"; columns: string }
   | { kind: "eq"; column: string; value: unknown }
@@ -33,13 +28,39 @@ type QueryCall =
 function createQueryClient({
   rowsByTable = {},
   errorByTable = {},
+  authenticatedOwnerAccountId = ownerAccountId,
+  authError = null,
+  throwAuth = false,
+  throwQueryByTable = {},
 }: {
   rowsByTable?: Record<string, unknown[]>;
   errorByTable?: Record<string, unknown>;
+  authenticatedOwnerAccountId?: string | null;
+  authError?: unknown;
+  throwAuth?: boolean;
+  throwQueryByTable?: Record<string, unknown>;
 } = {}) {
   const calls: QueryCall[] = [];
 
   const client = {
+    auth: {
+      async getUser() {
+        calls.push({ kind: "getUser" });
+
+        if (throwAuth) {
+          throw new Error("private auth payload must not escape");
+        }
+
+        return {
+          data: {
+            user: authenticatedOwnerAccountId
+              ? { id: authenticatedOwnerAccountId }
+              : null,
+          },
+          error: authError,
+        };
+      },
+    },
     from(table: string) {
       calls.push({ kind: "from", table });
 
@@ -62,6 +83,11 @@ function createQueryClient({
         },
         async limit(value: number) {
           calls.push({ kind: "limit", value });
+
+          if (throwQueryByTable[table]) {
+            throw throwQueryByTable[table];
+          }
+
           return {
             data: rowsByTable[table] ?? [],
             error: errorByTable[table] ?? null,
@@ -71,7 +97,7 @@ function createQueryClient({
 
       return builder;
     },
-  } as unknown as Pick<SupabaseClient, "from">;
+  } as unknown as Pick<SupabaseClient, "auth" | "from">;
 
   return { calls, client };
 }
@@ -93,8 +119,13 @@ test.describe("account-owned learning persistence PR A", () => {
 
     expect(sql).toContain("current_setting('vlx.account_persistence_target', true)");
     expect(sql).toContain("is distinct from 'staging'");
-    expect(sql).toContain("create table if not exists public.account_saved_words");
-    expect(sql).toContain("create table if not exists public.account_review_events");
+    expect(sql).toContain("create table public.account_saved_words");
+    expect(sql).toContain("create table public.account_review_events");
+    expect(sql).toContain(
+      "create function public.vlx_reject_account_review_event_mutation()"
+    );
+    expect(sql).not.toContain("if not exists");
+    expect(sql).not.toContain("create or replace");
     expect(sql).toContain("primary key (owner_account_id, slug)");
     expect(sql).toContain("primary key (owner_account_id, event_id)");
     expect(sql).toContain("references auth.users (id)");
@@ -109,9 +140,18 @@ test.describe("account-owned learning persistence PR A", () => {
     expect(sql).not.toMatch(/grant\s+(insert|update|delete|all)/);
     expect(sql).not.toContain("create policy account_saved_words_owner_insert");
     expect(sql).not.toContain("create policy account_review_events_owner_insert");
+    expect(sql).toContain(
+      "vlx:migration-owner=001_account_learning_evidence;object=public.account_saved_words"
+    );
+    expect(sql).toContain(
+      "vlx:migration-owner=001_account_learning_evidence;object=public.account_review_events"
+    );
+    expect(sql).toContain(
+      "vlx:migration-owner=001_account_learning_evidence;object=public.vlx_reject_account_review_event_mutation()"
+    );
   });
 
-  test("review events are immutable and rollback is narrow and staging-guarded", () => {
+  test("review updates are immutable, owner cascades remain possible, and rollback proves ownership", () => {
     const upSql = readProjectFile(
       "src",
       "lib",
@@ -130,17 +170,32 @@ test.describe("account-owned learning persistence PR A", () => {
     ).toLowerCase();
 
     expect(upSql).toContain("account_review_events is append-only");
-    expect(upSql).toContain("before update or delete on public.account_review_events");
-    expect(downSql).toContain("is distinct from 'staging'");
-    expect(downSql).toContain("drop table if exists public.account_review_events");
-    expect(downSql).toContain("drop table if exists public.account_saved_words");
-    expect(downSql).toContain(
-      "drop function if exists public.vlx_reject_account_review_event_mutation()"
+    expect(upSql).toContain("before update on public.account_review_events");
+    expect(upSql).not.toContain(
+      "before update or delete on public.account_review_events"
     );
+    expect(downSql).toContain("is distinct from 'staging'");
+    expect(downSql).toContain("to_regclass('public.account_saved_words')");
+    expect(downSql).toContain("to_regclass('public.account_review_events')");
+    expect(downSql).toContain(
+      "to_regprocedure('public.vlx_reject_account_review_event_mutation()')"
+    );
+    expect(downSql).toContain("obj_description(saved_words_object, 'pg_class')");
+    expect(downSql).toContain("obj_description(review_events_object, 'pg_class')");
+    expect(downSql).toContain(
+      "obj_description(review_mutation_function, 'pg_proc')"
+    );
+    expect(downSql).toContain("drop table public.account_review_events");
+    expect(downSql).toContain("drop table public.account_saved_words");
+    expect(downSql).toContain(
+      "drop function public.vlx_reject_account_review_event_mutation()"
+    );
+    expect(downSql).not.toContain("drop table if exists");
+    expect(downSql).not.toContain("drop function if exists");
     expect(downSql).not.toMatch(/drop\s+(schema|database|role)/);
   });
 
-  test("reads saved words with a server-principal owner filter and bounded columns", async () => {
+  test("derives the saved-word owner from the same authenticated client session", async () => {
     const { calls, client } = createQueryClient({
       rowsByTable: {
         [VLX_ACCOUNT_SAVED_WORDS_TABLE]: [
@@ -159,7 +214,7 @@ test.describe("account-owned learning persistence PR A", () => {
     });
     const adapter = createSupabaseStagingLearningEvidenceAdapter({ client });
 
-    const result = await adapter.readOwnerSavedWords(principal, { limit: 25 });
+    const result = await adapter.readOwnerSavedWords({ limit: 25 });
 
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -182,6 +237,7 @@ test.describe("account-owned learning persistence PR A", () => {
     });
     expect(calls).toEqual(
       expect.arrayContaining([
+        { kind: "getUser" },
         { kind: "from", table: VLX_ACCOUNT_SAVED_WORDS_TABLE },
         { kind: "eq", column: "owner_account_id", value: ownerAccountId },
         { kind: "limit", value: 25 },
@@ -226,7 +282,7 @@ test.describe("account-owned learning persistence PR A", () => {
     });
     const adapter = createSupabaseStagingLearningEvidenceAdapter({ client });
 
-    const result = await adapter.readOwnerReviewEvents(principal, { limit: 50 });
+    const result = await adapter.readOwnerReviewEvents({ limit: 50 });
 
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -255,6 +311,7 @@ test.describe("account-owned learning persistence PR A", () => {
     ]);
     expect(calls).toEqual(
       expect.arrayContaining([
+        { kind: "getUser" },
         { kind: "from", table: VLX_ACCOUNT_REVIEW_EVENTS_TABLE },
         { kind: "eq", column: "owner_account_id", value: ownerAccountId },
         { kind: "limit", value: 50 },
@@ -262,29 +319,46 @@ test.describe("account-owned learning persistence PR A", () => {
     );
   });
 
-  test("rejects malformed principals and oversized reads before provider access", async () => {
+  test("rejects invalid limits before session access", async () => {
     const { calls, client } = createQueryClient();
-    const adapter = createSupabaseStagingLearningEvidenceAdapter({ client });
-
-    const malformedPrincipal = await adapter.readOwnerSavedWords({
-      accountId: "client-provided-account-id",
-      provider: "supabase",
-    });
-    const invalidLimit = await adapter.readOwnerReviewEvents(principal, {
+    const invalidLimit = await createSupabaseStagingLearningEvidenceAdapter({
+      client,
+    }).readOwnerReviewEvents({
       limit: VLX_ACCOUNT_REVIEW_EVENTS_MAX_LIMIT + 1,
     });
 
-    expect(malformedPrincipal).toMatchObject({
-      ok: false,
-      callsNetwork: false,
-      error: { code: "invalid_server_principal" },
-    });
     expect(invalidLimit).toMatchObject({
       ok: false,
       callsNetwork: false,
       error: { code: "invalid_limit" },
     });
     expect(calls).toHaveLength(0);
+  });
+
+  test("fails closed on absent, malformed, errored, or throwing authenticated sessions", async () => {
+    const clients = [
+      createQueryClient({ authenticatedOwnerAccountId: null }),
+      createQueryClient({ authenticatedOwnerAccountId: "caller-controlled-id" }),
+      createQueryClient({ authError: { message: "private auth error" } }),
+      createQueryClient({ throwAuth: true }),
+    ];
+
+    for (const { calls, client } of clients) {
+      const result = await createSupabaseStagingLearningEvidenceAdapter({
+        client,
+      }).readOwnerSavedWords();
+
+      expect(result).toMatchObject({
+        ok: false,
+        callsNetwork: true,
+        error: {
+          code: "invalid_authenticated_session",
+          message: "A verified Supabase session is required.",
+        },
+      });
+      expect(calls).toEqual([{ kind: "getUser" }]);
+      expect(JSON.stringify(result)).not.toContain("private auth");
+    }
   });
 
   test("fails closed on cross-owner rows and redacts provider errors", async () => {
@@ -315,10 +389,10 @@ test.describe("account-owned learning persistence PR A", () => {
 
     const crossOwnerResult = await createSupabaseStagingLearningEvidenceAdapter({
       client: crossOwner.client,
-    }).readOwnerSavedWords(principal);
+    }).readOwnerSavedWords();
     const providerFailureResult = await createSupabaseStagingLearningEvidenceAdapter({
       client: providerFailure.client,
-    }).readOwnerSavedWords(principal);
+    }).readOwnerSavedWords();
 
     expect(crossOwnerResult).toMatchObject({
       ok: false,
@@ -334,6 +408,29 @@ test.describe("account-owned learning persistence PR A", () => {
     expect(JSON.stringify(providerFailureResult)).not.toContain("secret");
     expect(JSON.stringify(providerFailureResult)).not.toContain(
       "private provider payload"
+    );
+
+    const thrownProviderFailure = createQueryClient({
+      throwQueryByTable: {
+        [VLX_ACCOUNT_SAVED_WORDS_TABLE]: new Error(
+          "private thrown provider payload"
+        ),
+      },
+    });
+    const thrownProviderFailureResult =
+      await createSupabaseStagingLearningEvidenceAdapter({
+        client: thrownProviderFailure.client,
+      }).readOwnerSavedWords();
+
+    expect(thrownProviderFailureResult).toMatchObject({
+      ok: false,
+      error: {
+        code: "provider_query_failed",
+        message: "The saved-word evidence query failed.",
+      },
+    });
+    expect(JSON.stringify(thrownProviderFailureResult)).not.toContain(
+      "private thrown provider payload"
     );
   });
 
@@ -367,5 +464,55 @@ test.describe("account-owned learning persistence PR A", () => {
     expect(adapterText).not.toMatch(/\.(insert|upsert|update|delete|rpc)\s*\(/);
     expect(adapterText).not.toContain("process.env");
     expect(adapterText).not.toContain("createVlxSupabaseServerClient");
+    expect(adapterText).toContain("client.auth.getUser()");
+    expect(adapterText).not.toContain("AccountPrincipal");
+  });
+
+  test("ships PostgreSQL 16 integration fixtures for the security boundary", () => {
+    const bootstrap = readProjectFile(
+      "tests",
+      "postgres",
+      "account-owned-learning-persistence",
+      "000_bootstrap.sql"
+    ).toLowerCase();
+    const assertions = readProjectFile(
+      "tests",
+      "postgres",
+      "account-owned-learning-persistence",
+      "010_rls_and_integrity_assertions.sql"
+    ).toLowerCase();
+    const rollbackAssertions = readProjectFile(
+      "tests",
+      "postgres",
+      "account-owned-learning-persistence",
+      "020_rollback_assertions.sql"
+    ).toLowerCase();
+    const collisionSetup = readProjectFile(
+      "tests",
+      "postgres",
+      "account-owned-learning-persistence",
+      "030_collision_setup.sql"
+    ).toLowerCase();
+    const collisionAssertions = readProjectFile(
+      "tests",
+      "postgres",
+      "account-owned-learning-persistence",
+      "040_collision_assertions.sql"
+    ).toLowerCase();
+
+    expect(bootstrap).toContain("create role authenticated nologin");
+    expect(bootstrap).toContain("create function auth.uid()");
+    expect(assertions).toContain("set role authenticated");
+    expect(assertions).toContain("two-account saved-word rls isolation failed");
+    expect(assertions).toContain("two-account review-event rls isolation failed");
+    expect(assertions).toContain("authenticated saved-word delete was not denied");
+    expect(assertions).toContain("authenticated review-event delete was not denied");
+    expect(assertions).toContain("review-event update immutability was not enforced");
+    expect(assertions).toContain("owner cascade did not delete saved words");
+    expect(assertions).toContain("owner cascade did not delete review events");
+    expect(rollbackAssertions).toContain("owned rollback left migration objects behind");
+    expect(collisionSetup).toContain("collision-sentinel");
+    expect(collisionAssertions).toContain("collision guard replaced the sentinel table");
+    expect(collisionAssertions).toContain("collision guard did not roll back partial objects");
   });
 });

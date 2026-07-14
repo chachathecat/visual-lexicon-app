@@ -290,7 +290,7 @@ test.describe("Track B app shell v2 foundation", () => {
     expect(globalsCss).toContain("--vlx-track-b-bottom-nav-reserved");
     expect(globalsCss).toContain("env(safe-area-inset-bottom, 0px)");
     expect(globalsCss).toContain(
-      "padding-bottom: var(--vlx-track-b-bottom-nav-reserved);"
+      "var(--vlx-track-b-space-xl) + var(--vlx-track-b-bottom-nav-reserved)"
     );
     expect(globalsCss).toContain(".track-b-shell__skip-link:focus");
     expect(globalsCss).toContain(":focus-visible");
@@ -445,6 +445,11 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
           name: "Track B learning navigation"
         })
       ).toHaveCount(1);
+      await expect(
+        page.getByRole("navigation", {
+          name: "Track B learning navigation"
+        })
+      ).not.toContainText(/Components|Tokens/);
     });
   }
 
@@ -504,10 +509,15 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
       }
 
       const navRect = bottomNav.getBoundingClientRect();
+      const shell = document.querySelector<HTMLElement>(".track-b-shell");
       const mainStyles = window.getComputedStyle(main);
+      const shellStyles = shell ? window.getComputedStyle(shell) : null;
 
       return {
         mainPaddingBottom: Number.parseFloat(mainStyles.paddingBottom),
+        shellPaddingBottom: shellStyles
+          ? Number.parseFloat(shellStyles.paddingBottom)
+          : Number.NaN,
         navBottom: navRect.bottom,
         navHeight: navRect.height,
         viewportHeight: window.innerHeight
@@ -518,6 +528,7 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
     expect(mobileSpacing!.mainPaddingBottom).toBeGreaterThan(
       mobileSpacing!.navHeight
     );
+    expect(mobileSpacing!.shellPaddingBottom).toBeLessThanOrEqual(1);
     expect(mobileSpacing!.navBottom).toBeLessThanOrEqual(
       mobileSpacing!.viewportHeight
     );
@@ -559,9 +570,7 @@ test.describe("Track B shell navigation cleanup runtime contract", () => {
     ).toHaveAttribute("href", "/dashboard");
 
     await page.goto("/pricing", { waitUntil: "networkidle" });
-    await expect(
-      page.getByText("No checkout is live.")
-    ).toBeVisible();
+    await expect(page.locator("body")).toContainText("no payment is taken");
     await expect(page.locator("body")).not.toContainText("Checkout");
     await expect(page.locator("body")).not.toContainText("Subscribe now");
   });

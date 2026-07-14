@@ -327,7 +327,7 @@ test.describe("Saved Library v3 Memory Queue", () => {
 
     await expect(tab(page, "due")).toContainText("1");
     await expect(panel(page, "due")).toContainText("Dissonance");
-    await expect(card(page, "dissonance")).toContainText("Next due");
+    await expect(card(page, "dissonance")).toContainText("Ready to review");
     await expect(card(page, "resilient")).toHaveCount(0);
     await expect(card(page, "laconic")).toHaveCount(0);
   });
@@ -405,8 +405,8 @@ test.describe("Saved Library v3 Memory Queue", () => {
     await expect(panel(page, "weak")).toContainText("Lucid");
     await expect(panel(page, "weak")).toContainText("Abundance");
     await expect(panel(page, "weak")).not.toContainText("Resilient");
-    await expect(card(page, "lucid")).toContainText("1 wrong");
-    await expect(card(page, "abundance")).toContainText("Weak score 0.2");
+    await expect(card(page, "lucid")).toContainText("3 reviews");
+    await expect(card(page, "abundance")).toContainText("Next review");
   });
 
   test("New, Learning, Mastered, and All tabs derive from real state", async ({
@@ -495,17 +495,15 @@ test.describe("Saved Library v3 Memory Queue", () => {
     await expect(tab(page, "new")).toContainText("2");
     await expect(panel(page, "new")).toContainText("Lucid");
     await expect(panel(page, "new")).toContainText("Careful");
-    await expect(card(page, "lucid")).toContainText("No review state yet");
-    await expect(card(page, "lucid")).toContainText("No due date yet");
-    await expect(card(page, "lucid")).toContainText("Extension");
-    await expect(card(page, "careful")).toContainText("Alias search");
+    await expect(card(page, "lucid")).toContainText("Ready for first review");
+    await expect(card(page, "lucid")).toContainText("Saved");
 
     await tab(page, "learning").click();
     await expect(tab(page, "learning")).toContainText("2");
     await expect(panel(page, "learning")).toContainText("Obfuscate");
     await expect(panel(page, "learning")).toContainText("Resilient");
-    await expect(card(page, "obfuscate")).toContainText("Word page");
-    await expect(card(page, "resilient")).toContainText("Pack");
+    await expect(card(page, "obfuscate")).toContainText("1 review");
+    await expect(card(page, "resilient")).toContainText("5 reviews");
     await expect(panel(page, "learning")).not.toContainText("Laconic");
 
     await tab(page, "mastered").click();
@@ -614,10 +612,10 @@ test.describe("Saved Library v3 Memory Queue", () => {
 
     const emptyStates: Array<[string, string]> = [
       ["due", "No words due right now."],
-      ["weak", "No weak words yet. Wrong answers will appear here."],
+      ["weak", "No words need extra practice right now."],
       ["new", "Save a word to start your memory queue."],
       ["learning", "Review saved words to build learning progress."],
-      ["mastered", "Mastered words appear after delayed recall evidence."],
+      ["mastered", "Keep reviewing to build lasting recall."],
       ["all", "Your saved words will appear here."]
     ];
 
@@ -634,6 +632,9 @@ test.describe("Saved Library v3 Memory Queue", () => {
     expect(bodyText).not.toMatch(/\bcheckout\b/i);
     expect(bodyText).not.toMatch(/\bbilling\b/i);
     expect(bodyText).not.toMatch(/\bpayment\b/i);
+    expect(bodyText).not.toMatch(
+      /nextDueAt|weakScore|\bBox [0-5]\b|box 5|review state|local storage/i
+    );
     await expect(page.locator("[data-paywall-trigger]")).toHaveCount(0);
   });
 

@@ -201,6 +201,12 @@ function formatMinutes(wordCount: number) {
   return `about ${formatCount(minutes, "minute")}`;
 }
 
+function formatCompactMinutes(wordCount: number) {
+  const minutes = wordCount <= 0 ? 0 : Math.max(1, Math.ceil(wordCount / 4));
+
+  return `~${minutes} min`;
+}
+
 function getMissionCopy(
   snapshot: DashboardV3Snapshot,
   primaryAction: DashboardV3PrimaryAction
@@ -311,7 +317,7 @@ function fromSavedWord(savedWord: VlxSavedWord): DashboardV3Word {
     mastery: "New",
     box: 0,
     weakScore: 0,
-    detail: savedDate ? `Saved ${savedDate}` : "Saved locally"
+    detail: savedDate ? `Saved ${savedDate}` : "Saved to your library"
   };
 }
 
@@ -389,7 +395,7 @@ function DashboardV3Loading() {
     <TrackBAppShell activeItemId="today" currentPath="/dashboard">
       <div className="dashboard-v3-home" aria-label="Loading dashboard">
         <TrackBEmptyState
-          body="Reading local saved words, review state, review events, daily stats, and pack progress without changing them."
+          body="Getting your learning plan ready."
           title="Loading today's memory mission"
         />
       </div>
@@ -420,20 +426,20 @@ function MissionHero({
       <div className="dashboard-v3-mission__stats" aria-label="Mission counts">
         <span>
           <strong>{snapshot.dueToday.length}</strong>
-          Due count
+          Due today
         </span>
         <span>
           <strong>{snapshot.weakWords.length}</strong>
-          Weak count
+          Needs practice
         </span>
         <span>
-          <strong>{formatMinutes(primaryAction.estimateWordCount)}</strong>
+          <strong>{formatCompactMinutes(primaryAction.estimateWordCount)}</strong>
           Estimated time
         </span>
       </div>
 
       <MissionWordList
-        emptyText="No due, weak, or new saved words were found in local learning state."
+        emptyText="Your review queue is clear for now."
         words={words}
       />
 
@@ -495,7 +501,7 @@ function ContinuePackCard({ progress }: { progress: VlxPackProgressItem }) {
       <span>Continue Pack</span>
       <strong>{getPackLabel(progress.packId)}</strong>
       <p>
-        {getPackProgressLabel(progress)} from real local pack progress.
+        {getPackProgressLabel(progress)} in this pack.
         {progress.reviewedCount > 0
           ? ` ${formatCount(progress.correctCount, "correct answer")} recorded.`
           : ""}
@@ -517,7 +523,7 @@ function RecentSavedCard({ words }: { words: DashboardV3Word[] }) {
     <article className="dashboard-v3-card dashboard-v3-card--recent">
       <span>Recent Saved</span>
       <strong>{words.length.toLocaleString()}</strong>
-      <p>Recently saved words from local saved-word storage.</p>
+      <p>Words you added most recently.</p>
       <MissionWordList emptyText="No saved words found." words={words} />
       <Link
         className="track-b-button track-b-button--quiet"
@@ -540,19 +546,19 @@ function DashboardV3Cards({ snapshot }: { snapshot: DashboardV3Snapshot }) {
       className="dashboard-v3-evidence"
     >
       <div className="dashboard-v3-section-heading">
-        <h2 id="dashboard-v3-evidence-heading">Review evidence</h2>
-        <p>Counts below are derived from local review and saved-word state.</p>
+        <h2 id="dashboard-v3-evidence-heading">Your memory progress</h2>
+        <p>A quick view of what is ready now and how your memory is growing.</p>
       </div>
 
       <div className="dashboard-v3-card-grid">
         <DashboardMetricCard
-          description="Scheduled by nextDueAt through today, excluding Mastered."
+          description="Words ready for a quick refresh today."
           label="Due Today"
           state="due"
           value={snapshot.dueToday.length}
         />
         <DashboardMetricCard
-          description="Weak mastery, repeated misses, or high weakScore."
+          description="Words that benefit from a little extra practice."
           label="Weak Words"
           state="weak"
           value={snapshot.weakWords.length}
@@ -564,13 +570,13 @@ function DashboardV3Cards({ snapshot }: { snapshot: DashboardV3Snapshot }) {
           value={snapshot.newSaved.length}
         />
         <DashboardMetricCard
-          description="Only box 5 words with Mastered memory state."
+          description="Words you have recalled successfully over time."
           label="Mastered"
           state="mastered"
           value={snapshot.masteredWords.length}
         />
         <DashboardMetricCard
-          description="Unique reviewed words from review events in the last seven days."
+          description="Unique words you practiced in the last seven days."
           label="Weekly Reviewed Words"
           state="weekly"
           value={snapshot.weeklyReviewedWords}
@@ -594,14 +600,11 @@ function DashboardV3EmptyGuide() {
       <div>
         <h2 id="dashboard-v3-empty-heading">Build your first review queue</h2>
         <p>
-          Save a word or start a pack. The dashboard will show due, weak, and
-          mastered counts only after local review state exists.
+          Save a word or start a pack. Your progress will appear here as you
+          review and strengthen new words.
         </p>
       </div>
       <div className="dashboard-v3-empty-guide__actions">
-        <Link className="track-b-button track-b-button--primary" href="/saved">
-          Save a word to start
-        </Link>
         <Link className="track-b-button track-b-button--quiet" href="/packs">
           Start a pack
         </Link>
