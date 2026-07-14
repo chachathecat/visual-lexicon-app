@@ -1848,6 +1848,7 @@ export function ReviewSessionView({
             </h2>
             <p className="sr-only">{copy.description}</p>
             <div
+              aria-label="Review progress"
               aria-valuemax={questions.length}
               aria-valuemin={1}
               aria-valuenow={currentIndex + 1}

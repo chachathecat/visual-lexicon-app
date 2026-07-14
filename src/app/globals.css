@@ -4671,7 +4671,7 @@ select {
   gap: 6px;
   justify-self: end;
   min-width: 116px;
-  min-height: 38px;
+  min-height: 44px;
   padding-inline: 12px;
 }
 
@@ -5754,7 +5754,7 @@ select {
 
   .saved-v2-word-card__review {
     min-width: 0;
-    min-height: 36px;
+    min-height: 44px;
   }
 
   .saved-v2-state-card {

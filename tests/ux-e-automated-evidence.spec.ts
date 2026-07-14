@@ -335,7 +335,7 @@ async function assertStableFiftyWordQueue(page: Page, viewportWidth: number) {
           control.left < -1 ||
           control.right > viewportWidth + 1
       )
-  );
+  ).slice(0, 5);
 
   expect(unstable, `${viewportWidth}px unstable queue geometry`).toEqual([]);
   await expectNoHorizontalOverflow(page, `${viewportWidth}px 50-word queue`);
