@@ -704,7 +704,7 @@ test.describe("Track B product/UI readiness rendered audit", () => {
 
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "domcontentloaded" });
     const pricingButton = page.getByRole("button", {
-      name: "Note Lite interest - billing not connected yet"
+      name: "I'm interested in Lite"
     });
 
     await pricingButton.waitFor({ state: "visible" });

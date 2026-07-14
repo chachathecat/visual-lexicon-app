@@ -33,6 +33,14 @@ const approvedSafetyCopy = [
   "AI mistake explanations are planned for a future approved implementation."
 ] as const;
 
+const pricingDisclosureCopy = [
+  "Early access preview",
+  "Paid plans aren't available to purchase yet.",
+  "Interest buttons save your preference on this device only",
+  "no payment is taken",
+  "no paid features are unlocked"
+] as const;
+
 const forbiddenClaimPattern =
   /checkout enabled|billing connected|payment active|subscription active|paid access granted|paid entitlement granted|public beta launched|public paid beta is live|public paid beta launched|public paid beta is launched|private beta launched|private beta is launched|private\/manual beta is launched/i;
 
@@ -164,17 +172,18 @@ function makePaywallPrompts() {
 }
 
 test.describe("Placeholder planned beta copy safety", () => {
-  test("pricing and paywall surfaces expose approved interest-only safety copy", async ({
+  test("pricing and paywall surfaces expose clear interest-only safety copy", async ({
     page
   }) => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "networkidle" });
 
     const pricingText = await page.locator("body").innerText();
 
-    for (const phrase of approvedSafetyCopy.slice(0, 7)) {
+    for (const phrase of pricingDisclosureCopy) {
       expect(pricingText, phrase).toContain(phrase);
     }
 
+    expect(pricingText).not.toMatch(/no-go|owner approval|entitlement|paywall/i);
     expect(pricingText).not.toMatch(forbiddenClaimPattern);
     expect(pricingText).not.toMatch(/Pro unlocks|Exam Pack unlocks/i);
 
@@ -219,17 +228,16 @@ test.describe("Placeholder planned beta copy safety", () => {
     }
   });
 
-  test("private/manual beta remains owner-gated and public paid beta remains No-Go", async ({
+  test("pricing stays purchase-blocked while pack access remains owner-gated", async ({
     page
   }) => {
     await page.goto(`${baseUrl}/pricing`, { waitUntil: "networkidle" });
 
     await expect(page.locator("body")).toContainText(
-      "Private/manual beta requires owner approval."
+      "Paid plans aren't available to purchase yet."
     );
-    await expect(page.locator("body")).toContainText(
-      "Public paid beta remains No-Go."
-    );
+    await expect(page.locator("body")).toContainText("no payment is taken");
+    await expect(page.locator("body")).not.toContainText(/no-go|owner approval/i);
 
     for (const route of [
       "/packs/ielts-writing-vocabulary",

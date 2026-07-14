@@ -363,23 +363,23 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     await page
       .getByRole('button', {
-        name: 'Note Lite interest - billing not connected yet',
+        name: "I'm interested in Lite",
       })
       .click();
     await page
       .getByRole('button', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       })
       .click();
     await page
       .getByRole('button', {
-        name: 'Note Exam Pack interest - billing not connected yet',
+        name: "I'm interested in Exam Pack",
       })
       .click();
 
     await expect(page).toHaveURL(pricingUrl);
     await expect(
-      page.getByText('Paid beta interest noted locally. Billing is not connected yet.'),
+      page.getByText('Interest saved on this device. No charge was made'),
     ).toHaveCount(3);
 
     const interestRecords = await readLocalJson<Record<string, unknown>[]>(
@@ -420,42 +420,43 @@ test.describe('Visual Lexicon product paywall surfaces', () => {
 
     await expect(
       page.getByRole('button', {
-        name: 'Note Lite interest - billing not connected yet',
+        name: "I'm interested in Lite",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', {
-        name: 'Note Exam Pack interest - billing not connected yet',
+        name: "I'm interested in Exam Pack",
       }),
     ).toBeVisible();
     await expect(
       page.getByRole('link', {
-        name: 'Note Lite interest - billing not connected yet',
+        name: "I'm interested in Lite",
       }),
     ).toHaveCount(0);
     await expect(
       page.getByRole('link', {
-        name: 'Note Pro interest - billing not connected yet',
+        name: "I'm interested in Pro",
       }),
     ).toHaveCount(0);
     await expect(
       page.getByRole('link', {
-        name: 'Note Exam Pack interest - billing not connected yet',
+        name: "I'm interested in Exam Pack",
       }),
     ).toHaveCount(0);
     await expect(page.locator('body')).toContainText(
-      'This records beta interest only.',
+      "Paid plans aren't available to purchase yet.",
     );
     await expect(page.locator('body')).toContainText(
-      'Billing is not connected yet.',
+      'Interest buttons save your preference on this device only',
     );
+    await expect(page.locator('body')).toContainText('no payment is taken');
     await expect(page.locator('body')).toContainText(
-      'Public paid beta remains No-Go',
+      'no paid features are unlocked',
     );
   });
 
