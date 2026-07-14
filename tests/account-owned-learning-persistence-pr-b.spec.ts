@@ -997,8 +997,15 @@ test.describe("account-owned learning persistence PR B", () => {
       false
     );
 
+    const serverWithoutHmacChains = serverText.replace(
+      /createHmac\("sha256",[\s\S]*?\.digest\("hex"\)/g,
+      ""
+    );
+
     expect(adapterText).not.toMatch(/\.(insert|upsert|update|delete|rpc)\s*\(/);
-    expect(serverText).not.toMatch(/\.(insert|upsert|delete|rpc)\s*\(/);
+    expect(serverWithoutHmacChains).not.toMatch(
+      /\.(insert|upsert|update|delete|rpc)\s*\(/
+    );
     expect(serverText).not.toMatch(/\b(?:client|supabase)\.from\s*\(/);
     expect(serverText).toContain('cookieWriteMode: "disabled"');
 
