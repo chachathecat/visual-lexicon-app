@@ -42,6 +42,7 @@ export type AuthLogoutResult = {
 
 export type SupabaseAuthFlowClient = {
   auth: {
+    exchangeCodeForSession(code: string): Promise<{ error: unknown | null }>;
     signInWithOtp(input: {
       email: string;
       options: {
@@ -64,6 +65,7 @@ type GetSupabaseAuthFlowClientOptions = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const AUTH_CODE_PATTERN = /^[A-Za-z0-9_-]{8,512}$/;
 const AUTH_TOKEN_HASH_PATTERN = /^[A-Za-z0-9_-]{8,}$/;
 
 export function getSupabaseAuthAvailability({
@@ -164,6 +166,10 @@ export function isSupportedAuthOtpType(value: unknown): value is
   return value === "email" || value === "magiclink";
 }
 
+export function isValidAuthCode(value: unknown): value is string {
+  return typeof value === "string" && AUTH_CODE_PATTERN.test(value);
+}
+
 export function isValidAuthTokenHash(value: unknown): value is string {
   return typeof value === "string" && AUTH_TOKEN_HASH_PATTERN.test(value);
 }
@@ -213,17 +219,69 @@ export async function requestSupabaseMagicLink({
 }
 
 export async function confirmSupabaseMagicLink({
+  code,
   env,
   next,
   supabase,
   tokenHash,
   type,
 }: {
+  code?: unknown;
   next?: unknown;
   tokenHash: unknown;
   type: unknown;
 } & GetSupabaseAuthFlowClientOptions): Promise<AuthConfirmationResult> {
   const redirectTo = normalizeAuthRedirectTarget(next);
+  const hasCode = code !== null && code !== undefined && code !== "";
+  const hasTokenHash =
+    tokenHash !== null && tokenHash !== undefined && tokenHash !== "";
+
+  if (hasCode && hasTokenHash) {
+    return {
+      status: "rejected",
+      reason: "provider_rejected",
+      redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+    };
+  }
+
+  if (hasCode) {
+    if (!isValidAuthCode(code)) {
+      return {
+        status: "rejected",
+        reason: "missing_token",
+        redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+      };
+    }
+
+    const client = await getSupabaseAuthFlowClient({ env, supabase });
+
+    if (!client) {
+      return {
+        status: "rejected",
+        reason: "unconfigured",
+        redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+      };
+    }
+
+    const { error } = await client.auth
+      .exchangeCodeForSession(code)
+      .catch(() => ({
+        error: true,
+      }));
+
+    if (error) {
+      return {
+        status: "rejected",
+        reason: "provider_rejected",
+        redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+      };
+    }
+
+    return {
+      status: "confirmed",
+      redirectTo,
+    };
+  }
 
   if (!isValidAuthTokenHash(tokenHash)) {
     return {

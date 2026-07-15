@@ -25,8 +25,9 @@ feat/entitlement-domain-v1
 The form submits through a server action and never creates a browser Supabase
 client.
 
-`/auth/confirm` is the minimal route handler that verifies the Supabase
-`token_hash` and creates the cookie session through the existing server client.
+`/auth/confirm` is the minimal route handler that exchanges the Supabase PKCE
+authorization `code`, or verifies a legacy/custom-template `token_hash`, and
+creates the cookie session through the existing server client.
 
 ## Supabase Auth Behavior
 
@@ -50,16 +51,24 @@ If this address can receive a Visual Lexicon Magic Link, the next step is in
 that inbox.
 ```
 
-Confirmation uses:
+The default `@supabase/ssr` PKCE confirmation uses:
+
+```txt
+supabase.auth.exchangeCodeForSession
+```
+
+A custom token-hash email template remains compatible through:
 
 ```txt
 supabase.auth.verifyOtp
 ```
 
 with only supported email Magic Link token types. Missing, malformed, expired,
-reused, or provider-rejected token hashes fail safely back to `/login` with a
-generic error. Token query values are never echoed into the UI, logs, analytics,
-or redirect query strings.
+reused, ambiguous, or provider-rejected codes and token hashes fail safely back
+to `/login` with a generic confirmation error distinct from client-side email
+syntax validation. Neither state reveals whether an account exists. Credential
+query values are never echoed into the UI, logs, analytics, or redirect query
+strings.
 
 Logout uses:
 
@@ -195,6 +204,7 @@ The owner still needs to configure Supabase Auth for the deployed environment:
 - approved learner accounts must already exist
 - Email Magic Link must be enabled
 - public signup must remain disabled
-- the email template must send users to `/auth/confirm` with `token_hash`,
-  `type=email`, and the safe `next` parameter
+- the default ConfirmationURL/PKCE email template may return a `code` to
+  `/auth/confirm`; a custom template may instead send `token_hash`, `type=email`,
+  and the safe `next` parameter
 - the deployed app origin must be allowed in Supabase redirect URL settings

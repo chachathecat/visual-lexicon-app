@@ -6,6 +6,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import {
   AUTH_DEFAULT_REDIRECT_PATH,
+  createLoginRedirectPath,
   normalizeAuthRedirectTarget,
 } from "../src/lib/auth/redirects";
 import {
@@ -74,12 +75,16 @@ function projectRelative(path: string) {
 }
 
 function makeSupabaseAuthClient(overrides: {
+  exchangeCodeForSession?: SupabaseAuthFlowClient["auth"]["exchangeCodeForSession"];
   signInWithOtp?: SupabaseAuthFlowClient["auth"]["signInWithOtp"];
   signOut?: SupabaseAuthFlowClient["auth"]["signOut"];
   verifyOtp?: SupabaseAuthFlowClient["auth"]["verifyOtp"];
 } = {}): SupabaseAuthFlowClient {
   return {
     auth: {
+      async exchangeCodeForSession() {
+        return { error: null };
+      },
       async signInWithOtp() {
         return { error: null };
       },
@@ -219,6 +224,77 @@ test.describe("Minimal Auth Session Flow v1", () => {
     ]);
   });
 
+  test("PKCE authorization code establishes the session and preserves a safe redirect", async () => {
+    const calls: unknown[] = [];
+    const result = await confirmSupabaseMagicLink({
+      code: "34e770dd-9ff9-416c-87fa-43b31d7ef225",
+      next: "/review/due?limit=5",
+      tokenHash: null,
+      type: null,
+      supabase: makeSupabaseAuthClient({
+        async exchangeCodeForSession(code) {
+          calls.push(code);
+
+          return { error: null };
+        },
+      }),
+    });
+
+    expect(result).toEqual({
+      status: "confirmed",
+      redirectTo: "/review/due?limit=5",
+    });
+    expect(calls).toEqual(["34e770dd-9ff9-416c-87fa-43b31d7ef225"]);
+  });
+
+  test("invalid reused and ambiguous PKCE codes fail safely", async () => {
+    await expect(
+      confirmSupabaseMagicLink({
+        code: "not valid",
+        next: "/saved",
+        tokenHash: null,
+        type: null,
+        supabase: makeSupabaseAuthClient(),
+      })
+    ).resolves.toEqual({
+      status: "rejected",
+      reason: "missing_token",
+      redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+    });
+
+    await expect(
+      confirmSupabaseMagicLink({
+        code: "34e770dd-9ff9-416c-87fa-43b31d7ef225",
+        next: "/saved",
+        tokenHash: null,
+        type: null,
+        supabase: makeSupabaseAuthClient({
+          async exchangeCodeForSession() {
+            return { error: { message: "reused" } };
+          },
+        }),
+      })
+    ).resolves.toEqual({
+      status: "rejected",
+      reason: "provider_rejected",
+      redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+    });
+
+    await expect(
+      confirmSupabaseMagicLink({
+        code: "34e770dd-9ff9-416c-87fa-43b31d7ef225",
+        next: "/saved",
+        tokenHash: "valid_token_hash",
+        type: "email",
+        supabase: makeSupabaseAuthClient(),
+      })
+    ).resolves.toEqual({
+      status: "rejected",
+      reason: "provider_rejected",
+      redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+    });
+  });
+
   test("invalid missing expired and reused token hashes fail safely", async () => {
     await expect(
       confirmSupabaseMagicLink({
@@ -278,6 +354,33 @@ test.describe("Minimal Auth Session Flow v1", () => {
         origin: "https://app.visuallexicon.test",
       })
     ).toBe("https://app.visuallexicon.test/auth/confirm?next=%2Fsaved");
+  });
+
+  test("email syntax and confirmation failures have distinct non-enumerating states", () => {
+    expect(
+      createLoginRedirectPath({
+        next: "/saved",
+        status: "invalid-email",
+      })
+    ).toBe("/login?status=invalid-email&next=%2Fsaved");
+    expect(
+      createLoginRedirectPath({
+        next: "/saved",
+        status: "confirmation-error",
+      })
+    ).toBe("/login?status=confirmation-error&next=%2Fsaved");
+
+    const loginPageSource = readProjectFile("src/app/login/page.tsx");
+    const loginActionSource = readProjectFile("src/app/login/actions.ts");
+    const confirmationRouteSource = readProjectFile(
+      "src/app/auth/confirm/route.ts"
+    );
+
+    expect(loginPageSource).toContain("Use a valid email address and try again.");
+    expect(loginPageSource).toContain("Sign-in link not accepted.");
+    expect(loginActionSource).toContain('"invalid-email"');
+    expect(confirmationRouteSource).toContain('"confirmation-error"');
+    expect(loginPageSource.toLowerCase()).not.toContain("account not found");
   });
 
   test("logout clears the session through the server-safe boundary", async () => {

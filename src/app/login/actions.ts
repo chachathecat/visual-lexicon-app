@@ -34,7 +34,7 @@ export async function requestMagicLinkAction(formData: FormData) {
         result.status === "unavailable"
           ? "unavailable"
           : result.status === "invalid_email"
-            ? "error"
+            ? "invalid-email"
             : "sent",
     })
   );

@@ -60,7 +60,11 @@ export function createLoginRedirectPath({
   status,
 }: {
   next?: unknown;
-  status?: "error" | "sent" | "unavailable";
+  status?:
+    | "confirmation-error"
+    | "invalid-email"
+    | "sent"
+    | "unavailable";
 }) {
   const searchParams = new URLSearchParams();
   const safeNext = normalizeAuthRedirectTarget(next);

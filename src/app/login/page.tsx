@@ -35,11 +35,19 @@ function getLoginStatusMessage(status: string | undefined) {
     };
   }
 
-  if (status === "error") {
+  if (status === "invalid-email") {
     return {
       tone: "neutral",
       title: "Request not completed.",
       body: "Use a valid email address and try again. The response will not reveal whether an account exists.",
+    };
+  }
+
+  if (status === "confirmation-error") {
+    return {
+      tone: "neutral",
+      title: "Sign-in link not accepted.",
+      body: "Request a new Magic Link, then open the newest email once in this browser.",
     };
   }
 
