@@ -1,5 +1,12 @@
 export const AUTH_DEFAULT_REDIRECT_PATH = "/dashboard";
 
+export type AuthLoginStatus =
+  | "canonical-host"
+  | "confirmation-error"
+  | "invalid-email"
+  | "sent"
+  | "unavailable";
+
 const AUTH_REDIRECT_BASE_URL = "https://app.visuallexicon.local";
 const AUTH_REDIRECT_MAX_LENGTH = 1_024;
 const AUTH_REDIRECT_MAX_UTF8_BYTES = 1_024;
@@ -72,11 +79,7 @@ export function createLoginRedirectPath({
   status,
 }: {
   next?: unknown;
-  status?:
-    | "confirmation-error"
-    | "invalid-email"
-    | "sent"
-    | "unavailable";
+  status?: AuthLoginStatus;
 }) {
   const searchParams = new URLSearchParams();
   const safeNext = normalizeAuthRedirectTarget(next);

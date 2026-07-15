@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createLoginRedirectPath } from "@/lib/auth/redirects";
 import {
   createAuthConfirmationUrl,
+  getCanonicalLoginRedirect,
   getRequestAuthOrigin,
   requestSupabaseMagicLink,
 } from "@/lib/auth/session-flow";
@@ -17,6 +18,16 @@ import {
 export async function requestMagicLinkAction(formData: FormData) {
   const next = formData.get("next");
   const requestHeaders = await headers();
+  const canonicalLoginRedirect = getCanonicalLoginRedirect({
+    headers: requestHeaders,
+    next,
+    status: "canonical-host",
+  });
+
+  if (canonicalLoginRedirect) {
+    redirect(canonicalLoginRedirect);
+  }
+
   const origin = getRequestAuthOrigin({
     headers: requestHeaders,
   });

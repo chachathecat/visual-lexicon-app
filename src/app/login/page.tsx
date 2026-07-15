@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { TrackBAppShell, TrackBPageHeader } from "@/components/track-b";
 import {
   AUTH_DEFAULT_REDIRECT_PATH,
   normalizeAuthRedirectTarget,
 } from "@/lib/auth/redirects";
-import { getSupabaseAuthAvailability } from "@/lib/auth/session-flow";
+import {
+  getCanonicalLoginRedirect,
+  getSupabaseAuthAvailability,
+} from "@/lib/auth/session-flow";
 
 import { requestMagicLinkAction } from "./actions";
 
@@ -51,6 +56,14 @@ function getLoginStatusMessage(status: string | undefined) {
     };
   }
 
+  if (status === "canonical-host") {
+    return {
+      tone: "neutral",
+      title: "Secure login address ready.",
+      body: "No email was sent from the other Vercel address. Enter your approved email once here to continue securely.",
+    };
+  }
+
   if (status === "unavailable") {
     return {
       tone: "neutral",
@@ -62,7 +75,17 @@ function getLoginStatusMessage(status: string | undefined) {
   return null;
 }
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const requestHeaders = await headers();
+  const canonicalLoginRedirect = getCanonicalLoginRedirect({
+    headers: requestHeaders,
+    next: readSearchParam(searchParams, "next"),
+  });
+
+  if (canonicalLoginRedirect) {
+    redirect(canonicalLoginRedirect);
+  }
+
   const availability = getSupabaseAuthAvailability();
   const safeNext = normalizeAuthRedirectTarget(
     readSearchParam(searchParams, "next")

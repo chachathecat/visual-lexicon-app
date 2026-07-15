@@ -7,7 +7,9 @@ import {
 
 import {
   AUTH_DEFAULT_REDIRECT_PATH,
+  createLoginRedirectPath,
   normalizeAuthRedirectTarget,
+  type AuthLoginStatus,
 } from "./redirects";
 import { isValidMagicLinkRequestState } from "./request-state";
 
@@ -74,7 +76,13 @@ export function getSupabaseAuthAvailability({
 }: {
   env?: SupabaseServerEnv;
 } = {}) {
-  return readSupabaseServerConfig(env) ? "configured" : "unconfigured";
+  const appUrl = env.NEXT_PUBLIC_APP_URL;
+  const appUrlIsInvalid =
+    appUrl !== undefined && normalizeAuthOrigin(appUrl) === null;
+
+  return readSupabaseServerConfig(env) && !appUrlIsInvalid
+    ? "configured"
+    : "unconfigured";
 }
 
 export function normalizeAuthEmail(value: unknown) {
@@ -132,27 +140,19 @@ export function createAuthConfirmationUrl({
   return url.toString();
 }
 
-export function getRequestAuthOrigin({
-  env = process.env,
+export function getForwardedRequestAuthOrigin({
   headers,
 }: {
-  env?: SupabaseServerEnv & {
-    NEXT_PUBLIC_APP_URL?: string;
-  };
   headers: Pick<Headers, "get">;
 }) {
-  const configuredOrigin = normalizeAuthOrigin(env.NEXT_PUBLIC_APP_URL);
-
-  if (configuredOrigin) {
-    return configuredOrigin;
-  }
-
-  const host =
-    headers.get("x-forwarded-host")?.trim() ?? headers.get("host")?.trim();
-  const protocol = headers.get("x-forwarded-proto")?.trim() ?? "http";
+  const forwardedHost = headers.get("x-forwarded-host")?.trim();
+  const host = forwardedHost || headers.get("host")?.trim();
+  const forwardedProtocol = headers.get("x-forwarded-proto")?.trim();
+  const protocol = forwardedProtocol || "http";
 
   if (
     !host ||
+    host.includes(",") ||
     host.includes("/") ||
     host.includes("\\") ||
     host.includes("@") ||
@@ -162,6 +162,60 @@ export function getRequestAuthOrigin({
   }
 
   return normalizeAuthOrigin(`${protocol}://${host}`);
+}
+
+export function getCanonicalLoginRedirect({
+  env = process.env,
+  headers,
+  next,
+  status,
+}: {
+  env?: SupabaseServerEnv & {
+    NEXT_PUBLIC_APP_URL?: string;
+  };
+  headers: Pick<Headers, "get">;
+  next?: unknown;
+  status?: AuthLoginStatus;
+}) {
+  const configuredOrigin = normalizeAuthOrigin(env.NEXT_PUBLIC_APP_URL);
+
+  if (!configuredOrigin) {
+    return null;
+  }
+
+  const requestOrigin = getForwardedRequestAuthOrigin({ headers });
+
+  if (requestOrigin === configuredOrigin) {
+    return null;
+  }
+
+  return new URL(
+    createLoginRedirectPath({ next, status }),
+    configuredOrigin
+  ).toString();
+}
+
+export function getRequestAuthOrigin({
+  env = process.env,
+  headers,
+}: {
+  env?: SupabaseServerEnv & {
+    NEXT_PUBLIC_APP_URL?: string;
+  };
+  headers: Pick<Headers, "get">;
+}) {
+  const configuredAppUrl = env.NEXT_PUBLIC_APP_URL;
+  const configuredOrigin = normalizeAuthOrigin(configuredAppUrl);
+
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  if (configuredAppUrl !== undefined) {
+    return null;
+  }
+
+  return getForwardedRequestAuthOrigin({ headers });
 }
 
 export function isSupportedAuthOtpType(value: unknown): value is

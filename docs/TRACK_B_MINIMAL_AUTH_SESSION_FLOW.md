@@ -135,6 +135,17 @@ Rejected or missing redirect targets fall back to:
 /dashboard
 ```
 
+The login request and email callback must also use the same origin. Auth request
+state cookies are intentionally host-only and cannot be shared across Vercel
+deployment hostnames. When `NEXT_PUBLIC_APP_URL` is configured, `/login`
+canonicalizes any other deployment URL to that origin before rendering the
+form. The server action repeats the check before creating state or sending an
+email, so a stale page cannot create a cross-host Magic Link. If the action
+detects a mismatch, it redirects to the canonical login form without carrying
+the email address. A present but invalid `NEXT_PUBLIC_APP_URL` fails closed:
+the login UI is unavailable and the request helper does not fall back to an
+arbitrary forwarded host.
+
 ## Middleware
 
 Track B uses Next.js 14.2.35, so this PR adds:

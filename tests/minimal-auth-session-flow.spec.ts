@@ -12,6 +12,9 @@ import {
 import {
   confirmSupabaseMagicLink,
   createAuthConfirmationUrl,
+  getCanonicalLoginRedirect,
+  getForwardedRequestAuthOrigin,
+  getRequestAuthOrigin,
   getSupabaseAuthAvailability,
   isValidAuthTokenHash,
   requestSupabaseMagicLink,
@@ -501,6 +504,7 @@ test.describe("Minimal Auth Session Flow v1", () => {
     expect(acceptedCookies).toContain("auth_pending_request_state=");
     expect(acceptedCookies).toContain("HttpOnly");
     expect(acceptedCookies).toContain("SameSite=lax");
+    expect(acceptedCookies.toLowerCase()).not.toContain("domain=");
     expect(acceptedCookies).not.toContain(
       `${AUTH_REQUEST_STATE_COOKIE_NAME}=;`
     );
@@ -680,6 +684,137 @@ test.describe("Minimal Auth Session Flow v1", () => {
     ).toBeNull();
   });
 
+  test("canonical login host prevents host-only state cookie mismatches", () => {
+    const canonicalOrigin = "https://staging.visuallexicon.test";
+    const canonicalHeaders = new Headers({
+      host: "staging.visuallexicon.test",
+      "x-forwarded-host": "staging.visuallexicon.test",
+      "x-forwarded-proto": "https",
+    });
+    const deploymentHeaders = new Headers({
+      host: "deployment.visuallexicon.test",
+      "x-forwarded-host": "deployment.visuallexicon.test",
+      "x-forwarded-proto": "https",
+    });
+    const env = {
+      NEXT_PUBLIC_APP_URL: canonicalOrigin,
+    };
+
+    expect(getForwardedRequestAuthOrigin({ headers: canonicalHeaders })).toBe(
+      canonicalOrigin
+    );
+    expect(
+      getCanonicalLoginRedirect({
+        env,
+        headers: canonicalHeaders,
+        next: "/saved",
+      })
+    ).toBeNull();
+    expect(
+      getCanonicalLoginRedirect({
+        env,
+        headers: deploymentHeaders,
+        next: "/saved",
+      })
+    ).toBe(`${canonicalOrigin}/login?next=%2Fsaved`);
+    expect(
+      getCanonicalLoginRedirect({
+        env,
+        headers: deploymentHeaders,
+        next: "/saved",
+        status: "canonical-host",
+      })
+    ).toBe(
+      `${canonicalOrigin}/login?status=canonical-host&next=%2Fsaved`
+    );
+    expect(
+      getCanonicalLoginRedirect({
+        env,
+        headers: deploymentHeaders,
+        next: "https://external.example/account",
+        status: "canonical-host",
+      })
+    ).toBe(`${canonicalOrigin}/login?status=canonical-host`);
+  });
+
+  test("canonical login fails safe when the request origin is unavailable", () => {
+    expect(
+      getCanonicalLoginRedirect({
+        env: {
+          NEXT_PUBLIC_APP_URL: "https://staging.visuallexicon.test",
+        },
+        headers: new Headers(),
+      })
+    ).toBe("https://staging.visuallexicon.test/login");
+    expect(
+      getCanonicalLoginRedirect({
+        env: {},
+        headers: new Headers({
+          host: "deployment.visuallexicon.test",
+        }),
+      })
+    ).toBeNull();
+  });
+
+  test("forwarded origin parsing uses a safe host fallback and rejects ambiguous headers", () => {
+    expect(
+      getForwardedRequestAuthOrigin({
+        headers: new Headers({
+          host: "staging.visuallexicon.test",
+          "x-forwarded-host": "",
+          "x-forwarded-proto": "https",
+        }),
+      })
+    ).toBe("https://staging.visuallexicon.test");
+
+    for (const headers of [
+      new Headers({
+        host: "first.visuallexicon.test,second.visuallexicon.test",
+        "x-forwarded-proto": "https",
+      }),
+      new Headers({
+        host: "staging.visuallexicon.test",
+        "x-forwarded-proto": "https,http",
+      }),
+      new Headers({
+        host: "staging.visuallexicon.test/path",
+        "x-forwarded-proto": "https",
+      }),
+    ]) {
+      expect(getForwardedRequestAuthOrigin({ headers })).toBeNull();
+    }
+  });
+
+  test("invalid configured app origins fail closed instead of using request headers", () => {
+    const configuredSupabaseEnv = {
+      NEXT_PUBLIC_SUPABASE_URL: "https://project-ref.supabase.co",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable-key",
+    };
+    const requestHeaders = new Headers({
+      host: "deployment.visuallexicon.test",
+      "x-forwarded-host": "deployment.visuallexicon.test",
+      "x-forwarded-proto": "https",
+    });
+
+    for (const invalidAppUrl of [
+      "",
+      "not-a-url",
+      "javascript:alert(1)",
+      "https://user:password@staging.visuallexicon.test",
+    ]) {
+      const env = {
+        ...configuredSupabaseEnv,
+        NEXT_PUBLIC_APP_URL: invalidAppUrl,
+      };
+
+      expect(getSupabaseAuthAvailability({ env })).toBe("unconfigured");
+      expect(
+        getCanonicalLoginRedirect({ env, headers: requestHeaders })
+      ).toBeNull();
+      expect(getRequestAuthOrigin({ env, headers: requestHeaders })).toBeNull();
+    }
+  });
+
   test("email syntax and confirmation failures have distinct non-enumerating states", () => {
     expect(
       createLoginRedirectPath({
@@ -702,7 +837,17 @@ test.describe("Minimal Auth Session Flow v1", () => {
 
     expect(loginPageSource).toContain("Use a valid email address and try again.");
     expect(loginPageSource).toContain("Sign-in link not accepted.");
+    expect(loginPageSource).toContain("Secure login address ready.");
+    expect(loginPageSource).toContain("No email was sent");
+    expect(loginPageSource).toContain("getCanonicalLoginRedirect");
     expect(loginActionSource).toContain('"invalid-email"');
+    expect(loginActionSource).toContain('status: "canonical-host"');
+    expect(loginActionSource.indexOf("getCanonicalLoginRedirect")).toBeLessThan(
+      loginActionSource.indexOf("createMagicLinkRequestState")
+    );
+    expect(loginActionSource.indexOf("getCanonicalLoginRedirect")).toBeLessThan(
+      loginActionSource.indexOf("requestSupabaseMagicLink")
+    );
     expect(confirmationRouteSource).toContain('"confirmation-error"');
     expect(confirmationRouteSource).toContain(
       "stagePendingMagicLinkConfirmation"
