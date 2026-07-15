@@ -214,7 +214,7 @@ test.describe("Dashboard v3 Today Memory Mission", () => {
     const mission = page.locator(".dashboard-v3-mission");
 
     await expect(mission).toContainText("2 words due");
-    await expect(mission.getByText("Due count").locator("..")).toContainText("2");
+    await expect(mission.getByText("Due today").locator("..")).toContainText("2");
     await expect(
       mission.getByRole("link", { name: "Start due review" })
     ).toHaveAttribute("href", "/review/due");

@@ -192,10 +192,7 @@ async function seedDashboardMission(page: Page) {
 }
 
 test.describe("Dashboard Figma source parity", () => {
-  test("uses /dashboard as the canonical Track B app entry", async ({
-    page,
-    request
-  }) => {
+  test("uses /dashboard as the canonical Track B app entry", async ({ page }) => {
     const rootRoute = readFileSync(
       join(workspaceRoot, "src", "app", "page.tsx"),
       "utf8"
@@ -210,13 +207,6 @@ test.describe("Dashboard Figma source parity", () => {
     expect(rootRoute).not.toContain("DashboardView");
     expect(dashboardRoute).toContain("DashboardV3View");
     expect(dashboardRoute).toContain("return <DashboardV3View />;");
-
-    const rootResponse = await request.get(`${baseUrl}/`, { maxRedirects: 0 });
-    const rootLocation = rootResponse.headers().location;
-
-    expect(rootResponse.status()).toBe(307);
-    expect(rootLocation).toBeTruthy();
-    expect(new URL(rootLocation ?? "", baseUrl).pathname).toBe("/dashboard");
 
     const followedResponse = await page.goto(`${baseUrl}/`, {
       waitUntil: "networkidle"

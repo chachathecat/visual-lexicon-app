@@ -361,8 +361,10 @@ test.describe("Track B v3 keyboard QA follow-up", () => {
     await expect(liteInterest).toBeEnabled();
     await liteInterest.focus();
     await page.keyboard.press("Space");
-    await expect(page.getByRole("status")).toContainText(
-      "This does not grant paid access"
+    const interestStatus = page.getByRole("status");
+    await expect(interestStatus).toContainText("No charge was made");
+    await expect(interestStatus).toContainText(
+      "no paid features were unlocked"
     );
 
     await page.goto(`${baseUrl}/packs`, { waitUntil: "networkidle" });

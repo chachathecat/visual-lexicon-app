@@ -728,6 +728,8 @@ function CardMeta({ word }: { word: SavedLibraryCard }) {
   const savedDate = formatShortDate(word.savedAt);
   const dueDate = formatShortDate(state?.nextDueAt);
   const sourceLabel = formatSourceLabel(word.source);
+  const sourceSuffix =
+    sourceLabel && sourceLabel !== "Word page" ? ` · ${sourceLabel}` : "";
   const reviewCountLabel =
     word.reviewCount === 1
       ? "1 review"
@@ -753,9 +755,9 @@ function CardMeta({ word }: { word: SavedLibraryCard }) {
       )}
       <span className="saved-v2-token">
         {state
-          ? reviewCountLabel
+          ? `${reviewCountLabel}${sourceSuffix}`
           : savedDate
-            ? `Saved ${savedDate}`
+            ? `Saved ${savedDate}${sourceSuffix}`
             : sourceLabel ?? "Saved word"}
       </span>
     </div>

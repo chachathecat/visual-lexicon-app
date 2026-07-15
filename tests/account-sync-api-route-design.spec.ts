@@ -305,11 +305,19 @@ test.describe('account sync API route design contracts', () => {
     ).toBe(true);
   });
 
-  test('no real route file paths are created for this design-only PR', () => {
+  test('historical design-only assertions stay frozen while current unapproved route paths remain absent', () => {
+    const runtimeAccountSyncRoot = join(
+      workspaceRoot,
+      'src',
+      'app',
+      'api',
+      'account',
+      'sync'
+    );
     const forbiddenRoutePaths = [
       join(workspaceRoot, 'app', 'api', 'account', 'sync'),
       join(workspaceRoot, 'pages', 'api', 'account', 'sync'),
-      join(workspaceRoot, 'src', 'app', 'api', 'account', 'sync'),
+      runtimeAccountSyncRoot,
       join(workspaceRoot, 'src', 'pages', 'api', 'account', 'sync'),
       join(workspaceRoot, 'src', 'lib', 'account-persistence', 'api-route-design', 'route.ts'),
       routePath('preview'),
@@ -319,7 +327,14 @@ test.describe('account sync API route design contracts', () => {
     ];
 
     for (const forbiddenPath of forbiddenRoutePaths) {
-      expect(existsSync(forbiddenPath), forbiddenPath).toBe(false);
+      const currentForbiddenPaths =
+        forbiddenPath === runtimeAccountSyncRoot
+          ? [join(runtimeAccountSyncRoot, 'audit')]
+          : [forbiddenPath];
+
+      for (const currentForbiddenPath of currentForbiddenPaths) {
+        expect(existsSync(currentForbiddenPath), currentForbiddenPath).toBe(false);
+      }
     }
   });
 

@@ -188,6 +188,12 @@ const PACKET_MD_PATH = [
 ];
 const PACKET_JSON_SLASH = "docs/factory/tb-090-owner-decision-packet.v1.json";
 const PACKET_MD_SLASH = "docs/factory/tb-090-owner-decision-packet.md";
+const CURRENT_OWNER_APPROVED_STAGING_ROUTE_FILES = new Set([
+  "src/app/api/account/sync/apply/route.ts",
+  "src/app/api/account/sync/digest/route.ts",
+  "src/app/api/account/sync/hydrate/route.ts",
+  "src/app/api/account/sync/preview/route.ts"
+]);
 
 function readJson<T>(...parts: string[]): T {
   return JSON.parse(readFileSync(join(process.cwd(), ...parts), "utf8")) as T;
@@ -287,9 +293,14 @@ test.describe("TB-090 owner decision packet", () => {
         created_by_this_packet: false,
         approved_by_this_packet: false
       });
-      expect(existsSync(join(process.cwd(), routeFile.path)), routeFile.path).toBe(
-        false
-      );
+
+      // The packet itself approved no routes; later separate approvals are current state.
+      if (!CURRENT_OWNER_APPROVED_STAGING_ROUTE_FILES.has(routeFile.path)) {
+        expect(
+          existsSync(join(process.cwd(), routeFile.path)),
+          routeFile.path
+        ).toBe(false);
+      }
     }
 
     expect(packet.protected_surfaces).toMatchObject({
