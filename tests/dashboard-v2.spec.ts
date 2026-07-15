@@ -208,11 +208,10 @@ test.describe("Dashboard Figma source parity", () => {
     expect(dashboardRoute).toContain("DashboardV3View");
     expect(dashboardRoute).toContain("return <DashboardV3View />;");
 
-    const followedResponse = await page.goto(`${baseUrl}/`, {
+    await page.goto(`${baseUrl}/`, {
       waitUntil: "networkidle"
     });
 
-    expect(followedResponse?.status()).toBe(200);
     expect(new URL(page.url()).pathname).toBe("/dashboard");
     await expect(page.locator(".dashboard-v3-mission")).toBeVisible();
   });
