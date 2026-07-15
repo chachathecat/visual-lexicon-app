@@ -10,6 +10,7 @@ import {
   VLX_ACCOUNT_LEARNING_PREVIEW_MAX_SAVED_WORD_SLUGS,
 } from "../src/lib/account-persistence/read-only-preview-digest/contracts";
 import {
+  VLX_ACCOUNT_LEARNING_DEDICATED_STAGING_VERCEL_PROJECT_ID,
   createAccountLearningReadOnlyRouteHandler,
   readAccountLearningStagingReadAccess,
   readAuthenticatedPermanentOwner,
@@ -42,6 +43,8 @@ const matchingActivationEnv = {
   NODE_ENV: "production",
   VERCEL_ENV: "preview",
   VERCEL: "1",
+  VERCEL_PROJECT_ID:
+    VLX_ACCOUNT_LEARNING_DEDICATED_STAGING_VERCEL_PROJECT_ID,
   VERCEL_GIT_REPO_OWNER: "chachathecat",
   VERCEL_GIT_REPO_SLUG: "visual-lexicon-app",
   VERCEL_GIT_COMMIT_REF: "release/account-read-only-staging-activation",
@@ -53,6 +56,7 @@ const enabledAccess = {
   target: "isolated_staging",
   expectedProjectRefMatched: true,
   productionProjectRefExcluded: true,
+  dedicatedVercelProjectMatched: true,
   expectedBranchMatched: true,
   expectedCommitMatched: true,
   canonicalRepositoryMatched: true,
@@ -269,6 +273,7 @@ test.describe("account-owned learning persistence PR B", () => {
       () => ({ ...enabledAccess, target: "disabled" }),
       () => ({ ...enabledAccess, expectedProjectRefMatched: false }),
       () => ({ ...enabledAccess, productionProjectRefExcluded: false }),
+      () => ({ ...enabledAccess, dedicatedVercelProjectMatched: false }),
       () => ({ ...enabledAccess, expectedBranchMatched: false }),
       () => ({ ...enabledAccess, expectedCommitMatched: false }),
       () => ({ ...enabledAccess, canonicalRepositoryMatched: false }),
@@ -306,6 +311,7 @@ test.describe("account-owned learning persistence PR B", () => {
       target: "isolated_staging",
       expectedProjectRefMatched: true,
       productionProjectRefExcluded: true,
+      dedicatedVercelProjectMatched: true,
       expectedBranchMatched: true,
       expectedCommitMatched: true,
       canonicalRepositoryMatched: true,
@@ -327,6 +333,14 @@ test.describe("account-owned learning persistence PR B", () => {
       {
         ...matchingActivationEnv,
         VERCEL_ENV: "production",
+      },
+      {
+        ...matchingActivationEnv,
+        VERCEL_PROJECT_ID: undefined,
+      },
+      {
+        ...matchingActivationEnv,
+        VERCEL_PROJECT_ID: "prj_wrongDedicatedStagingProject000",
       },
       {
         ...matchingActivationEnv,
@@ -972,7 +986,7 @@ test.describe("account-owned learning persistence PR B", () => {
     });
   });
 
-  test("Zod is isolated at the validator edge and apply/audit stay absent and hard-disabled", () => {
+  test("the read-only PR B modules stay side-effect free and audit remains absent", () => {
     const packageJson = JSON.parse(
       readFileSync(join(workspaceRoot, "package.json"), "utf8")
     ) as { dependencies: Record<string, string> };
@@ -1003,9 +1017,6 @@ test.describe("account-owned learning persistence PR B", () => {
     expect(validatorText).toContain('from "zod"');
     expect(serverText).not.toContain('from "zod"');
     expect(adapterText).not.toContain('from "zod"');
-    expect(existsSync(join(workspaceRoot, "src/app/api/account/sync/apply"))).toBe(
-      false
-    );
     expect(existsSync(join(workspaceRoot, "src/app/api/account/sync/audit"))).toBe(
       false
     );

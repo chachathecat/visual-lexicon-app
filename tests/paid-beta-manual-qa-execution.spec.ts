@@ -867,7 +867,9 @@ test.describe("paid beta manual QA safety guards", () => {
     ).toEqual(
       [
         ...PAID_BETA_MANUAL_QA_EXECUTION_ALLOWED_ROUTE_HANDLERS,
+        "src/app/api/account/sync/apply/route.ts",
         "src/app/api/account/sync/digest/route.ts",
+        "src/app/api/account/sync/hydrate/route.ts",
         "src/app/api/account/sync/preview/route.ts"
       ].sort()
     );

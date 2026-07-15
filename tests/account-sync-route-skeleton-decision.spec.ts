@@ -347,7 +347,8 @@ test.describe('account sync route skeleton decision', () => {
       });
       if (
         filePlan.filePath !== 'src/app/api/account/sync/preview/route.ts' &&
-        filePlan.filePath !== 'src/app/api/account/sync/digest/route.ts'
+        filePlan.filePath !== 'src/app/api/account/sync/digest/route.ts' &&
+        filePlan.filePath !== 'src/app/api/account/sync/apply/route.ts'
       ) {
         expect(
           existsSync(join(workspaceRoot, filePlan.filePath)),
@@ -362,7 +363,7 @@ test.describe('account sync route skeleton decision', () => {
     });
   });
 
-  test('forbidden route paths do not exist', () => {
+  test('historical forbidden metadata stays frozen while current unapproved route paths remain absent', () => {
     for (const forbiddenPath of ACCOUNT_SYNC_ROUTE_SKELETON_FORBIDDEN_PATHS) {
       expect(forbiddenPath).toMatchObject({
         mustNotExistInThisPr: true,
@@ -370,12 +371,10 @@ test.describe('account sync route skeleton decision', () => {
       });
       const currentForbiddenPaths =
         forbiddenPath.path === 'src/app/api/account/sync'
-          ? [
-              'src/app/api/account/sync/apply',
-              'src/app/api/account/sync/audit',
-            ]
+          ? ['src/app/api/account/sync/audit']
           : forbiddenPath.path === 'src/app/api/account/sync/preview/route.ts' ||
-              forbiddenPath.path === 'src/app/api/account/sync/digest/route.ts'
+              forbiddenPath.path === 'src/app/api/account/sync/digest/route.ts' ||
+              forbiddenPath.path === 'src/app/api/account/sync/apply/route.ts'
             ? []
             : [forbiddenPath.path];
 

@@ -1377,9 +1377,8 @@ test.describe("Minimal Auth Session Flow v1", () => {
       .toBe(true);
   });
 
-  test("no Account Sync DB usage billing or payment implementation is added", () => {
+  test("the auth flow stays isolated from Account Sync DB usage, billing, and payments", () => {
     for (const relativePath of [
-      "src/app/api/account/sync/apply",
       "src/app/api/account/sync/audit",
       "src/app/api/admin",
       "src/app/api/billing",
@@ -1414,7 +1413,9 @@ test.describe("Minimal Auth Session Flow v1", () => {
       .map(projectRelative);
 
     expect(appRouteHandlers).toEqual([
+      "src/app/api/account/sync/apply/route.ts",
       "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/hydrate/route.ts",
       "src/app/api/account/sync/preview/route.ts",
       allowedEntitlementReadRouteHandler,
       allowedAuthRouteHandler,

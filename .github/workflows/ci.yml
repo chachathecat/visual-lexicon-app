@@ -117,6 +117,11 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
         run: npm run test -- tests/analytics-events.spec.ts tests/track-b-analytics-retention-core.spec.ts tests/track-b-analytics-retention-gate.spec.ts --workers=1
 
+      - name: Full regression suite
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3006
+        run: npm run test:regression:functional
+
       - name: Stop app
         if: always()
         run: |
@@ -250,3 +255,115 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: ignore
+
+  account-persistence-pr-c-postgres:
+    name: Account Persistence PR C PostgreSQL Gate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vlx_pr_c_integration
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vlx_pr_c_integration"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: vlx_pr_c_integration
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: PR C staging apply and browser hydration contracts
+        run: npm run test:account-learning:pr-c
+
+      - name: PR C historical scope and safety guards
+        run: npm run test:account-learning:pr-c:guards
+
+      - name: Ensure PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+
+      - name: PostgreSQL PR C apply, RLS, replay, and operational rollback
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/postgres/account-owned-learning-persistence/000_bootstrap.sql
+
+          PGOPTIONS="-c vlx.account_persistence_target=staging" \
+            psql -v ON_ERROR_STOP=1 \
+              -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_up.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/002_account_learning_apply_up.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/003_account_learning_auth_rls_initplan_up.sql \
+              -f tests/postgres/account-owned-learning-persistence/050_pr_c_default_disabled_assertions.sql \
+              -f tests/postgres/account-owned-learning-persistence/055_pr_c_auth_rls_initplan_assertions.sql \
+              -f tests/postgres/account-owned-learning-persistence/060_pr_c_apply_assertions.sql \
+              -f tests/postgres/account-owned-learning-persistence/070_pr_c_operational_rollback_assertions.sql
+
+          PGOPTIONS="-c vlx.account_persistence_target=staging -c vlx.account_persistence_disposable_test=true" \
+            psql -v ON_ERROR_STOP=1 \
+              -f tests/postgres/account-owned-learning-persistence/080_pr_c_disposable_teardown.sql \
+              -f tests/postgres/account-owned-learning-persistence/090_pr_c_disposable_teardown_assertions.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_down.sql \
+              -f tests/postgres/account-owned-learning-persistence/020_rollback_assertions.sql
+
+  account-persistence-pr-c-concurrency:
+    name: Account Persistence PostgreSQL Concurrency Gate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vlx_pr_c_concurrency
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vlx_pr_c_concurrency"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: vlx_pr_c_concurrency
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+
+      - name: PostgreSQL PR C concurrency and rollback serialization
+        run: tests/postgres/account-owned-learning-persistence/concurrency/run.sh

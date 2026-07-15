@@ -115,7 +115,6 @@ export const PAID_BETA_MANUAL_QA_REQUIRED_P2_STOP_CONDITION_IDS = [
 export const PAID_BETA_MANUAL_QA_FORBIDDEN_ACTUAL_PATHS = [
   "app/api",
   "pages/api",
-  "src/app/api/account/sync/apply",
   "src/app/api/account/sync/audit",
   "src/app/api/admin",
   "src/app/api/billing",

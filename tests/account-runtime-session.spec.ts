@@ -386,14 +386,16 @@ test.describe("account runtime session principal", () => {
     }
   });
 
-  test("route inventory includes only auth, entitlement, and #187 hard-disabled read routes", () => {
+  test("route inventory includes only approved auth, entitlement, read, and staging learning routes", () => {
     const appFiles = listFiles(join(workspaceRoot, "src", "app"));
     const routeHandlers = appFiles
       .filter((path) => /^route\.(ts|tsx|js|jsx)$/.test(basename(path)))
       .map(projectRelative);
 
     expect(routeHandlers).toEqual([
+      "src/app/api/account/sync/apply/route.ts",
       "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/hydrate/route.ts",
       "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts",
@@ -402,7 +404,6 @@ test.describe("account runtime session principal", () => {
     for (const relativePath of [
       "app/api",
       "pages/api",
-      "src/app/api/account/sync/apply",
       "src/app/api/account/sync/audit",
       "src/app/api/admin",
       "src/app/api/billing",

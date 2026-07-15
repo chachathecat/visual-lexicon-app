@@ -500,18 +500,19 @@ test.describe("Track B simplicity reset", () => {
     expect(moduleReadme).toContain("does not wire into routes or components");
   });
 
-  test("this contract allows auth plus #187 hard-disabled read-only handlers", () => {
+  test("the current inventory allows only approved auth, read, and staging learning handlers", () => {
     const appRouteHandlers = collectFiles("src/app").filter(
       (relativePath) => basename(relativePath) === "route.ts"
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/account/sync/apply/route.ts",
       "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/hydrate/route.ts",
       "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"
     ]);
-    expect(existsSync(join(workspaceRoot, "src/app/api/account/sync/apply"))).toBe(false);
     expect(existsSync(join(workspaceRoot, "src/app/api/account/sync/audit"))).toBe(false);
     expect(existsSync(join(workspaceRoot, "src", "middleware.ts"))).toBe(true);
     expect(existsSync(join(workspaceRoot, "middleware.ts"))).toBe(false);

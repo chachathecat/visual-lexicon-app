@@ -538,7 +538,7 @@ test.describe("Visual Lexicon paid beta manual QA checklist contract", () => {
     });
   });
 
-  test("only #187 read-only routes exist; mutating, payment, and schema paths stay absent", () => {
+  test("only approved staging learning routes exist; payment and schema paths stay absent", () => {
     for (const relativePath of PAID_BETA_MANUAL_QA_FORBIDDEN_ACTUAL_PATHS) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);
     }
@@ -548,7 +548,9 @@ test.describe("Visual Lexicon paid beta manual QA checklist contract", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/account/sync/apply/route.ts",
       "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/hydrate/route.ts",
       "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"

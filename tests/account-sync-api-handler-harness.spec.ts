@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 
@@ -29,6 +29,18 @@ import type {
 } from '../src/lib/account-persistence/api-handler-harness/handler-contracts';
 
 const workspaceRoot = process.cwd();
+
+function collectFiles(root: string, relativeRoot = ''): string[] {
+  if (!existsSync(root)) return [];
+
+  return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const relativePath = join(relativeRoot, entry.name);
+    const absolutePath = join(root, entry.name);
+    return entry.isDirectory()
+      ? collectFiles(absolutePath, relativePath)
+      : [relativePath.replaceAll('\\', '/')];
+  });
+}
 
 function expectOk<TBody extends VlxAccountSyncMockResponseBody>(
   response: VlxAccountSyncMockHandlerResponse<TBody>
@@ -464,11 +476,25 @@ test.describe('account sync API handler harness', () => {
     expect(expectError(malformed).code).toBe('invalid_request');
   });
 
-  test('no actual route file paths are created', () => {
+  test('the real staging route surface is exact while the mock harness remains route-free', () => {
+    const accountSyncRoot = join(
+      workspaceRoot,
+      'src',
+      'app',
+      'api',
+      'account',
+      'sync'
+    );
+    expect(collectFiles(accountSyncRoot).sort()).toEqual([
+      'apply/route.ts',
+      'digest/route.ts',
+      'hydrate/route.ts',
+      'preview/route.ts',
+    ]);
+
     const forbiddenRoutePaths = [
       join(workspaceRoot, 'app', 'api', 'account', 'sync'),
       join(workspaceRoot, 'pages', 'api', 'account', 'sync'),
-      join(workspaceRoot, 'src', 'app', 'api', 'account', 'sync'),
       join(workspaceRoot, 'src', 'pages', 'api', 'account', 'sync'),
       join(
         workspaceRoot,
