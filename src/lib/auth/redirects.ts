@@ -1,13 +1,24 @@
 export const AUTH_DEFAULT_REDIRECT_PATH = "/dashboard";
 
 const AUTH_REDIRECT_BASE_URL = "https://app.visuallexicon.local";
+const AUTH_REDIRECT_MAX_LENGTH = 1_024;
+const AUTH_REDIRECT_MAX_UTF8_BYTES = 1_024;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/;
+
+function utf8ByteLength(value: string) {
+  return new TextEncoder().encode(value).byteLength;
+}
 
 export function normalizeAuthRedirectTarget(
   value: unknown,
   fallback = AUTH_DEFAULT_REDIRECT_PATH
 ) {
-  if (typeof value !== "string" || value.length === 0) {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > AUTH_REDIRECT_MAX_LENGTH ||
+    utf8ByteLength(value) > AUTH_REDIRECT_MAX_UTF8_BYTES
+  ) {
     return fallback;
   }
 
@@ -45,7 +56,8 @@ export function normalizeAuthRedirectTarget(
       !normalized.startsWith("/") ||
       normalized.startsWith("//") ||
       lowerNormalized.startsWith("/%2f") ||
-      lowerNormalized.startsWith("/%5c")
+      lowerNormalized.startsWith("/%5c") ||
+      utf8ByteLength(normalized) > AUTH_REDIRECT_MAX_UTF8_BYTES
     ) {
       return fallback;
     }

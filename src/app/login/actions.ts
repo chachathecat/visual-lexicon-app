@@ -9,6 +9,10 @@ import {
   getRequestAuthOrigin,
   requestSupabaseMagicLink,
 } from "@/lib/auth/session-flow";
+import {
+  createMagicLinkRequestState,
+  storeMagicLinkRequestState,
+} from "@/lib/auth/request-state";
 
 export async function requestMagicLinkAction(formData: FormData) {
   const next = formData.get("next");
@@ -16,12 +20,22 @@ export async function requestMagicLinkAction(formData: FormData) {
   const origin = getRequestAuthOrigin({
     headers: requestHeaders,
   });
+  const state = createMagicLinkRequestState();
   const emailRedirectTo = origin
     ? createAuthConfirmationUrl({
         next,
         origin,
+        state,
       })
     : null;
+
+  if (origin && emailRedirectTo) {
+    await storeMagicLinkRequestState({
+      secure: new URL(origin).protocol === "https:",
+      state,
+    });
+  }
+
   const result = await requestSupabaseMagicLink({
     email: formData.get("email"),
     emailRedirectTo,

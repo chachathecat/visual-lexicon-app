@@ -31,7 +31,7 @@ function getLoginStatusMessage(status: string | undefined) {
     return {
       tone: "success",
       title: "Check your email.",
-      body: "If this address can receive a Visual Lexicon Magic Link, the next step is in that inbox.",
+      body: "If this address can receive a Visual Lexicon Magic Link, open the newest email and confirm once more in Visual Lexicon.",
     };
   }
 
@@ -47,7 +47,7 @@ function getLoginStatusMessage(status: string | undefined) {
     return {
       tone: "neutral",
       title: "Sign-in link not accepted.",
-      body: "Request a new Magic Link, then open the newest email once in this browser.",
+      body: "Request a new Magic Link, open the newest email once, then use the confirmation button in Visual Lexicon.",
     };
   }
 

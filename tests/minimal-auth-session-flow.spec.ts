@@ -13,11 +13,26 @@ import {
   confirmSupabaseMagicLink,
   createAuthConfirmationUrl,
   getSupabaseAuthAvailability,
+  isValidAuthTokenHash,
   requestSupabaseMagicLink,
   signOutSupabaseSession,
   type SupabaseAuthFlowClient,
 } from "../src/lib/auth/session-flow";
 import { refreshSupabaseAuthCookies } from "../src/lib/auth/middleware";
+import {
+  readPendingMagicLinkConfirmation,
+  stagePendingMagicLinkConfirmation,
+  takePendingMagicLinkConfirmation,
+  type PendingConfirmationCookieStore,
+} from "../src/lib/auth/pending-confirmation";
+import {
+  AUTH_REQUEST_STATE_COOKIE_NAME,
+  consumeMagicLinkRequestState,
+  createMagicLinkRequestState,
+  storeMagicLinkRequestState,
+  validateMagicLinkRequestState,
+  type AuthRequestStateCookieStore,
+} from "../src/lib/auth/request-state";
 import { readAuthAccountStatus } from "../src/lib/auth/account-status";
 import { readAccountPrincipal } from "../src/lib/account-runtime/session";
 import {
@@ -96,6 +111,38 @@ function makeSupabaseAuthClient(overrides: {
       },
       ...overrides,
     },
+  };
+}
+
+function makePendingCookieStore() {
+  const values = new Map<string, string>();
+  const writes: Array<{
+    name: string;
+    options: Record<string, unknown>;
+    value: string;
+  }> = [];
+  const cookieStore: PendingConfirmationCookieStore &
+    AuthRequestStateCookieStore = {
+    get(name) {
+      const value = values.get(name);
+
+      return value === undefined ? undefined : { value };
+    },
+    set(name, value, options) {
+      writes.push({ name, options, value });
+
+      if (options.maxAge === 0) {
+        values.delete(name);
+      } else {
+        values.set(name, value);
+      }
+    },
+  };
+
+  return {
+    cookieStore,
+    values,
+    writes,
   };
 }
 
@@ -247,6 +294,270 @@ test.describe("Minimal Auth Session Flow v1", () => {
     expect(calls).toEqual(["34e770dd-9ff9-416c-87fa-43b31d7ef225"]);
   });
 
+  test("Magic Link request state validates without GET consumption and is consumed on POST", async () => {
+    const firstState = createMagicLinkRequestState();
+    const secondState = createMagicLinkRequestState();
+    const { cookieStore, values, writes } = makePendingCookieStore();
+
+    expect(firstState).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(secondState).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(secondState).not.toBe(firstState);
+    await expect(
+      storeMagicLinkRequestState({
+        cookieStore,
+        secure: true,
+        state: firstState,
+      })
+    ).resolves.toBe(true);
+    expect(values.get(AUTH_REQUEST_STATE_COOKIE_NAME)).toBe(firstState);
+    expect(writes[0]?.options).toEqual(
+      expect.objectContaining({
+        httpOnly: true,
+        maxAge: 600,
+        path: "/auth",
+        sameSite: "lax",
+        secure: true,
+      })
+    );
+    await expect(
+      validateMagicLinkRequestState({
+        cookieStore,
+        state: secondState,
+      })
+    ).resolves.toBe(false);
+    expect(values.get(AUTH_REQUEST_STATE_COOKIE_NAME)).toBe(firstState);
+    await expect(
+      validateMagicLinkRequestState({
+        cookieStore,
+        state: firstState,
+      })
+    ).resolves.toBe(true);
+    expect(values.get(AUTH_REQUEST_STATE_COOKIE_NAME)).toBe(firstState);
+    await expect(
+      consumeMagicLinkRequestState({
+        cookieStore,
+        state: firstState,
+      })
+    ).resolves.toBe(true);
+    await expect(
+      consumeMagicLinkRequestState({
+        cookieStore,
+        state: firstState,
+      })
+    ).resolves.toBe(false);
+  });
+
+  test("email scanner GET stages a short-lived HttpOnly token without consuming it", async () => {
+    const { cookieStore, writes } = makePendingCookieStore();
+    const state = "a".repeat(43);
+    const staged = await stagePendingMagicLinkConfirmation({
+      cookieStore,
+      next: "/review/due?limit=5",
+      secure: true,
+      state,
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+
+    expect(staged).toBe(true);
+    await expect(
+      readPendingMagicLinkConfirmation({ cookieStore })
+    ).resolves.toEqual({
+      next: "/review/due?limit=5",
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+    expect(writes).toHaveLength(4);
+    for (const write of writes) {
+      expect(write.options).toEqual(
+        expect.objectContaining({
+          httpOnly: true,
+          maxAge: 600,
+          path: "/auth",
+          sameSite: "lax",
+          secure: true,
+        })
+      );
+    }
+  });
+
+  test("pending token requires an explicit one-time take and then fails closed", async () => {
+    const { cookieStore } = makePendingCookieStore();
+    const state = "a".repeat(43);
+
+    await storeMagicLinkRequestState({
+      cookieStore,
+      secure: true,
+      state,
+    });
+
+    await stagePendingMagicLinkConfirmation({
+      cookieStore,
+      next: "https://evil.example/steal",
+      secure: true,
+      state,
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+
+    await expect(
+      takePendingMagicLinkConfirmation({ cookieStore })
+    ).resolves.toEqual({
+      next: AUTH_DEFAULT_REDIRECT_PATH,
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+    await expect(
+      takePendingMagicLinkConfirmation({ cookieStore })
+    ).resolves.toBeNull();
+  });
+
+  test("explicit POST fails closed when the staged token is bound to another request state", async () => {
+    const { cookieStore, values } = makePendingCookieStore();
+    const browserState = "a".repeat(43);
+
+    await storeMagicLinkRequestState({
+      cookieStore,
+      secure: true,
+      state: browserState,
+    });
+    await stagePendingMagicLinkConfirmation({
+      cookieStore,
+      next: "/dashboard",
+      secure: true,
+      state: "b".repeat(43),
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+
+    await expect(
+      takePendingMagicLinkConfirmation({ cookieStore })
+    ).resolves.toBeNull();
+    expect(values.has(AUTH_REQUEST_STATE_COOKIE_NAME)).toBe(false);
+    expect(values.size).toBe(0);
+  });
+
+  test("scanner landing rejects malformed and non-email token types without cookie writes", async () => {
+    for (const candidate of [
+      { tokenHash: "bad token", type: "email" },
+      { tokenHash: "valid_token_hash", type: "magiclink" },
+      { tokenHash: "valid_token_hash", type: null },
+    ]) {
+      const { cookieStore, writes } = makePendingCookieStore();
+
+      await expect(
+        stagePendingMagicLinkConfirmation({
+          cookieStore,
+          next: "/dashboard",
+          secure: true,
+          state: "a".repeat(43),
+          ...candidate,
+        })
+      ).resolves.toBe(false);
+      expect(writes).toEqual([]);
+    }
+
+    expect(isValidAuthTokenHash("a".repeat(512))).toBe(true);
+    expect(isValidAuthTokenHash("a".repeat(513))).toBe(false);
+  });
+
+  test("scanner-safe HTTP landing requires matching browser state and emits only a clean redirect", async () => {
+    const state = "a".repeat(43);
+    const tokenHash = "scanner_safe_token_hash";
+    const url = new URL("/auth/confirm", baseUrl);
+    url.searchParams.set("next", "/review/due?limit=5");
+    url.searchParams.set("state", state);
+    url.searchParams.set("token_hash", tokenHash);
+    url.searchParams.set("type", "email");
+
+    const rejected = await fetch(url, {
+      redirect: "manual",
+    });
+    expect(rejected.status).toBe(303);
+    expect(rejected.headers.get("location")).toContain(
+      "/login?status=confirmation-error"
+    );
+    expect(rejected.headers.get("set-cookie") ?? "").not.toContain(
+      "auth_pending_token_hash"
+    );
+
+    const accepted = await fetch(url, {
+      headers: {
+        cookie: `${AUTH_REQUEST_STATE_COOKIE_NAME}=${state}`,
+      },
+      redirect: "manual",
+    });
+    const acceptedCookies = accepted.headers.get("set-cookie") ?? "";
+    const acceptedLocation = accepted.headers.get("location");
+
+    expect(accepted.status).toBe(303);
+    expect(acceptedLocation).not.toBeNull();
+    expect(new URL(acceptedLocation as string).pathname).toBe(
+      "/auth/continue"
+    );
+    expect(accepted.headers.get("cache-control")).toContain("no-store");
+    expect(accepted.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(acceptedCookies).toContain("auth_pending_token_hash=");
+    expect(acceptedCookies).toContain("auth_pending_request_state=");
+    expect(acceptedCookies).toContain("HttpOnly");
+    expect(acceptedCookies).toContain("SameSite=lax");
+    expect(acceptedCookies).not.toContain(
+      `${AUTH_REQUEST_STATE_COOKIE_NAME}=;`
+    );
+    expect(acceptedLocation).not.toContain(tokenHash);
+    expect(await accepted.text()).not.toContain(tokenHash);
+
+    const headResponse = await fetch(url, {
+      headers: {
+        cookie: `${AUTH_REQUEST_STATE_COOKIE_NAME}=${state}`,
+      },
+      method: "HEAD",
+      redirect: "manual",
+    });
+    const headCookies = headResponse.headers.get("set-cookie") ?? "";
+
+    expect(headResponse.status).toBe(303);
+    expect(headCookies).toContain("auth_pending_token_hash=");
+    expect(headCookies).toContain("auth_pending_request_state=");
+    expect(headCookies).not.toContain(
+      `${AUTH_REQUEST_STATE_COOKIE_NAME}=;`
+    );
+    expect(await headResponse.text()).toBe("");
+  });
+
+  test("redirect and pending-cookie bounds cover Unicode and double-encoding expansion", async () => {
+    const oversizedUnicode = `/${"é".repeat(600)}`;
+    const doubleEncodingExpansion = `/safe/${"%3D".repeat(300)}`;
+
+    expect(normalizeAuthRedirectTarget(oversizedUnicode)).toBe(
+      AUTH_DEFAULT_REDIRECT_PATH
+    );
+    expect(normalizeAuthRedirectTarget(doubleEncodingExpansion)).toBe(
+      doubleEncodingExpansion
+    );
+
+    const { cookieStore, writes } = makePendingCookieStore();
+    await expect(
+      stagePendingMagicLinkConfirmation({
+        cookieStore,
+        next: doubleEncodingExpansion,
+        secure: true,
+        state: "a".repeat(43),
+        tokenHash: "valid_token_hash",
+        type: "email",
+      })
+    ).resolves.toBe(true);
+
+    expect(writes.some(({ value }) => value === "%2Fdashboard")).toBe(true);
+    await expect(
+      readPendingMagicLinkConfirmation({ cookieStore })
+    ).resolves.toEqual({
+      next: AUTH_DEFAULT_REDIRECT_PATH,
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+  });
+
   test("invalid reused and ambiguous PKCE codes fail safely", async () => {
     await expect(
       confirmSupabaseMagicLink({
@@ -341,6 +652,9 @@ test.describe("Minimal Auth Session Flow v1", () => {
         AUTH_DEFAULT_REDIRECT_PATH
       );
     }
+    expect(normalizeAuthRedirectTarget(`/${"a".repeat(1_024)}`)).toBe(
+      AUTH_DEFAULT_REDIRECT_PATH
+    );
   });
 
   test("safe relative redirect target is accepted", () => {
@@ -352,8 +666,18 @@ test.describe("Minimal Auth Session Flow v1", () => {
       createAuthConfirmationUrl({
         next: "/saved",
         origin: "https://app.visuallexicon.test",
+        state: "a".repeat(43),
       })
-    ).toBe("https://app.visuallexicon.test/auth/confirm?next=%2Fsaved");
+    ).toBe(
+      `https://app.visuallexicon.test/auth/confirm?next=%2Fsaved&state=${"a".repeat(43)}`
+    );
+    expect(
+      createAuthConfirmationUrl({
+        next: "/saved",
+        origin: "https://app.visuallexicon.test",
+        state: "too-short",
+      })
+    ).toBeNull();
   });
 
   test("email syntax and confirmation failures have distinct non-enumerating states", () => {
@@ -380,6 +704,17 @@ test.describe("Minimal Auth Session Flow v1", () => {
     expect(loginPageSource).toContain("Sign-in link not accepted.");
     expect(loginActionSource).toContain('"invalid-email"');
     expect(confirmationRouteSource).toContain('"confirmation-error"');
+    expect(confirmationRouteSource).toContain(
+      "stagePendingMagicLinkConfirmation"
+    );
+    expect(confirmationRouteSource).toContain(
+      "validateMagicLinkRequestState"
+    );
+    expect(confirmationRouteSource).not.toContain(
+      "consumeMagicLinkRequestState"
+    );
+    expect(confirmationRouteSource).not.toContain("verifyOtp");
+    expect(confirmationRouteSource).not.toContain("exchangeCodeForSession");
     expect(loginPageSource.toLowerCase()).not.toContain("account not found");
   });
 
@@ -612,6 +947,10 @@ test.describe("Minimal Auth Session Flow v1", () => {
     });
 
     const bodyText = await page.locator("body").innerText();
+    await page.goto(`${baseUrl}/auth/continue`, {
+      waitUntil: "networkidle",
+    });
+    const continueBodyText = await page.locator("body").innerText();
     const serializedResult = JSON.stringify(
       await confirmSupabaseMagicLink({
         next: "/dashboard",
@@ -633,6 +972,7 @@ test.describe("Minimal Auth Session Flow v1", () => {
       missingLearnerEmail,
     ]) {
       expect(bodyText.toLowerCase()).not.toContain(forbidden);
+      expect(continueBodyText.toLowerCase()).not.toContain(forbidden);
       expect(serializedResult.toLowerCase()).not.toContain(forbidden);
     }
   });
@@ -775,6 +1115,9 @@ test.describe("Minimal Auth Session Flow v1", () => {
       "src/app/login/page.tsx",
       "src/app/login/actions.ts",
       "src/app/auth/confirm/route.ts",
+      "src/app/auth/continue/page.tsx",
+      "src/app/auth/continue/actions.ts",
+      "src/lib/auth/pending-confirmation.ts",
       "src/app/settings/actions.ts",
       "src/middleware.ts",
     ]

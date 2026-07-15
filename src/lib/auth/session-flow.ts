@@ -9,6 +9,7 @@ import {
   AUTH_DEFAULT_REDIRECT_PATH,
   normalizeAuthRedirectTarget,
 } from "./redirects";
+import { isValidMagicLinkRequestState } from "./request-state";
 
 export type AuthMagicLinkRequestStatus =
   | "invalid_email"
@@ -66,7 +67,7 @@ type GetSupabaseAuthFlowClientOptions = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AUTH_CODE_PATTERN = /^[A-Za-z0-9_-]{8,512}$/;
-const AUTH_TOKEN_HASH_PATTERN = /^[A-Za-z0-9_-]{8,}$/;
+const AUTH_TOKEN_HASH_PATTERN = /^[A-Za-z0-9_-]{8,512}$/;
 
 export function getSupabaseAuthAvailability({
   env = process.env,
@@ -112,18 +113,21 @@ export function normalizeAuthOrigin(value: unknown) {
 export function createAuthConfirmationUrl({
   next,
   origin,
+  state,
 }: {
   next?: unknown;
   origin: string;
+  state: unknown;
 }) {
   const safeOrigin = normalizeAuthOrigin(origin);
 
-  if (!safeOrigin) {
+  if (!safeOrigin || !isValidMagicLinkRequestState(state)) {
     return null;
   }
 
   const url = new URL("/auth/confirm", safeOrigin);
   url.searchParams.set("next", normalizeAuthRedirectTarget(next));
+  url.searchParams.set("state", state);
 
   return url.toString();
 }
