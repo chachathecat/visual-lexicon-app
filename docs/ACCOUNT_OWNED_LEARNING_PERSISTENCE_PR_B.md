@@ -11,13 +11,14 @@ PR B adds reviewable Next.js route files for:
 - `POST /api/account/sync/preview`
 - `GET /api/account/sync/digest`
 
-Both actual exports are hard default-disabled and return `503 ROUTE_DISABLED`
-without creating a Supabase client. This keeps PR A's `runtimeConnected:
-false` statement accurate. A tested, non-wired future staging policy requires
-`VLX_ACCOUNT_LEARNING_READ_MODE=staging_read_only`, an exact expected project
-ref match against the configured Supabase URL, and exact
-`VERCEL_ENV=preview`. A later reviewed code change is required to wire that
-policy.
+PR B shipped both actual exports hard default-disabled. The separately
+approved staging activation change wires them to a fail-closed policy that
+still returns `503 ROUTE_DISABLED` without creating a Supabase client unless
+all dedicated-staging controls match: read mode, Preview environment,
+production Node runtime, canonical repository, exact non-main branch, exact
+reviewed commit SHA, staging Supabase project ref, production-ref exclusion,
+strong HMAC secret, and both distributed Firewall rules. Production and all
+write/apply/audit paths remain outside this approval.
 
 ## Authentication and account selection
 
@@ -99,9 +100,12 @@ Every success and error response includes `Cache-Control: private, no-store`,
 
 ## Activation and next gate
 
-Activation is not an environment-only operation in this PR. It requires a new
-reviewed change to wire the dual staging guard into the actual route exports,
-plus a dedicated cursor HMAC secret, synthetic accounts, and isolated-staging
-evidence, plus distributed account/IP read throttling. Mutating PR C remains
-unauthorized until a separate owner approval, kill switch,
-idempotency, rollback, monitoring, and manual QA gates are complete.
+This document records the historical PR B state. On 2026-07-14 the owner later
+approved a separate dedicated-staging, read-only activation gate. The follow-up
+source change wires the actual exports only through exact preview, project-ref,
+non-main branch, strong-HMAC, and distributed IP/owner Firewall controls. Live
+staging application and synthetic two-account evidence remain external
+execution steps and must not be claimed until verified.
+
+Mutating PR C remains unauthorized until a separate owner approval, kill
+switch, idempotency, rollback, monitoring, and manual QA gates are complete.

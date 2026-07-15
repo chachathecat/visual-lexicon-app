@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { TrackBAppShell, TrackBPageHeader } from "@/components/track-b";
 import {
   AUTH_DEFAULT_REDIRECT_PATH,
   normalizeAuthRedirectTarget,
 } from "@/lib/auth/redirects";
-import { getSupabaseAuthAvailability } from "@/lib/auth/session-flow";
+import {
+  getCanonicalLoginRedirect,
+  getSupabaseAuthAvailability,
+} from "@/lib/auth/session-flow";
 
 import { requestMagicLinkAction } from "./actions";
 
@@ -31,15 +36,31 @@ function getLoginStatusMessage(status: string | undefined) {
     return {
       tone: "success",
       title: "Check your email.",
-      body: "If this address can receive a Visual Lexicon Magic Link, the next step is in that inbox.",
+      body: "If this address can receive a Visual Lexicon Magic Link, open the newest email and confirm once more in Visual Lexicon.",
     };
   }
 
-  if (status === "error") {
+  if (status === "invalid-email") {
     return {
       tone: "neutral",
       title: "Request not completed.",
       body: "Use a valid email address and try again. The response will not reveal whether an account exists.",
+    };
+  }
+
+  if (status === "confirmation-error") {
+    return {
+      tone: "neutral",
+      title: "Sign-in link not accepted.",
+      body: "Request a new Magic Link, open the newest email once, then use the confirmation button in Visual Lexicon.",
+    };
+  }
+
+  if (status === "canonical-host") {
+    return {
+      tone: "neutral",
+      title: "Secure login address ready.",
+      body: "No email was sent from the other Vercel address. Enter your approved email once here to continue securely.",
     };
   }
 
@@ -54,7 +75,17 @@ function getLoginStatusMessage(status: string | undefined) {
   return null;
 }
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const requestHeaders = await headers();
+  const canonicalLoginRedirect = getCanonicalLoginRedirect({
+    headers: requestHeaders,
+    next: readSearchParam(searchParams, "next"),
+  });
+
+  if (canonicalLoginRedirect) {
+    redirect(canonicalLoginRedirect);
+  }
+
   const availability = getSupabaseAuthAvailability();
   const safeNext = normalizeAuthRedirectTarget(
     readSearchParam(searchParams, "next")

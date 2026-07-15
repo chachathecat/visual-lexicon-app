@@ -7,8 +7,11 @@ import {
 
 import {
   AUTH_DEFAULT_REDIRECT_PATH,
+  createLoginRedirectPath,
   normalizeAuthRedirectTarget,
+  type AuthLoginStatus,
 } from "./redirects";
+import { isValidMagicLinkRequestState } from "./request-state";
 
 export type AuthMagicLinkRequestStatus =
   | "invalid_email"
@@ -42,6 +45,7 @@ export type AuthLogoutResult = {
 
 export type SupabaseAuthFlowClient = {
   auth: {
+    exchangeCodeForSession(code: string): Promise<{ error: unknown | null }>;
     signInWithOtp(input: {
       email: string;
       options: {
@@ -64,14 +68,21 @@ type GetSupabaseAuthFlowClientOptions = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const AUTH_TOKEN_HASH_PATTERN = /^[A-Za-z0-9_-]{8,}$/;
+const AUTH_CODE_PATTERN = /^[A-Za-z0-9_-]{8,512}$/;
+const AUTH_TOKEN_HASH_PATTERN = /^[A-Za-z0-9_-]{8,512}$/;
 
 export function getSupabaseAuthAvailability({
   env = process.env,
 }: {
   env?: SupabaseServerEnv;
 } = {}) {
-  return readSupabaseServerConfig(env) ? "configured" : "unconfigured";
+  const appUrl = env.NEXT_PUBLIC_APP_URL;
+  const appUrlIsInvalid =
+    appUrl !== undefined && normalizeAuthOrigin(appUrl) === null;
+
+  return readSupabaseServerConfig(env) && !appUrlIsInvalid
+    ? "configured"
+    : "unconfigured";
 }
 
 export function normalizeAuthEmail(value: unknown) {
@@ -110,43 +121,38 @@ export function normalizeAuthOrigin(value: unknown) {
 export function createAuthConfirmationUrl({
   next,
   origin,
+  state,
 }: {
   next?: unknown;
   origin: string;
+  state: unknown;
 }) {
   const safeOrigin = normalizeAuthOrigin(origin);
 
-  if (!safeOrigin) {
+  if (!safeOrigin || !isValidMagicLinkRequestState(state)) {
     return null;
   }
 
   const url = new URL("/auth/confirm", safeOrigin);
   url.searchParams.set("next", normalizeAuthRedirectTarget(next));
+  url.searchParams.set("state", state);
 
   return url.toString();
 }
 
-export function getRequestAuthOrigin({
-  env = process.env,
+export function getForwardedRequestAuthOrigin({
   headers,
 }: {
-  env?: SupabaseServerEnv & {
-    NEXT_PUBLIC_APP_URL?: string;
-  };
   headers: Pick<Headers, "get">;
 }) {
-  const configuredOrigin = normalizeAuthOrigin(env.NEXT_PUBLIC_APP_URL);
-
-  if (configuredOrigin) {
-    return configuredOrigin;
-  }
-
-  const host =
-    headers.get("x-forwarded-host")?.trim() ?? headers.get("host")?.trim();
-  const protocol = headers.get("x-forwarded-proto")?.trim() ?? "http";
+  const forwardedHost = headers.get("x-forwarded-host")?.trim();
+  const host = forwardedHost || headers.get("host")?.trim();
+  const forwardedProtocol = headers.get("x-forwarded-proto")?.trim();
+  const protocol = forwardedProtocol || "http";
 
   if (
     !host ||
+    host.includes(",") ||
     host.includes("/") ||
     host.includes("\\") ||
     host.includes("@") ||
@@ -158,10 +164,68 @@ export function getRequestAuthOrigin({
   return normalizeAuthOrigin(`${protocol}://${host}`);
 }
 
+export function getCanonicalLoginRedirect({
+  env = process.env,
+  headers,
+  next,
+  status,
+}: {
+  env?: SupabaseServerEnv & {
+    NEXT_PUBLIC_APP_URL?: string;
+  };
+  headers: Pick<Headers, "get">;
+  next?: unknown;
+  status?: AuthLoginStatus;
+}) {
+  const configuredOrigin = normalizeAuthOrigin(env.NEXT_PUBLIC_APP_URL);
+
+  if (!configuredOrigin) {
+    return null;
+  }
+
+  const requestOrigin = getForwardedRequestAuthOrigin({ headers });
+
+  if (requestOrigin === configuredOrigin) {
+    return null;
+  }
+
+  return new URL(
+    createLoginRedirectPath({ next, status }),
+    configuredOrigin
+  ).toString();
+}
+
+export function getRequestAuthOrigin({
+  env = process.env,
+  headers,
+}: {
+  env?: SupabaseServerEnv & {
+    NEXT_PUBLIC_APP_URL?: string;
+  };
+  headers: Pick<Headers, "get">;
+}) {
+  const configuredAppUrl = env.NEXT_PUBLIC_APP_URL;
+  const configuredOrigin = normalizeAuthOrigin(configuredAppUrl);
+
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  if (configuredAppUrl !== undefined) {
+    return null;
+  }
+
+  return getForwardedRequestAuthOrigin({ headers });
+}
+
 export function isSupportedAuthOtpType(value: unknown): value is
   | "email"
   | "magiclink" {
   return value === "email" || value === "magiclink";
+}
+
+export function isValidAuthCode(value: unknown): value is string {
+  return typeof value === "string" && AUTH_CODE_PATTERN.test(value);
 }
 
 export function isValidAuthTokenHash(value: unknown): value is string {
@@ -213,17 +277,69 @@ export async function requestSupabaseMagicLink({
 }
 
 export async function confirmSupabaseMagicLink({
+  code,
   env,
   next,
   supabase,
   tokenHash,
   type,
 }: {
+  code?: unknown;
   next?: unknown;
-  tokenHash: unknown;
-  type: unknown;
+  tokenHash?: unknown;
+  type?: unknown;
 } & GetSupabaseAuthFlowClientOptions): Promise<AuthConfirmationResult> {
   const redirectTo = normalizeAuthRedirectTarget(next);
+  const hasCode = code !== null && code !== undefined && code !== "";
+  const hasTokenHash =
+    tokenHash !== null && tokenHash !== undefined && tokenHash !== "";
+
+  if (hasCode && hasTokenHash) {
+    return {
+      status: "rejected",
+      reason: "provider_rejected",
+      redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+    };
+  }
+
+  if (hasCode) {
+    if (!isValidAuthCode(code)) {
+      return {
+        status: "rejected",
+        reason: "missing_token",
+        redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+      };
+    }
+
+    const client = await getSupabaseAuthFlowClient({ env, supabase });
+
+    if (!client) {
+      return {
+        status: "rejected",
+        reason: "unconfigured",
+        redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+      };
+    }
+
+    const { error } = await client.auth
+      .exchangeCodeForSession(code)
+      .catch(() => ({
+        error: true,
+      }));
+
+    if (error) {
+      return {
+        status: "rejected",
+        reason: "provider_rejected",
+        redirectTo: AUTH_DEFAULT_REDIRECT_PATH,
+      };
+    }
+
+    return {
+      status: "confirmed",
+      redirectTo,
+    };
+  }
 
   if (!isValidAuthTokenHash(tokenHash)) {
     return {

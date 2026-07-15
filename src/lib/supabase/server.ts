@@ -18,6 +18,8 @@ export type SupabaseServerConfig = {
   supabasePublishableKey: string;
 };
 
+export type SupabaseServerCookieWriteMode = "enabled" | "disabled";
+
 export type VlxSupabaseServerClientResult =
   | {
       status: "configured";
@@ -131,8 +133,10 @@ export async function clearVlxSupabaseAuthCookies({
 
 export async function createVlxSupabaseServerClient({
   env = process.env,
+  cookieWriteMode = "enabled",
 }: {
   env?: SupabaseServerEnv;
+  cookieWriteMode?: SupabaseServerCookieWriteMode;
 } = {}): Promise<VlxSupabaseServerClientResult> {
   const config = readSupabaseServerConfig(env);
 
@@ -153,6 +157,10 @@ export async function createVlxSupabaseServerClient({
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
+          if (cookieWriteMode === "disabled") {
+            return;
+          }
+
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);

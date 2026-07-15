@@ -103,8 +103,10 @@ billing, payment SDKs, or production-data mutation.
 
 These bullets describe the scope of the historical auth-principal PR. The
 current repository also contains the later issue #187-approved Account Sync
-`preview` and `digest` route files. Those exports are hard default-disabled and
-read-only; no `apply` or `audit` route exists and no learning data is uploaded.
+`preview` and `digest` route files. Those exports are hard default-disabled and read-only;
+the separately approved staging activation still requires every fail-closed
+environment and Firewall control. No `apply` or `audit` route exists and no
+learning data is uploaded.
 
 ## Beta Status
 

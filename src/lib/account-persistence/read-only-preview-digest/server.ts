@@ -1,6 +1,8 @@
 import { createHmac } from "node:crypto";
+import { isIP } from "node:net";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { checkRateLimit as checkVercelRateLimit } from "@vercel/firewall";
 
 import { mapSupabaseAuthErrorToPrincipalStatus } from "@/lib/account-runtime/session";
 import {
@@ -39,14 +41,30 @@ export const VLX_ACCOUNT_LEARNING_READ_MODE_ENV =
   "VLX_ACCOUNT_LEARNING_READ_MODE" as const;
 export const VLX_ACCOUNT_LEARNING_EXPECTED_PROJECT_REF_ENV =
   "VLX_ACCOUNT_LEARNING_EXPECTED_SUPABASE_PROJECT_REF" as const;
+export const VLX_ACCOUNT_LEARNING_PRODUCTION_PROJECT_REF_ENV =
+  "VLX_ACCOUNT_LEARNING_PRODUCTION_SUPABASE_PROJECT_REF" as const;
+export const VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET_ENV =
+  "VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET" as const;
+export const VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH_ENV =
+  "VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH" as const;
+export const VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA_ENV =
+  "VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA" as const;
 export const VLX_ACCOUNT_LEARNING_READ_MODE_VALUE =
   "staging_read_only" as const;
+export const VLX_ACCOUNT_LEARNING_IP_RATE_LIMIT_ID =
+  "vlx-account-learning-read-ip-v1" as const;
+export const VLX_ACCOUNT_LEARNING_OWNER_RATE_LIMIT_ID =
+  "vlx-account-learning-read-owner-v1" as const;
+export const VLX_ACCOUNT_LEARNING_RATE_LIMIT_RETRY_AFTER_SECONDS = 60;
 
 export const VLX_ACCOUNT_LEARNING_READ_CACHE_CONTROL = "private, no-store";
 export const VLX_ACCOUNT_LEARNING_READ_VARY = "Cookie";
 
 const SUPABASE_ACCOUNT_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const GIT_COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/;
+const VLX_CANONICAL_GIT_REPO_OWNER = "chachathecat";
+const VLX_CANONICAL_GIT_REPO_SLUG = "visual-lexicon-app";
 
 export type VlxAccountLearningReadEnv = Record<string, string | undefined>;
 
@@ -54,12 +72,20 @@ export type VlxAccountLearningReadAccess = {
   enabled: boolean;
   target: "isolated_staging" | "disabled";
   expectedProjectRefMatched: boolean;
+  productionProjectRefExcluded: boolean;
+  expectedBranchMatched: boolean;
+  expectedCommitMatched: boolean;
+  canonicalRepositoryMatched: boolean;
+  vercelPlatformConfirmed: boolean;
+  productionRuntimeConfirmed: boolean;
+  hmacSecretConfigured: boolean;
 };
 
 export type VlxAccountLearningReadDependencies = {
   readAccess?: () => VlxAccountLearningReadAccess;
   createClient?: () => Promise<SupabaseClient | null>;
   readSummary?: typeof readSupabaseAccountLearningSummary;
+  checkRateLimit?: typeof checkVercelRateLimit;
   now?: () => Date;
   cursorHmacSecret?: string | null;
 };
@@ -80,12 +106,6 @@ type BoundedJsonResult =
   | { ok: true; value: unknown }
   | { ok: false; code: "MALFORMED_REQUEST" | "REQUEST_TOO_LARGE" };
 
-const HARD_DISABLED_ACCESS = {
-  enabled: false,
-  target: "disabled",
-  expectedProjectRefMatched: false,
-} as const satisfies VlxAccountLearningReadAccess;
-
 export function readAccountLearningStagingReadAccess(
   env: VlxAccountLearningReadEnv = process.env
 ): VlxAccountLearningReadAccess {
@@ -99,21 +119,70 @@ export function readAccountLearningStagingReadAccess(
       actualProjectRef &&
       expectedProjectRef === actualProjectRef
   );
+  const productionProjectRef =
+    env[VLX_ACCOUNT_LEARNING_PRODUCTION_PROJECT_REF_ENV]?.trim();
+  const productionProjectRefExcluded = Boolean(
+    productionProjectRef &&
+      actualProjectRef &&
+      productionProjectRef !== actualProjectRef
+  );
+  const expectedBranch =
+    env[VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH_ENV]?.trim();
+  const actualBranch = env.VERCEL_GIT_COMMIT_REF?.trim();
+  const expectedBranchMatched = Boolean(
+    expectedBranch &&
+      actualBranch &&
+      actualBranch !== "main" &&
+      expectedBranch === actualBranch
+  );
+  const expectedCommitSha =
+    env[VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA_ENV]?.trim();
+  const actualCommitSha = env.VERCEL_GIT_COMMIT_SHA?.trim();
+  const expectedCommitMatched = Boolean(
+    expectedCommitSha &&
+      actualCommitSha &&
+      GIT_COMMIT_SHA_PATTERN.test(expectedCommitSha) &&
+      expectedCommitSha === actualCommitSha
+  );
+  const canonicalRepositoryMatched =
+    env.VERCEL_GIT_REPO_OWNER === VLX_CANONICAL_GIT_REPO_OWNER &&
+    env.VERCEL_GIT_REPO_SLUG === VLX_CANONICAL_GIT_REPO_SLUG;
+  const vercelPlatformConfirmed = env.VERCEL === "1";
+  const productionRuntimeConfirmed = env.NODE_ENV === "production";
+  const cursorHmacSecret =
+    env[VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET_ENV] ?? null;
+  const hmacSecretConfigured = hasStrongCursorHmacSecret(cursorHmacSecret);
   const enabled =
     env[VLX_ACCOUNT_LEARNING_READ_MODE_ENV] ===
       VLX_ACCOUNT_LEARNING_READ_MODE_VALUE &&
     expectedProjectRefMatched &&
-    env.VERCEL_ENV === "preview";
+    productionProjectRefExcluded &&
+    expectedBranchMatched &&
+    expectedCommitMatched &&
+    canonicalRepositoryMatched &&
+    vercelPlatformConfirmed &&
+    productionRuntimeConfirmed &&
+    env.VERCEL_ENV === "preview" &&
+    hmacSecretConfigured;
 
   return {
     enabled,
     target: enabled ? "isolated_staging" : "disabled",
     expectedProjectRefMatched,
+    productionProjectRefExcluded,
+    expectedBranchMatched,
+    expectedCommitMatched,
+    canonicalRepositoryMatched,
+    vercelPlatformConfirmed,
+    productionRuntimeConfirmed,
+    hmacSecretConfigured,
   };
 }
 
 async function createDefaultClient() {
-  const result = await createVlxSupabaseServerClient();
+  const result = await createVlxSupabaseServerClient({
+    cookieWriteMode: "disabled",
+  });
 
   return result.status === "configured" ? result.client : null;
 }
@@ -121,11 +190,12 @@ async function createDefaultClient() {
 export function createAccountLearningReadOnlyRouteHandler(
   route: VlxAccountLearningReadRoute,
   {
-    readAccess = () => HARD_DISABLED_ACCESS,
+    readAccess = readAccountLearningStagingReadAccess,
     createClient = createDefaultClient,
     readSummary = readSupabaseAccountLearningSummary,
+    checkRateLimit = checkVercelRateLimit,
     now = () => new Date(),
-    cursorHmacSecret = null,
+    cursorHmacSecret,
   }: VlxAccountLearningReadDependencies = {}
 ) {
   return async function accountLearningReadOnlyRouteHandler(request: Request) {
@@ -140,9 +210,54 @@ export function createAccountLearningReadOnlyRouteHandler(
     if (
       !access.enabled ||
       access.target !== "isolated_staging" ||
-      !access.expectedProjectRefMatched
+      !access.expectedProjectRefMatched ||
+      !access.productionProjectRefExcluded ||
+      !access.expectedBranchMatched ||
+      !access.expectedCommitMatched ||
+      !access.canonicalRepositoryMatched ||
+      !access.vercelPlatformConfirmed ||
+      !access.productionRuntimeConfirmed ||
+      !access.hmacSecretConfigured
     ) {
       return errorResponse("ROUTE_DISABLED", 503);
+    }
+
+    const resolvedCursorHmacSecret =
+      cursorHmacSecret === undefined
+        ? process.env[VLX_ACCOUNT_LEARNING_CURSOR_HMAC_SECRET_ENV] ?? null
+        : cursorHmacSecret;
+
+    if (!hasStrongCursorHmacSecret(resolvedCursorHmacSecret)) {
+      return errorResponse("ROUTE_DISABLED", 503);
+    }
+
+    const trustedClientIp = readTrustedVercelClientIp(request);
+
+    if (!trustedClientIp) {
+      return errorResponse("RATE_LIMIT_UNAVAILABLE", 503);
+    }
+
+    const ipRateLimit = await readDistributedRateLimit({
+      checkRateLimit,
+      rateLimitId: VLX_ACCOUNT_LEARNING_IP_RATE_LIMIT_ID,
+      rateLimitKey: createRateLimitKey(
+        resolvedCursorHmacSecret,
+        "ip",
+        trustedClientIp
+      ),
+      request,
+    });
+
+    if (ipRateLimit === "unavailable") {
+      return errorResponse("RATE_LIMIT_UNAVAILABLE", 503);
+    }
+
+    if (ipRateLimit === "limited") {
+      return errorResponse("RATE_LIMITED", 429, {
+        "Retry-After": String(
+          VLX_ACCOUNT_LEARNING_RATE_LIMIT_RETRY_AFTER_SECONDS
+        ),
+      });
     }
 
     const validatedInput = await readAndValidateRouteInput(route, request);
@@ -172,6 +287,29 @@ export function createAccountLearningReadOnlyRouteHandler(
       return owner.reason === "unavailable"
         ? errorResponse("AUTH_UNAVAILABLE", 503)
         : errorResponse("AUTH_REQUIRED", 401);
+    }
+
+    const ownerRateLimit = await readDistributedRateLimit({
+      checkRateLimit,
+      rateLimitId: VLX_ACCOUNT_LEARNING_OWNER_RATE_LIMIT_ID,
+      rateLimitKey: createRateLimitKey(
+        resolvedCursorHmacSecret,
+        "owner",
+        owner.ownerAccountId
+      ),
+      request,
+    });
+
+    if (ownerRateLimit === "unavailable") {
+      return errorResponse("RATE_LIMIT_UNAVAILABLE", 503);
+    }
+
+    if (ownerRateLimit === "limited") {
+      return errorResponse("RATE_LIMITED", 429, {
+        "Retry-After": String(
+          VLX_ACCOUNT_LEARNING_RATE_LIMIT_RETRY_AFTER_SECONDS
+        ),
+      });
     }
 
     const summary = await readSummary({
@@ -207,7 +345,7 @@ export function createAccountLearningReadOnlyRouteHandler(
         ownerAccountId: owner.ownerAccountId,
         evidence: summary.data,
         evaluatedAt,
-        cursorHmacSecret,
+        cursorHmacSecret: resolvedCursorHmacSecret,
       });
     }
 
@@ -215,7 +353,7 @@ export function createAccountLearningReadOnlyRouteHandler(
       ownerAccountId: owner.ownerAccountId,
       evidence: summary.data,
       evaluatedAt,
-      cursorHmacSecret,
+      cursorHmacSecret: resolvedCursorHmacSecret,
     });
   };
 }
@@ -360,6 +498,69 @@ function buildPreviewResponse({
     responseBody,
     validateAccountLearningPreviewResponse
   );
+}
+
+function hasStrongCursorHmacSecret(secret: string | null): secret is string {
+  return Boolean(
+    secret &&
+      new TextEncoder().encode(secret).byteLength >=
+        VLX_ACCOUNT_LEARNING_CURSOR_HMAC_MIN_SECRET_BYTES
+  );
+}
+
+function readTrustedVercelClientIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.trim();
+
+  if (
+    !forwardedFor ||
+    forwardedFor.length > 64 ||
+    forwardedFor.includes(",") ||
+    isIP(forwardedFor) === 0
+  ) {
+    return null;
+  }
+
+  return forwardedFor;
+}
+
+function createRateLimitKey(
+  secret: string,
+  scope: "ip" | "owner",
+  value: string
+) {
+  return `vlx-${scope}-${createHmac("sha256", secret)
+    .update("vlx-account-learning-rate-limit-v1\u0000", "utf8")
+    .update(scope, "utf8")
+    .update("\u0000", "utf8")
+    .update(value, "utf8")
+    .digest("hex")}`;
+}
+
+async function readDistributedRateLimit({
+  checkRateLimit,
+  rateLimitId,
+  rateLimitKey,
+  request,
+}: {
+  checkRateLimit: typeof checkVercelRateLimit;
+  rateLimitId: string;
+  rateLimitKey: string;
+  request: Request;
+}): Promise<"allowed" | "limited" | "unavailable"> {
+  try {
+    const result = await checkRateLimit(rateLimitId, {
+      request,
+      rateLimitKey,
+    });
+
+    if (result.error) {
+      return result.error === "blocked" ? "limited" : "unavailable";
+    }
+
+    return result.rateLimited ? "limited" : "allowed";
+  } catch {
+    return "unavailable";
+  }
 }
 
 function buildDigestResponse({
@@ -639,14 +840,21 @@ function validatedSuccessResponse<TBody>(
   });
 }
 
-function errorResponse(code: VlxAccountLearningReadErrorCode, status: number) {
+function errorResponse(
+  code: VlxAccountLearningReadErrorCode,
+  status: number,
+  additionalHeaders: Record<string, string> = {}
+) {
   return Response.json(
     {
       error: { code },
     },
     {
       status,
-      headers: createReadOnlyHeaders(),
+      headers: {
+        ...createReadOnlyHeaders(),
+        ...additionalHeaders,
+      },
     }
   );
 }
