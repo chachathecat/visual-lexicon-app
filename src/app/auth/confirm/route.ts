@@ -22,24 +22,30 @@ function createCredentialSafeRedirect(request: NextRequest, path: string) {
 
 async function handleConfirmationLanding(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const code = searchParams.get("code");
-  const tokenHash = searchParams.get("token_hash");
+  const codeValues = searchParams.getAll("code");
+  const tokenHashValues = searchParams.getAll("token_hash");
   const type = searchParams.get("type");
   const next = searchParams.get("next");
   const state = searchParams.get("state");
   const requestStateAccepted = await validateMagicLinkRequestState({ state });
 
-  // A GET is allowed to stage a custom-template token hash, but it must never
-  // consume the browser-bound request state or an authentication credential.
+  const hasOneUnambiguousCredential =
+    (codeValues.length === 1 && tokenHashValues.length === 0) ||
+    (codeValues.length === 0 && tokenHashValues.length === 1);
+
+  // A GET is allowed to stage one PKCE code or custom-template token hash, but
+  // it must never consume the browser-bound request state or an authentication
+  // credential.
   // Email security scanners routinely prefetch links. The explicit
   // server-action POST on /auth/continue consumes both the bound state and the
   // pending token before provider verification.
-  if (!code && tokenHash && requestStateAccepted) {
+  if (hasOneUnambiguousCredential && requestStateAccepted) {
     const staged = await stagePendingMagicLinkConfirmation({
+      code: codeValues[0],
       next,
       secure: request.nextUrl.protocol === "https:",
       state,
-      tokenHash,
+      tokenHash: tokenHashValues[0],
       type,
     });
 

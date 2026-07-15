@@ -5,8 +5,9 @@ import {
   consumeMagicLinkRequestState,
   isValidMagicLinkRequestState,
 } from "./request-state";
-import { isValidAuthTokenHash } from "./session-flow";
+import { isValidAuthCode, isValidAuthTokenHash } from "./session-flow";
 
+const PENDING_CODE_COOKIE = "auth_pending_code";
 const PENDING_TOKEN_COOKIE = "auth_pending_token_hash";
 const PENDING_TYPE_COOKIE = "auth_pending_type";
 const PENDING_NEXT_COOKIE = "auth_pending_next";
@@ -29,11 +30,16 @@ export type PendingConfirmationCookieStore = {
   set(name: string, value: string, options: CookieOptions): unknown;
 };
 
-export type PendingMagicLinkConfirmation = {
-  next: string;
-  tokenHash: string;
-  type: "email";
-};
+export type PendingMagicLinkConfirmation =
+  | {
+      code: string;
+      next: string;
+    }
+  | {
+      next: string;
+      tokenHash: string;
+      type: "email";
+    };
 
 type StagedMagicLinkConfirmation = PendingMagicLinkConfirmation & {
   state: string;
@@ -103,6 +109,7 @@ async function resolveCookieStore(cookieStore?: PendingConfirmationCookieStore) 
 }
 
 export async function stagePendingMagicLinkConfirmation({
+  code,
   cookieStore,
   next,
   secure,
@@ -110,26 +117,47 @@ export async function stagePendingMagicLinkConfirmation({
   tokenHash,
   type,
 }: {
+  code?: unknown;
   cookieStore?: PendingConfirmationCookieStore;
   next?: unknown;
   secure: boolean;
   state: unknown;
-  tokenHash: unknown;
-  type: unknown;
+  tokenHash?: unknown;
+  type?: unknown;
 }) {
+  const codeWasProvided = code !== null && code !== undefined;
+  const tokenHashWasProvided = tokenHash !== null && tokenHash !== undefined;
+  const isPkceConfirmation =
+    codeWasProvided &&
+    !tokenHashWasProvided &&
+    isValidAuthCode(code);
+  const isTokenHashConfirmation =
+    !codeWasProvided &&
+    tokenHashWasProvided &&
+    isValidAuthTokenHash(tokenHash) &&
+    type === "email";
+
   if (
-    !isValidAuthTokenHash(tokenHash) ||
     !isValidMagicLinkRequestState(state) ||
-    type !== "email"
+    (!isPkceConfirmation && !isTokenHashConfirmation)
   ) {
     return false;
   }
 
   const store = await resolveCookieStore(cookieStore);
   const options = pendingCookieOptions({ secure });
+  const expiredOptions = expiredPendingCookieOptions();
 
-  store.set(PENDING_TOKEN_COOKIE, tokenHash, options);
-  store.set(PENDING_TYPE_COOKIE, type, options);
+  if (isPkceConfirmation) {
+    store.set(PENDING_CODE_COOKIE, code, options);
+    store.set(PENDING_TOKEN_COOKIE, "", expiredOptions);
+    store.set(PENDING_TYPE_COOKIE, "", expiredOptions);
+  } else {
+    store.set(PENDING_CODE_COOKIE, "", expiredOptions);
+    store.set(PENDING_TOKEN_COOKIE, tokenHash as string, options);
+    store.set(PENDING_TYPE_COOKIE, "email", options);
+  }
+
   store.set(PENDING_NEXT_COOKIE, encodeNext(next), options);
   store.set(PENDING_STATE_COOKIE, state, options);
 
@@ -142,26 +170,33 @@ async function readStagedMagicLinkConfirmation({
   cookieStore?: PendingConfirmationCookieStore;
 } = {}): Promise<StagedMagicLinkConfirmation | null> {
   const store = await resolveCookieStore(cookieStore);
+  const code = store.get(PENDING_CODE_COOKIE)?.value;
   const tokenHash = store.get(PENDING_TOKEN_COOKIE)?.value;
   const type = store.get(PENDING_TYPE_COOKIE)?.value;
   const next = decodeNext(store.get(PENDING_NEXT_COOKIE)?.value);
   const state = store.get(PENDING_STATE_COOKIE)?.value;
 
-  if (
-    !isValidAuthTokenHash(tokenHash) ||
-    type !== "email" ||
-    !next ||
-    !isValidMagicLinkRequestState(state)
-  ) {
+  if (!next || !isValidMagicLinkRequestState(state)) {
     return null;
   }
 
-  return {
-    next,
-    state,
-    tokenHash,
-    type,
-  };
+  if (
+    isValidAuthCode(code) &&
+    tokenHash === undefined &&
+    type === undefined
+  ) {
+    return { code, next, state };
+  }
+
+  if (
+    code === undefined &&
+    isValidAuthTokenHash(tokenHash) &&
+    type === "email"
+  ) {
+    return { next, state, tokenHash, type };
+  }
+
+  return null;
 }
 
 export async function readPendingMagicLinkConfirmation({
@@ -175,11 +210,11 @@ export async function readPendingMagicLinkConfirmation({
     return null;
   }
 
-  return {
-    next: staged.next,
-    tokenHash: staged.tokenHash,
-    type: staged.type,
-  };
+  if ("code" in staged) {
+    return { code: staged.code, next: staged.next };
+  }
+
+  return { next: staged.next, tokenHash: staged.tokenHash, type: staged.type };
 }
 
 export async function takePendingMagicLinkConfirmation({
@@ -193,6 +228,7 @@ export async function takePendingMagicLinkConfirmation({
   });
   const expiredOptions = expiredPendingCookieOptions();
 
+  store.set(PENDING_CODE_COOKIE, "", expiredOptions);
   store.set(PENDING_TOKEN_COOKIE, "", expiredOptions);
   store.set(PENDING_TYPE_COOKIE, "", expiredOptions);
   store.set(PENDING_NEXT_COOKIE, "", expiredOptions);
@@ -211,9 +247,9 @@ export async function takePendingMagicLinkConfirmation({
     return null;
   }
 
-  return {
-    next: staged.next,
-    tokenHash: staged.tokenHash,
-    type: staged.type,
-  };
+  if ("code" in staged) {
+    return { code: staged.code, next: staged.next };
+  }
+
+  return { next: staged.next, tokenHash: staged.tokenHash, type: staged.type };
 }

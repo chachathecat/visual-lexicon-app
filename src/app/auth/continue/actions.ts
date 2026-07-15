@@ -17,11 +17,18 @@ export async function completeMagicLinkAction() {
     );
   }
 
-  const result = await confirmSupabaseMagicLink({
-    next: pending.next,
-    tokenHash: pending.tokenHash,
-    type: pending.type,
-  });
+  const result = await confirmSupabaseMagicLink(
+    "code" in pending
+      ? {
+          code: pending.code,
+          next: pending.next,
+        }
+      : {
+          next: pending.next,
+          tokenHash: pending.tokenHash,
+          type: pending.type,
+        }
+  );
 
   redirect(
     result.status === "confirmed"

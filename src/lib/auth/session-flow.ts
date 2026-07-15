@@ -286,8 +286,8 @@ export async function confirmSupabaseMagicLink({
 }: {
   code?: unknown;
   next?: unknown;
-  tokenHash: unknown;
-  type: unknown;
+  tokenHash?: unknown;
+  type?: unknown;
 } & GetSupabaseAuthFlowClientOptions): Promise<AuthConfirmationResult> {
   const redirectTo = normalizeAuthRedirectTarget(next);
   const hasCode = code !== null && code !== undefined && code !== "";

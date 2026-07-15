@@ -16,6 +16,7 @@ import {
   getForwardedRequestAuthOrigin,
   getRequestAuthOrigin,
   getSupabaseAuthAvailability,
+  isValidAuthCode,
   isValidAuthTokenHash,
   requestSupabaseMagicLink,
   signOutSupabaseSession,
@@ -370,8 +371,15 @@ test.describe("Minimal Auth Session Flow v1", () => {
       tokenHash: "valid_token_hash",
       type: "email",
     });
-    expect(writes).toHaveLength(4);
-    for (const write of writes) {
+    expect(writes).toHaveLength(5);
+    expect(writes).toContainEqual(
+      expect.objectContaining({
+        name: "auth_pending_code",
+        options: expect.objectContaining({ maxAge: 0, path: "/auth" }),
+        value: "",
+      })
+    );
+    for (const write of writes.filter(({ options }) => options.maxAge !== 0)) {
       expect(write.options).toEqual(
         expect.objectContaining({
           httpOnly: true,
@@ -382,6 +390,110 @@ test.describe("Minimal Auth Session Flow v1", () => {
         })
       );
     }
+  });
+
+  test("PKCE code is staged on GET and exchanged only after an explicit one-time take", async () => {
+    const { cookieStore, values } = makePendingCookieStore();
+    const state = "a".repeat(43);
+    const code = "34e770dd-9ff9-416c-87fa-43b31d7ef225";
+
+    await storeMagicLinkRequestState({ cookieStore, secure: true, state });
+    await expect(
+      stagePendingMagicLinkConfirmation({
+        code,
+        cookieStore,
+        next: "/review/due?limit=5",
+        secure: true,
+        state,
+      })
+    ).resolves.toBe(true);
+    await expect(
+      readPendingMagicLinkConfirmation({ cookieStore })
+    ).resolves.toEqual({ code, next: "/review/due?limit=5" });
+    expect(values.get("auth_pending_code")).toBe(code);
+    expect(values.has("auth_pending_token_hash")).toBe(false);
+    expect(values.has("auth_pending_type")).toBe(false);
+
+    const pending = await takePendingMagicLinkConfirmation({ cookieStore });
+    expect(pending).toEqual({ code, next: "/review/due?limit=5" });
+    if (!pending || !("code" in pending)) {
+      throw new Error("Expected one staged PKCE confirmation");
+    }
+    await expect(
+      takePendingMagicLinkConfirmation({ cookieStore })
+    ).resolves.toBeNull();
+
+    const exchangeCalls: string[] = [];
+    let verifyCalls = 0;
+    await expect(
+      confirmSupabaseMagicLink({
+        code: pending.code,
+        next: pending.next,
+        supabase: makeSupabaseAuthClient({
+          async exchangeCodeForSession(receivedCode) {
+            exchangeCalls.push(receivedCode);
+            return { error: null };
+          },
+          async verifyOtp() {
+            verifyCalls += 1;
+            return { error: null };
+          },
+        }),
+      })
+    ).resolves.toEqual({
+      status: "confirmed",
+      redirectTo: "/review/due?limit=5",
+    });
+    expect(exchangeCalls).toEqual([code]);
+    expect(verifyCalls).toBe(0);
+  });
+
+  test("staging replaces the opposite credential and rejects ambiguous inputs", async () => {
+    const { cookieStore, values } = makePendingCookieStore();
+    const state = "a".repeat(43);
+    const code = "34e770dd-9ff9-416c-87fa-43b31d7ef225";
+
+    await stagePendingMagicLinkConfirmation({
+      cookieStore,
+      secure: true,
+      state,
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+    expect(values.has("auth_pending_token_hash")).toBe(true);
+
+    await stagePendingMagicLinkConfirmation({
+      code,
+      cookieStore,
+      secure: true,
+      state,
+    });
+    expect(values.get("auth_pending_code")).toBe(code);
+    expect(values.has("auth_pending_token_hash")).toBe(false);
+    expect(values.has("auth_pending_type")).toBe(false);
+
+    await stagePendingMagicLinkConfirmation({
+      cookieStore,
+      secure: true,
+      state,
+      tokenHash: "valid_token_hash",
+      type: "email",
+    });
+    expect(values.has("auth_pending_code")).toBe(false);
+    expect(values.get("auth_pending_token_hash")).toBe("valid_token_hash");
+
+    const { cookieStore: emptyStore, writes } = makePendingCookieStore();
+    await expect(
+      stagePendingMagicLinkConfirmation({
+        code,
+        cookieStore: emptyStore,
+        secure: true,
+        state,
+        tokenHash: "valid_token_hash",
+        type: "email",
+      })
+    ).resolves.toBe(false);
+    expect(writes).toEqual([]);
   });
 
   test("pending token requires an explicit one-time take and then fails closed", async () => {
@@ -462,9 +574,11 @@ test.describe("Minimal Auth Session Flow v1", () => {
 
     expect(isValidAuthTokenHash("a".repeat(512))).toBe(true);
     expect(isValidAuthTokenHash("a".repeat(513))).toBe(false);
+    expect(isValidAuthCode("a".repeat(512))).toBe(true);
+    expect(isValidAuthCode("a".repeat(513))).toBe(false);
   });
 
-  test("scanner-safe HTTP landing requires matching browser state and emits only a clean redirect", async () => {
+  test("scanner-safe HTTP landing stages either token hash or PKCE code behind a clean redirect", async () => {
     const state = "a".repeat(43);
     const tokenHash = "scanner_safe_token_hash";
     const url = new URL("/auth/confirm", baseUrl);
@@ -527,6 +641,70 @@ test.describe("Minimal Auth Session Flow v1", () => {
       `${AUTH_REQUEST_STATE_COOKIE_NAME}=;`
     );
     expect(await headResponse.text()).toBe("");
+
+    const code = "34e770dd-9ff9-416c-87fa-43b31d7ef225";
+    const codeUrl = new URL("/auth/confirm", baseUrl);
+    codeUrl.searchParams.set("code", code);
+    codeUrl.searchParams.set("next", "/saved");
+    codeUrl.searchParams.set("state", state);
+
+    const codeResponse = await fetch(codeUrl, {
+      headers: {
+        cookie: `${AUTH_REQUEST_STATE_COOKIE_NAME}=${state}`,
+      },
+      redirect: "manual",
+    });
+    const codeCookies = codeResponse.headers.get("set-cookie") ?? "";
+    const codeLocation = codeResponse.headers.get("location");
+
+    expect(codeResponse.status).toBe(303);
+    expect(new URL(codeLocation as string).pathname).toBe("/auth/continue");
+    expect(codeCookies).toContain("auth_pending_code=");
+    expect(codeCookies).toContain("HttpOnly");
+    expect(codeCookies).toContain("SameSite=lax");
+    expect(codeLocation).not.toContain(code);
+    expect(await codeResponse.text()).not.toContain(code);
+
+    const codeHeadResponse = await fetch(codeUrl, {
+      headers: {
+        cookie: `${AUTH_REQUEST_STATE_COOKIE_NAME}=${state}`,
+      },
+      method: "HEAD",
+      redirect: "manual",
+    });
+    expect(codeHeadResponse.status).toBe(303);
+    expect(codeHeadResponse.headers.get("set-cookie") ?? "").toContain(
+      "auth_pending_code="
+    );
+    expect(await codeHeadResponse.text()).toBe("");
+
+    const ambiguousUrl = new URL(codeUrl);
+    ambiguousUrl.searchParams.set("token_hash", tokenHash);
+    ambiguousUrl.searchParams.set("type", "email");
+    const ambiguousResponse = await fetch(ambiguousUrl, {
+      headers: {
+        cookie: `${AUTH_REQUEST_STATE_COOKIE_NAME}=${state}`,
+      },
+      redirect: "manual",
+    });
+    expect(ambiguousResponse.status).toBe(303);
+    expect(ambiguousResponse.headers.get("location")).toContain(
+      "/login?status=confirmation-error"
+    );
+    expect(ambiguousResponse.headers.get("set-cookie") ?? "").toBe("");
+
+    const duplicateCodeUrl = new URL(codeUrl);
+    duplicateCodeUrl.searchParams.append("code", "another_valid_code");
+    const duplicateCodeResponse = await fetch(duplicateCodeUrl, {
+      headers: {
+        cookie: `${AUTH_REQUEST_STATE_COOKIE_NAME}=${state}`,
+      },
+      redirect: "manual",
+    });
+    expect(duplicateCodeResponse.status).toBe(303);
+    expect(duplicateCodeResponse.headers.get("location")).toContain(
+      "/login?status=confirmation-error"
+    );
   });
 
   test("redirect and pending-cookie bounds cover Unicode and double-encoding expansion", async () => {
@@ -834,6 +1012,9 @@ test.describe("Minimal Auth Session Flow v1", () => {
     const confirmationRouteSource = readProjectFile(
       "src/app/auth/confirm/route.ts"
     );
+    const continueActionSource = readProjectFile(
+      "src/app/auth/continue/actions.ts"
+    );
 
     expect(loginPageSource).toContain("Use a valid email address and try again.");
     expect(loginPageSource).toContain("Sign-in link not accepted.");
@@ -860,6 +1041,9 @@ test.describe("Minimal Auth Session Flow v1", () => {
     );
     expect(confirmationRouteSource).not.toContain("verifyOtp");
     expect(confirmationRouteSource).not.toContain("exchangeCodeForSession");
+    expect(confirmationRouteSource).toContain('getAll("code")');
+    expect(continueActionSource).toContain('"code" in pending');
+    expect(continueActionSource).toContain("code: pending.code");
     expect(loginPageSource.toLowerCase()).not.toContain("account not found");
   });
 
