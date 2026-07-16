@@ -182,7 +182,27 @@ test.describe("account-owned learning persistence PR C", () => {
       expect(sql).toContain(
         "f3f25dc5a8278862e356f2c93d130589674942d8b6fc50963b2d8475b0c838fd"
       );
+
+      const operatorGuard = sql.indexOf(
+        "if current_user is distinct from 'postgres' then"
+      );
+      const privateObjectResolution = sql.indexOf(
+        "control_object := to_regclass("
+      );
+      expect(operatorGuard).toBeGreaterThan(-1);
+      expect(privateObjectResolution).toBeGreaterThan(operatorGuard);
+      expect(sql.slice(0, operatorGuard)).not.toContain("regclass := to_regclass");
+      expect(sql.slice(0, operatorGuard)).not.toContain(
+        "regprocedure := to_regprocedure"
+      );
     }
+
+    expect(enableSql).toContain(
+      "when operator.rolsuper then 'vlx_account_learning_writer'::regrole::oid"
+    );
+    expect(enableSql).toContain(
+      "else operator.oid\n  end\n  into wrapper_authenticated_grantor"
+    );
 
     const wrapperGrantEnd = enableSql.indexOf(
       "to authenticated\ngranted by postgres;"

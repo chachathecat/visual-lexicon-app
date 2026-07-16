@@ -19,27 +19,14 @@ declare
     );
   approved_owner_uuid uuid;
   bound_owner_account_id uuid;
-  control_object regclass := to_regclass(
-    'vlx_account_persistence_private.account_learning_apply_control'
-  );
-  receipts_object regclass := to_regclass(
-    'vlx_account_persistence_private.account_learning_apply_receipts'
-  );
-  control_snapshot_helper regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_control_snapshot()'
-  );
-  session_helper regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)'
-  );
-  request_identity_helper regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_request_identity()'
-  );
-  internal_function regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)'
-  );
-  wrapper_function regprocedure := to_regprocedure(
-    'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'
-  );
+  control_object regclass;
+  receipts_object regclass;
+  control_snapshot_helper regprocedure;
+  session_helper regprocedure;
+  request_identity_helper regprocedure;
+  internal_function regprocedure;
+  wrapper_function regprocedure;
+  wrapper_authenticated_grantor oid;
 begin
   if current_setting('vlx.account_persistence_target', true) is distinct from 'staging' then
     raise exception
@@ -50,6 +37,31 @@ begin
     raise exception
       'VLX account learning apply activation requires the postgres operator';
   end if;
+
+  -- Resolve private objects only after the operator guard. A deliberately
+  -- unprivileged wrong-operator probe must fail with the stable operator error,
+  -- not while PL/pgSQL evaluates a schema-protected declaration initializer.
+  control_object := to_regclass(
+    'vlx_account_persistence_private.account_learning_apply_control'
+  );
+  receipts_object := to_regclass(
+    'vlx_account_persistence_private.account_learning_apply_receipts'
+  );
+  control_snapshot_helper := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_control_snapshot()'
+  );
+  session_helper := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)'
+  );
+  request_identity_helper := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()'
+  );
+  internal_function := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)'
+  );
+  wrapper_function := to_regprocedure(
+    'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'
+  );
 
   if not exists (
        select 1
@@ -113,6 +125,17 @@ begin
     raise exception
       'VLX activation rejected writer role or membership drift';
   end if;
+
+  select case
+    -- PostgreSQL records object grants made by a superuser as the object
+    -- owner. Hosted Supabase uses the non-superuser branch and therefore
+    -- must retain postgres as the external authenticated grantor.
+    when operator.rolsuper then 'vlx_account_learning_writer'::regrole::oid
+    else operator.oid
+  end
+  into wrapper_authenticated_grantor
+  from pg_roles as operator
+  where operator.rolname = 'postgres';
 
   if capability_digest is null or
      capability_digest !~ '^sha256:[0-9a-f]{64}$' then
@@ -456,7 +479,7 @@ begin
              acl.is_grantable
            ) or (
              acl.grantee = 'authenticated'::regrole and
-             acl.grantor = 'postgres'::regrole and
+             acl.grantor = wrapper_authenticated_grantor and
              acl.privilege_type = 'EXECUTE' and
              not acl.is_grantable
            )
@@ -575,7 +598,16 @@ do $$
 declare
   request_identity_helper regprocedure :=
     'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure;
+  wrapper_authenticated_grantor oid;
 begin
+  select case
+    when operator.rolsuper then 'vlx_account_learning_writer'::regrole::oid
+    else operator.oid
+  end
+  into wrapper_authenticated_grantor
+  from pg_roles as operator
+  where operator.rolname = 'postgres';
+
   if not has_function_privilege(
        'authenticated',
        'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)',
@@ -689,7 +721,7 @@ begin
              acl.is_grantable
            ) or (
              acl.grantee = 'authenticated'::regrole and
-             acl.grantor = 'postgres'::regrole and
+             acl.grantor = wrapper_authenticated_grantor and
              acl.privilege_type = 'EXECUTE' and
              not acl.is_grantable
            )
@@ -838,7 +870,7 @@ begin
        where wrapper.oid =
          'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
          and acl.grantee = 'authenticated'::regrole
-         and acl.grantor = 'postgres'::regrole
+         and acl.grantor = wrapper_authenticated_grantor
          and acl.privilege_type = 'EXECUTE'
          and not acl.is_grantable
      ) or exists (
@@ -855,7 +887,7 @@ begin
          and acl.grantee = 'authenticated'::regrole
          and acl.privilege_type = 'EXECUTE'
          and (
-           acl.grantor <> 'postgres'::regrole or
+           acl.grantor <> wrapper_authenticated_grantor or
            acl.is_grantable
          )
      ) then

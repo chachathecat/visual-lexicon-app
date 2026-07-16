@@ -173,7 +173,15 @@ select
           acl.is_grantable
         ) or (
           acl.grantee = 'authenticated'::regrole and
-          acl.grantor = 'postgres'::regrole and
+          acl.grantor = (
+            select case
+              when operator.rolsuper then
+                'vlx_account_learning_writer'::regrole::oid
+              else operator.oid
+            end
+            from pg_roles as operator
+            where operator.rolname = 'postgres'
+          ) and
           acl.privilege_type = 'EXECUTE' and
           not acl.is_grantable
         )
@@ -349,7 +357,15 @@ select
     where wrapper.oid =
       'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
       and acl.grantee = 'authenticated'::regrole
-      and acl.grantor = 'postgres'::regrole
+      and acl.grantor = (
+        select case
+          when operator.rolsuper then
+            'vlx_account_learning_writer'::regrole::oid
+          else operator.oid
+        end
+        from pg_roles as operator
+        where operator.rolname = 'postgres'
+      )
       and acl.privilege_type = 'EXECUTE'
       and not acl.is_grantable
   ) and
@@ -364,7 +380,15 @@ select
       and acl.grantee = 'authenticated'::regrole
       and acl.privilege_type = 'EXECUTE'
       and (
-        acl.grantor <> 'postgres'::regrole or
+        acl.grantor <> (
+          select case
+            when operator.rolsuper then
+              'vlx_account_learning_writer'::regrole::oid
+            else operator.oid
+          end
+          from pg_roles as operator
+          where operator.rolname = 'postgres'
+        ) or
         acl.is_grantable
       )
   ) and

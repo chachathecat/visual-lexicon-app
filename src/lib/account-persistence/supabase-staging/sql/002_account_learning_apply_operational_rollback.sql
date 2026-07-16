@@ -2,27 +2,13 @@ begin;
 
 do $$
 declare
-  control_object regclass := to_regclass(
-    'vlx_account_persistence_private.account_learning_apply_control'
-  );
-  receipts_object regclass := to_regclass(
-    'vlx_account_persistence_private.account_learning_apply_receipts'
-  );
-  control_snapshot_helper regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_control_snapshot()'
-  );
-  session_helper regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)'
-  );
-  request_identity_helper regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_request_identity()'
-  );
-  internal_function regprocedure := to_regprocedure(
-    'vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)'
-  );
-  wrapper_function regprocedure := to_regprocedure(
-    'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'
-  );
+  control_object regclass;
+  receipts_object regclass;
+  control_snapshot_helper regprocedure;
+  session_helper regprocedure;
+  request_identity_helper regprocedure;
+  internal_function regprocedure;
+  wrapper_function regprocedure;
 begin
   if current_setting('vlx.account_persistence_target', true) is distinct from 'staging' then
     raise exception
@@ -33,6 +19,30 @@ begin
     raise exception
       'VLX account learning apply rollback requires the postgres operator';
   end if;
+
+  -- Resolve private objects only after the operator guard so the negative
+  -- operator probe cannot fail early on protected-schema name resolution.
+  control_object := to_regclass(
+    'vlx_account_persistence_private.account_learning_apply_control'
+  );
+  receipts_object := to_regclass(
+    'vlx_account_persistence_private.account_learning_apply_receipts'
+  );
+  control_snapshot_helper := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_control_snapshot()'
+  );
+  session_helper := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)'
+  );
+  request_identity_helper := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()'
+  );
+  internal_function := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)'
+  );
+  wrapper_function := to_regprocedure(
+    'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'
+  );
 
   if control_object is null or
      obj_description(control_object, 'pg_class') is distinct from
