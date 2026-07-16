@@ -508,7 +508,9 @@ test.describe("owner beta launch checklist", () => {
     );
 
     expect(appRouteHandlers.map((path) => path.split("\\").join("/"))).toEqual([
+      "src/app/api/account/sync/apply/route.ts",
       "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/hydrate/route.ts",
       "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts"

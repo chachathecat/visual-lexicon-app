@@ -595,10 +595,7 @@ test.describe('account sync implementation spike plan', () => {
     for (const relativePath of ACCOUNT_SYNC_IMPLEMENTATION_SPIKE_FORBIDDEN_ACTUAL_ROUTE_PATHS.flatMap(
       (path) =>
         path === 'src/app/api/account/sync'
-          ? [
-              'src/app/api/account/sync/apply',
-              'src/app/api/account/sync/audit',
-            ]
+          ? ['src/app/api/account/sync/audit']
           : [path]
     )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);
@@ -713,7 +710,25 @@ test.describe('account sync implementation spike plan', () => {
     delete historicalPackageJsonDevDependencies['axe-core'];
     delete historicalPackageLockDevDependencies['axe-core'];
 
-    expect(packageJson.scripts).toEqual(
+    const currentScriptsWithoutApprovedPrCVerification = {
+      ...packageJson.scripts,
+    };
+    const approvedPrCVerificationScripts = {
+      'test:account-learning:pr-c':
+        'playwright test tests/account-owned-learning-persistence-pr-c.spec.ts tests/account-persistence-staging-browser-hydration.spec.ts --workers=1',
+      'test:account-learning:pr-c:guards':
+        'playwright test tests/account-owned-learning-persistence-pr-b.spec.ts tests/account-runtime-session.spec.ts tests/account-sync-api-handler-harness.spec.ts tests/account-sync-audit-redaction-policy.spec.ts tests/account-sync-auth-ownership-boundary.spec.ts tests/account-sync-auth-provider-decision.spec.ts tests/account-sync-db-persistence-decision.spec.ts tests/account-sync-final-readiness-review.spec.ts tests/account-sync-idempotency-storage-design.spec.ts tests/account-sync-implementation-spike-plan.spec.ts tests/account-sync-preview-digest.spec.ts tests/account-sync-rollout-gate.spec.ts tests/account-sync-route-readiness-audit.spec.ts tests/account-sync-route-skeleton-decision.spec.ts tests/account-sync-runtime-validator-decision.spec.ts tests/account-sync-schema-payload-contract.spec.ts --workers=1',
+      'test:account-learning:pr-c:golden':
+        'playwright test tests/account-persistence-staging-golden.e2e.spec.ts --workers=1',
+      'test:regression:functional':
+        'playwright test --config=playwright.functional.config.ts --workers=1',
+    } as const;
+
+    expect(packageJson.scripts).toMatchObject(approvedPrCVerificationScripts);
+    for (const scriptName of Object.keys(approvedPrCVerificationScripts)) {
+      delete currentScriptsWithoutApprovedPrCVerification[scriptName];
+    }
+    expect(currentScriptsWithoutApprovedPrCVerification).toEqual(
       ACCOUNT_SYNC_IMPLEMENTATION_SPIKE_EXPECTED_PACKAGE_MANIFEST.scripts
     );
     expect(historicalPackageJsonDependencies).toEqual(

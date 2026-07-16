@@ -436,10 +436,7 @@ test.describe('account sync idempotency storage design', () => {
       ...ACCOUNT_SYNC_IDEMPOTENCY_STORAGE_FORBIDDEN_ACTUAL_ROUTE_PATHS,
     ].flatMap((path) =>
       path === 'src/app/api/account/sync'
-        ? [
-            'src/app/api/account/sync/apply',
-            'src/app/api/account/sync/audit',
-          ]
+        ? ['src/app/api/account/sync/audit']
         : [path]
     )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);

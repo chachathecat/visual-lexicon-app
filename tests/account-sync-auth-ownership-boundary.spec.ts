@@ -398,10 +398,7 @@ test.describe('account sync auth ownership boundary', () => {
 
     for (const relativePath of forbiddenPaths.flatMap((path) =>
       path === 'src/app/api/account/sync' || path === 'src/app/api/account'
-        ? [
-            'src/app/api/account/sync/apply',
-            'src/app/api/account/sync/audit',
-          ]
+        ? ['src/app/api/account/sync/audit']
         : [path]
     )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);

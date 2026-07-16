@@ -411,10 +411,7 @@ test.describe('account sync schema payload contract', () => {
     for (const relativePath of ACCOUNT_SYNC_SCHEMA_PAYLOAD_FORBIDDEN_ACTUAL_ROUTE_PATHS.flatMap(
       (path) =>
         path === 'src/app/api/account/sync'
-          ? [
-              'src/app/api/account/sync/apply',
-              'src/app/api/account/sync/audit',
-            ]
+          ? ['src/app/api/account/sync/audit']
           : [path]
     )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);

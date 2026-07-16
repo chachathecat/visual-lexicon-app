@@ -21,6 +21,7 @@ tsconfig.tsbuildinfo
 test-results/
 playwright-report/
 blob-report/
+.playwright-auth/
 
 # local tooling state
 .codex/

@@ -195,7 +195,6 @@ export const OWNER_PRIVATE_BETA_REQUIRED_VALIDATION_COMMANDS = [
 export const OWNER_PRIVATE_BETA_FORBIDDEN_ACTUAL_PATHS = [
   "app/api",
   "pages/api",
-  "src/app/api/account/sync/apply",
   "src/app/api/account/sync/audit",
   "src/app/api/admin",
   "src/app/api/billing",

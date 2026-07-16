@@ -51,6 +51,8 @@ export const VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA_ENV =
   "VLX_ACCOUNT_LEARNING_EXPECTED_GIT_COMMIT_SHA" as const;
 export const VLX_ACCOUNT_LEARNING_READ_MODE_VALUE =
   "staging_read_only" as const;
+export const VLX_ACCOUNT_LEARNING_DEDICATED_STAGING_VERCEL_PROJECT_ID =
+  "prj_GyX4jqA3zhSp2G4xvnP0yXIeayGb" as const;
 export const VLX_ACCOUNT_LEARNING_IP_RATE_LIMIT_ID =
   "vlx-account-learning-read-ip-v1" as const;
 export const VLX_ACCOUNT_LEARNING_OWNER_RATE_LIMIT_ID =
@@ -73,6 +75,7 @@ export type VlxAccountLearningReadAccess = {
   target: "isolated_staging" | "disabled";
   expectedProjectRefMatched: boolean;
   productionProjectRefExcluded: boolean;
+  dedicatedVercelProjectMatched: boolean;
   expectedBranchMatched: boolean;
   expectedCommitMatched: boolean;
   canonicalRepositoryMatched: boolean;
@@ -126,6 +129,9 @@ export function readAccountLearningStagingReadAccess(
       actualProjectRef &&
       productionProjectRef !== actualProjectRef
   );
+  const dedicatedVercelProjectMatched =
+    env.VERCEL_PROJECT_ID ===
+    VLX_ACCOUNT_LEARNING_DEDICATED_STAGING_VERCEL_PROJECT_ID;
   const expectedBranch =
     env[VLX_ACCOUNT_LEARNING_EXPECTED_GIT_BRANCH_ENV]?.trim();
   const actualBranch = env.VERCEL_GIT_COMMIT_REF?.trim();
@@ -157,6 +163,7 @@ export function readAccountLearningStagingReadAccess(
       VLX_ACCOUNT_LEARNING_READ_MODE_VALUE &&
     expectedProjectRefMatched &&
     productionProjectRefExcluded &&
+    dedicatedVercelProjectMatched &&
     expectedBranchMatched &&
     expectedCommitMatched &&
     canonicalRepositoryMatched &&
@@ -170,6 +177,7 @@ export function readAccountLearningStagingReadAccess(
     target: enabled ? "isolated_staging" : "disabled",
     expectedProjectRefMatched,
     productionProjectRefExcluded,
+    dedicatedVercelProjectMatched,
     expectedBranchMatched,
     expectedCommitMatched,
     canonicalRepositoryMatched,
@@ -212,6 +220,7 @@ export function createAccountLearningReadOnlyRouteHandler(
       access.target !== "isolated_staging" ||
       !access.expectedProjectRefMatched ||
       !access.productionProjectRefExcluded ||
+      !access.dedicatedVercelProjectMatched ||
       !access.expectedBranchMatched ||
       !access.expectedCommitMatched ||
       !access.canonicalRepositoryMatched ||

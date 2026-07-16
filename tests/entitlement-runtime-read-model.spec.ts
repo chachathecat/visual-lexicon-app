@@ -467,9 +467,8 @@ test.describe("Track B entitlement runtime read model", () => {
     expect(localEntitlementsSource).toContain("resolveEntitlement");
   });
 
-  test("no mutating Account Sync, usage, asset, billing, payment, or UI integration is added", () => {
+  test("the entitlement module stays isolated from Account Sync, usage, asset, billing, payment, and UI integration", () => {
     for (const relativePath of [
-      "src/app/api/account/sync/apply",
       "src/app/api/account/sync/audit",
       "src/app/api/usage",
       "src/app/api/downloads",
@@ -562,7 +561,7 @@ test.describe("Track B entitlement runtime read model", () => {
     expect(runtimeSources).not.toMatch(/vlx_[a-z0-9_]+_v1/);
   });
 
-  test("route inventory includes only auth, entitlement, and #187 hard-disabled reads", () => {
+  test("route inventory includes only approved auth, entitlement, read, and staging learning routes", () => {
     const apiFiles = listFiles(join(workspaceRoot, "src", "app", "api"))
       .map(projectRelative)
       .sort();
@@ -572,12 +571,16 @@ test.describe("Track B entitlement runtime read model", () => {
       .sort();
 
     expect(apiFiles).toEqual([
+      "src/app/api/account/sync/apply/route.ts",
       "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/hydrate/route.ts",
       "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
     ]);
     expect(routeHandlers).toEqual([
+      "src/app/api/account/sync/apply/route.ts",
       "src/app/api/account/sync/digest/route.ts",
+      "src/app/api/account/sync/hydrate/route.ts",
       "src/app/api/account/sync/preview/route.ts",
       "src/app/api/me/entitlements/route.ts",
       "src/app/auth/confirm/route.ts",

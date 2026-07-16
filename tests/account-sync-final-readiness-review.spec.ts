@@ -339,10 +339,7 @@ test.describe('account sync final readiness review', () => {
     for (const relativePath of ACCOUNT_SYNC_FINAL_READINESS_FORBIDDEN_ACTUAL_ROUTE_PATHS.flatMap(
       (path) =>
         path === 'src/app/api/account/sync' || path === 'src/app/api/account'
-          ? [
-              'src/app/api/account/sync/apply',
-              'src/app/api/account/sync/audit',
-            ]
+          ? ['src/app/api/account/sync/audit']
           : [path]
     )) {
       expect(existsSync(join(workspaceRoot, relativePath)), relativePath).toBe(false);

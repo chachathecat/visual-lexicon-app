@@ -168,6 +168,13 @@ const EXPECTED_CHANGED_FILES = [
   "tests/factory-tb-090-account-sync-skeleton-verification.spec.ts"
 ];
 
+const CURRENT_OWNER_APPROVED_STAGING_ROUTE_FILES = new Set([
+  "src/app/api/account/sync/apply/route.ts",
+  "src/app/api/account/sync/digest/route.ts",
+  "src/app/api/account/sync/hydrate/route.ts",
+  "src/app/api/account/sync/preview/route.ts"
+]);
+
 const PROTECTED_PATH_PARTS = [
   ".github/",
   "codeowners",
@@ -459,9 +466,14 @@ test.describe("TB-090 account sync skeleton verification", () => {
         runtime_route_file: true,
         owner_approval_required_before_creation: true
       });
-      expect(existsSync(join(process.cwd(), routeFile.path)), routeFile.path).toBe(
-        false
-      );
+
+      // This artifact records PR #142. Later owner approvals do not rewrite it.
+      if (!CURRENT_OWNER_APPROVED_STAGING_ROUTE_FILES.has(routeFile.path)) {
+        expect(
+          existsSync(join(process.cwd(), routeFile.path)),
+          routeFile.path
+        ).toBe(false);
+      }
     }
   });
 
