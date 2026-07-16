@@ -44,10 +44,22 @@ select
          )
        )
   ) and (
-    select count(*)
-    from pg_auth_members as membership
-    where membership.roleid = 'vlx_account_learning_writer'::regrole
-  ) <= 1 as pr_c_writer_is_least_privilege
+    (
+      (select rolsuper from pg_roles where rolname = 'postgres') and
+      (
+        select count(*) = 0
+        from pg_auth_members as membership
+        where membership.roleid = 'vlx_account_learning_writer'::regrole
+      )
+    ) or (
+      not (select rolsuper from pg_roles where rolname = 'postgres') and
+      (
+        select count(*) = 1
+        from pg_auth_members as membership
+        where membership.roleid = 'vlx_account_learning_writer'::regrole
+      )
+    )
+  ) as pr_c_writer_is_least_privilege
 from pg_roles
 where rolname = 'vlx_account_learning_writer'
 \gset
@@ -136,6 +148,21 @@ select
     from pg_language as language
     where language.lanname = 'sql'
   ) and
+  not request_identity.prosecdef and
+  request_identity.proowner = 'postgres'::regrole and
+  request_identity.prokind = 'f' and
+  not request_identity.proisstrict and
+  request_identity.proretset and
+  request_identity.prorettype = 'record'::regtype and
+  request_identity.provolatile = 's' and
+  request_identity.pronargs = 0 and
+  request_identity.prolang = (
+    select language.oid
+    from pg_language as language
+    where language.lanname = 'plpgsql'
+  ) and
+  pg_get_function_result(request_identity.oid) =
+    'TABLE(owner_account_id uuid, auth_session_id uuid)' and
   wrapper.prosecdef and
   wrapper.proowner = 'vlx_account_learning_writer'::regrole and
   wrapper.provolatile = 'v' and
@@ -148,10 +175,17 @@ select
     'vlx:migration-owner=002_account_learning_apply;object=vlx_account_persistence_private.vlx_account_learning_control_snapshot()' and
   obj_description(wrapper.oid, 'pg_proc') =
     'vlx:migration-owner=002_account_learning_apply;object=public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)' and
+  obj_description(request_identity.oid, 'pg_proc') =
+    'vlx:migration-owner=004_account_learning_hosted_grantor_compat;object=vlx_account_persistence_private.vlx_account_learning_request_identity()' and
   internal.proconfig @> array['search_path=""', 'row_security=on']::text[] and
   control_snapshot.proconfig @>
     array['search_path=""', 'row_security=on']::text[] and
   helper.proconfig @> array['search_path=""', 'row_security=on']::text[] and
+  request_identity.proconfig = array['search_path=""']::text[] and
+  position('request.jwt.claim' in request_identity.prosrc) > 0 and
+  position('request.jwt.claims' in request_identity.prosrc) > 0 and
+  position('request.jwt.claim.sub' in request_identity.prosrc) > 0 and
+  position('auth.' in lower(request_identity.prosrc)) = 0 and
   wrapper.proconfig @>
     array['search_path=""', 'row_security=on']::text[] and
   position(
@@ -164,6 +198,12 @@ select
   position(
     'pg_advisory_xact_lock' in lower(pg_get_functiondef(internal.oid))
   ) > 0 and
+  position(
+    'vlx_account_learning_request_identity' in
+    lower(pg_get_functiondef(internal.oid))
+  ) > 0 and
+  position('auth.jwt' in lower(pg_get_functiondef(internal.oid))) = 0 and
+  position('auth.uid' in lower(pg_get_functiondef(internal.oid))) = 0 and
   position('from auth.sessions' in lower(pg_get_functiondef(helper.oid))) > 0 and
   position(
     'active_session.id = p_auth_session_id' in
@@ -179,6 +219,7 @@ from pg_proc as internal
 cross join pg_proc as wrapper
 cross join pg_proc as control_snapshot
 cross join pg_proc as helper
+cross join pg_proc as request_identity
 where internal.oid =
   'vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
   and wrapper.oid =
@@ -187,11 +228,68 @@ where internal.oid =
     'vlx_account_persistence_private.vlx_account_learning_control_snapshot()'::regprocedure
   and helper.oid =
     'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)'::regprocedure
+  and request_identity.oid =
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure
 \gset
 
 \if :pr_c_function_security_shape
 \else
   \echo 'PR C wrapper/private function security shape is invalid'
+  \quit 1
+\endif
+
+select
+  count(*) = 6 and
+  bool_and(
+    position(
+      'vlx_account_persistence_private.vlx_account_learning_request_identity()'
+      in lower(
+        pg_get_expr(
+          coalesce(policy.polqual, policy.polwithcheck),
+          policy.polrelid
+        )
+      )
+    ) > 0 and
+    position(
+      'auth.' in lower(
+        pg_get_expr(
+          coalesce(policy.polqual, policy.polwithcheck),
+          policy.polrelid
+        )
+      )
+    ) = 0 and
+    exists (
+      select 1
+      from pg_depend as dependency
+      where dependency.classid = 'pg_policy'::regclass
+        and dependency.objid = policy.oid
+        and dependency.refclassid = 'pg_proc'::regclass
+        and dependency.refobjid =
+          'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure::oid
+        and dependency.deptype = 'n'
+    )
+  ) as pr_c_writer_policies_use_only_request_identity
+from pg_policy as policy
+where policy.polrelid in (
+  'vlx_account_persistence_private.account_learning_apply_receipts'::regclass,
+  'public.account_saved_words'::regclass,
+  'public.account_review_events'::regclass
+)
+  and policy.polroles =
+    array['vlx_account_learning_writer'::regrole::oid]
+  and policy.polname in (
+    'account_learning_apply_receipts_writer_select',
+    'account_learning_apply_receipts_writer_insert',
+    'account_saved_words_pr_c_writer_select',
+    'account_saved_words_pr_c_writer_insert',
+    'account_review_events_pr_c_writer_select',
+    'account_review_events_pr_c_writer_insert'
+  )
+\gset
+
+\if :pr_c_writer_policies_use_only_request_identity
+\else
+  \echo 'PR C writer RLS policies retained an auth schema dependency'
   \quit 1
 \endif
 
@@ -265,6 +363,56 @@ select
     'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)',
     'EXECUTE'
   ) and
+  not exists (
+    select 1
+    from pg_roles as app_role
+    where app_role.rolname = 'service_role'
+      and has_function_privilege(
+        app_role.oid,
+        'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure,
+        'EXECUTE'
+      )
+  ) and
+  not exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee = 0
+      and acl.privilege_type = 'EXECUTE'
+  ) and
+  exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee = 'postgres'::regrole
+      and acl.grantor = 'vlx_account_learning_writer'::regrole
+      and acl.privilege_type = 'EXECUTE'
+      and acl.is_grantable
+  ) and
+  not exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee <> wrapper.proowner
+      and not (
+        acl.grantee = 'postgres'::regrole and
+        acl.grantor = 'vlx_account_learning_writer'::regrole and
+        acl.privilege_type = 'EXECUTE' and
+        acl.is_grantable
+      )
+  ) and
   not has_function_privilege(
     'anon',
     'vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)',
@@ -316,6 +464,16 @@ select
     'singleton',
     'UPDATE'
   ) and
+  not has_schema_privilege(
+    'vlx_account_learning_writer',
+    'auth',
+    'USAGE'
+  ) and
+  not has_function_privilege(
+    'vlx_account_learning_writer',
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()',
+    'EXECUTE'
+  ) and
   not has_function_privilege(
     'vlx_account_learning_writer',
     'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)',
@@ -345,11 +503,31 @@ select
     'authenticated',
     'vlx_account_persistence_private.vlx_account_learning_control_snapshot()',
     'EXECUTE'
+  ) and
+  not has_function_privilege(
+    'anon',
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()',
+    'EXECUTE'
+  ) and
+  not has_function_privilege(
+    'authenticated',
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()',
+    'EXECUTE'
+  ) and
+  not exists (
+    select 1
+    from pg_roles as app_role
+    where app_role.rolname = 'service_role'
+      and has_function_privilege(
+        app_role.oid,
+        'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure,
+        'EXECUTE'
+      )
   ) as pr_c_default_session_grants_absent
 \gset
 
 \if :pr_c_default_session_grants_absent
 \else
-  \echo 'PR C writer/app role received session or control-helper access before activation'
+  \echo 'PR C writer/app role received identity/session/control access before activation'
   \quit 1
 \endif

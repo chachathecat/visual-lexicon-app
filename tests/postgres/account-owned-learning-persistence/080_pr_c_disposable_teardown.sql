@@ -21,6 +21,9 @@ declare
   session_helper regprocedure := to_regprocedure(
     'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)'
   );
+  request_identity_helper regprocedure := to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()'
+  );
   saved_words_object regclass := to_regclass('public.account_saved_words');
   review_events_object regclass := to_regclass('public.account_review_events');
   internal_function regprocedure := to_regprocedure(
@@ -128,6 +131,38 @@ begin
       'VLX disposable teardown ownership guard rejected the live-session helper';
   end if;
 
+  if request_identity_helper is null or
+     obj_description(request_identity_helper, 'pg_proc') is distinct from
+       'vlx:migration-owner=004_account_learning_hosted_grantor_compat;object=vlx_account_persistence_private.vlx_account_learning_request_identity()' or
+     not exists (
+       select 1
+       from pg_proc as helper
+       where helper.oid = request_identity_helper
+         and helper.proowner = 'postgres'::regrole
+         and helper.prokind = 'f'
+         and not helper.prosecdef
+         and not helper.proisstrict
+         and helper.proretset
+         and helper.prorettype = 'record'::regtype
+         and helper.provolatile = 's'
+         and helper.pronargs = 0
+         and helper.prolang = (
+           select language.oid
+           from pg_language as language
+           where language.lanname = 'plpgsql'
+         )
+         and helper.proconfig = array['search_path=""']::text[]
+         and pg_get_function_result(helper.oid) =
+           'TABLE(owner_account_id uuid, auth_session_id uuid)'
+         and position('request.jwt.claim' in helper.prosrc) > 0
+         and position('request.jwt.claims' in helper.prosrc) > 0
+         and position('request.jwt.claim.sub' in helper.prosrc) > 0
+         and position('auth.' in lower(helper.prosrc)) = 0
+     ) then
+    raise exception
+      'VLX disposable teardown ownership guard rejected the request-identity helper';
+  end if;
+
   if internal_function is null or
      obj_description(internal_function, 'pg_proc') is distinct from
        'vlx:migration-owner=002_account_learning_apply;object=vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)' then
@@ -221,6 +256,10 @@ drop function
   vlx_account_persistence_private.vlx_account_learning_control_snapshot();
 
 drop table vlx_account_persistence_private.account_learning_apply_receipts;
+
+drop function
+  vlx_account_persistence_private.vlx_account_learning_request_identity();
+
 drop table vlx_account_persistence_private.account_learning_apply_control;
 drop function
   vlx_account_persistence_private.reject_account_learning_apply_owner_rebind();
@@ -235,14 +274,13 @@ revoke all on table public.account_saved_words
   from vlx_account_learning_writer;
 revoke all on table public.account_review_events
   from vlx_account_learning_writer;
-revoke all on table auth.sessions
-  from vlx_account_learning_writer;
-revoke all on function auth.uid(), auth.jwt()
-  from vlx_account_learning_writer;
 revoke all on function extensions.digest(text, text)
   from vlx_account_learning_writer;
-revoke all on schema auth, extensions
+revoke all on schema extensions
   from vlx_account_learning_writer;
+
+revoke vlx_account_learning_writer from postgres
+  granted by postgres;
 
 drop role vlx_account_learning_writer;
 

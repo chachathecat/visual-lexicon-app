@@ -62,6 +62,18 @@ only the exact legacy or already-hardened policy shape, so it is idempotent and
 fails closed on a missing, reassigned, or altered target. It uses only
 `ALTER POLICY`; `001` and `002` remain immutable historical migrations.
 
+The additive `004_account_learning_hosted_grantor_compat_up.sql` migration
+repairs the grantor assumptions exposed by hosted Supabase, where `postgres`
+is not a superuser and does not own the managed `auth` schema. It creates one
+private, stable `SECURITY INVOKER` helper that normalizes only the request owner
+and auth-session UUID, converts all six writer policies and the internal apply
+function away from direct `auth.uid()`/`auth.jwt()` resolution, and preserves
+the existing narrow `postgres`-owned live-session check. The helper grants no
+managed-schema or table authority. In the same guarded transaction, the writer
+owner gives `postgres` grant option on exactly the public apply signature;
+`PUBLIC`, `anon`, `authenticated`, and `service_role` remain revoked while the
+database is disabled.
+
 Still not included:
 
 - no production configuration or production data access;
@@ -91,7 +103,8 @@ project secrets in this repository.
 
 `002_account_learning_apply_up.sql` creates the write layer disabled and with
 no callable app-role RPC. For a fresh live Track B staging run, apply `002`,
-then `003_account_learning_auth_rls_initplan_up.sql`, then run
+then `003_account_learning_auth_rls_initplan_up.sql`, then
+`004_account_learning_hosted_grantor_compat_up.sql`, then run
 `050_pr_c_default_disabled_assertions.sql` and
 `055_pr_c_auth_rls_initplan_assertions.sql`. Activation is a separate
 transaction:
@@ -117,26 +130,30 @@ check. The writer receives `EXECUTE` on that helper while active, never table
 `SELECT`; `anon` and `authenticated` receive neither.
 
 The writer-owned public wrapper switches to the same least-privilege identity
-as the private apply function. While active, `authenticated` receives only
-wrapper `EXECUTE`. Capability, deployment, immutable owner, live session,
+as the private apply function. While active, hosted `postgres` grants
+`authenticated` only wrapper `EXECUTE` from its exact delegated grant option.
+Capability, deployment, immutable owner, live session,
 timestamp, input-scope, idempotency, RLS, and collision checks remain inside
 the private implementation, but app roles cannot call or even resolve that
 private path. Operational rollback first waits on the control row lock, flips
 the kill switch off, then revokes wrapper and writer-helper execution in the
 same transaction.
 
-## PostgreSQL 16 integration gate
+## PostgreSQL 16/17 integration gates
 
 Disposable-database fixtures live under
 `tests/postgres/account-owned-learning-persistence`. In addition to the `001`
-gate, the fresh CI sequence applies `002`, applies `003`, runs `050` and `055`,
-then proceeds through `060`, `070`, `080`, and `090`. It proves `002`
+gate, the fresh CI sequence applies `002`, `003`, and `004`, runs `050` and
+`055`, then proceeds through `060`, `070`, `080`, and `090`. It proves `002`
 default-disable, the exact seven-policy initplan hardening, role/ACL shape,
 exact session binding, canonical round-trip, atomic replay/conflict/collision
 behavior, timestamp rejection, immutable-owner and cross-account denial,
 helper-only ACLs, rollback preservation, and a separately guarded
-disposable-only teardown. The fixtures emulate the relevant `auth.sessions`
-RLS boundary and must never point at a live database.
+disposable-only teardown. A separate PostgreSQL 17 fixture uses a distinct
+bootstrap superuser, a non-superuser `postgres`, and split managed-schema
+owners to prove the same enable/apply/replay/conflict/cross-account/rollback
+path under the hosted grantor model. The fixtures emulate the relevant
+`auth.sessions` RLS boundary and must never point at a live database.
 
 ## Rollback
 
@@ -148,7 +165,10 @@ not be run against a production project.
 PR C uses
 `002_account_learning_apply_operational_rollback.sql`, not the `001` destructive
 rollback. It atomically flips the DB kill switch off and revokes app execution,
-writer insert privileges, and the writer's two helper-execution capabilities.
+writer insert privileges, and the writer's three helper-execution capabilities.
+It also revokes the private request-identity helper from the writer while
+retaining the operator's narrowly delegated wrapper grant option for a later
+reviewed reactivation.
 It preserves both learning-evidence tables, all rows, every idempotency
 receipt, and the last capability digest/deployment binding for incident
 evidence. Only the explicitly guarded disposable PostgreSQL fixture removes

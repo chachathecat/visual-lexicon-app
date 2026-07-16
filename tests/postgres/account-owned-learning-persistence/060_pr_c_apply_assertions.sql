@@ -95,6 +95,11 @@ select
     'auth.sessions',
     'SELECT'
   ) and
+  not has_schema_privilege(
+    'vlx_account_learning_writer',
+    'auth',
+    'USAGE'
+  ) and
   not has_column_privilege(
     'vlx_account_learning_writer',
     'vlx_account_persistence_private.account_learning_apply_control',
@@ -111,6 +116,69 @@ select
     'vlx_account_persistence_private.vlx_account_learning_control_snapshot()',
     'EXECUTE'
   ) and
+  has_function_privilege(
+    'vlx_account_learning_writer',
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()',
+    'EXECUTE'
+  ) and
+  exists (
+    select 1
+    from pg_proc as identity_helper
+    cross join lateral aclexplode(
+      coalesce(
+        identity_helper.proacl,
+        acldefault('f', identity_helper.proowner)
+      )
+    ) as acl
+    where identity_helper.oid =
+      'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure
+      and acl.grantee = 'vlx_account_learning_writer'::regrole
+      and acl.grantor = 'postgres'::regrole
+      and acl.privilege_type = 'EXECUTE'
+      and not acl.is_grantable
+  ) and
+  not exists (
+    select 1
+    from pg_proc as identity_helper
+    cross join lateral aclexplode(
+      coalesce(
+        identity_helper.proacl,
+        acldefault('f', identity_helper.proowner)
+      )
+    ) as acl
+    where identity_helper.oid =
+      'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure
+      and acl.privilege_type = 'EXECUTE'
+      and acl.grantee <> identity_helper.proowner
+      and (
+        acl.grantee <> 'vlx_account_learning_writer'::regrole or
+        acl.grantor <> 'postgres'::regrole or
+        acl.is_grantable
+      )
+  ) and
+  not exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee <> wrapper.proowner
+      and not (
+        (
+          acl.grantee = 'postgres'::regrole and
+          acl.grantor = 'vlx_account_learning_writer'::regrole and
+          acl.privilege_type = 'EXECUTE' and
+          acl.is_grantable
+        ) or (
+          acl.grantee = 'authenticated'::regrole and
+          acl.grantor = 'postgres'::regrole and
+          acl.privilege_type = 'EXECUTE' and
+          not acl.is_grantable
+        )
+      )
+  ) and
   not has_function_privilege(
     'anon',
     'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)',
@@ -130,6 +198,26 @@ select
     'authenticated',
     'vlx_account_persistence_private.vlx_account_learning_control_snapshot()',
     'EXECUTE'
+  ) and
+  not has_function_privilege(
+    'anon',
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()',
+    'EXECUTE'
+  ) and
+  not has_function_privilege(
+    'authenticated',
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()',
+    'EXECUTE'
+  ) and
+  not exists (
+    select 1
+    from pg_roles as app_role
+    where app_role.rolname = 'service_role'
+      and has_function_privilege(
+        app_role.oid,
+        'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure,
+        'EXECUTE'
+      )
   ) and
   not has_table_privilege(
     'vlx_account_learning_writer',
@@ -152,23 +240,39 @@ select
 
 \if :pr_c_session_grant_is_exact
 \else
-  \echo 'PR C live-session helper was not writer-only with zero direct table access'
+  \echo 'PR C identity/session/control helpers were not writer-only with zero direct table access'
   \quit 1
 \endif
 
-set role vlx_account_learning_writer;
-
-\set ON_ERROR_STOP off
-update vlx_account_persistence_private.account_learning_apply_control
-set singleton = singleton
-where singleton;
-\set writer_control_update_sqlstate :LAST_ERROR_SQLSTATE
-\set ON_ERROR_STOP on
-
-reset role;
-
 select
-  :'writer_control_update_sqlstate' = '42501' and
+  not has_table_privilege(
+    'vlx_account_learning_writer',
+    'vlx_account_persistence_private.account_learning_apply_control',
+    'UPDATE'
+  ) and
+  (
+    (
+      (select rolsuper from pg_roles where rolname = 'postgres') and
+      (
+        select count(*) = 0
+        from pg_auth_members as membership
+        where membership.roleid = 'vlx_account_learning_writer'::regrole
+      )
+    ) or (
+      not (select rolsuper from pg_roles where rolname = 'postgres') and
+      (
+        select count(*) = 1 and
+          bool_and(
+            membership.member = 'postgres'::regrole and
+            membership.admin_option and
+            not membership.inherit_option and
+            not membership.set_option
+          )
+        from pg_auth_members as membership
+        where membership.roleid = 'vlx_account_learning_writer'::regrole
+      )
+    )
+  ) and
   enabled and
   write_capability_digest =
     'sha256:89228d479955b4faa37880d337d82301a3d5e1333a6445f283f3bed844c8d518' and
@@ -214,6 +318,55 @@ select
     'anon',
     'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)',
     'EXECUTE'
+  ) and
+  not exists (
+    select 1
+    from pg_roles as app_role
+    where app_role.rolname = 'service_role'
+      and has_function_privilege(
+        app_role.oid,
+        'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure,
+        'EXECUTE'
+      )
+  ) and
+  not exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee = 0
+      and acl.privilege_type = 'EXECUTE'
+  ) and
+  exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee = 'authenticated'::regrole
+      and acl.grantor = 'postgres'::regrole
+      and acl.privilege_type = 'EXECUTE'
+      and not acl.is_grantable
+  ) and
+  not exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee = 'authenticated'::regrole
+      and acl.privilege_type = 'EXECUTE'
+      and (
+        acl.grantor <> 'postgres'::regrole or
+        acl.is_grantable
+      )
   ) and
   not has_schema_privilege(
     'authenticated',
@@ -315,6 +468,122 @@ select
 \if :pr_c_missing_session_denied
 \else
   \echo 'PR C accepted a JWT without a session_id claim'
+  \quit 1
+\endif
+
+set request.jwt.claim.sub =
+  '74d2da4e-5947-49ef-a24d-659c5e95f08d';
+set request.jwt.claims =
+  '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":false,"session_id":"11111111-1111-4111-8111-111111111111"}';
+
+select public.vlx_account_learning_apply(
+  'pr-c-legacy-sub-disagreement',
+  'vlx-pr-c-integration-capability-0000000000000001',
+  '1111111111111111111111111111111111111111',
+  :'pr_c_valid_saved_at'::timestamptz,
+  'prc-event-legacy-sub-disagreement',
+  'browser-session-legacy-sub-disagreement',
+  :'pr_c_valid_created_at'::timestamptz,
+  3000
+) as legacy_sub_disagreement_outcome
+\gset
+
+select
+  :'legacy_sub_disagreement_outcome'::jsonb =
+    '{"status":"auth_required"}'::jsonb
+  as pr_c_legacy_sub_disagreement_denied
+\gset
+
+\if :pr_c_legacy_sub_disagreement_denied
+\else
+  \echo 'PR C accepted disagreeing legacy and JSON subject claims'
+  \quit 1
+\endif
+
+set request.jwt.claim.sub =
+  '6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b';
+set request.jwt.claims =
+  '{"is_anonymous":false,"session_id":"11111111-1111-4111-8111-111111111111"}';
+
+select public.vlx_account_learning_apply(
+  'pr-c-legacy-only-subject',
+  'vlx-pr-c-integration-capability-0000000000000001',
+  '1111111111111111111111111111111111111111',
+  :'pr_c_valid_saved_at'::timestamptz,
+  'prc-event-legacy-only-subject',
+  'browser-session-legacy-only-subject',
+  :'pr_c_valid_created_at'::timestamptz,
+  5001
+) as legacy_only_subject_outcome
+\gset
+
+select
+  :'legacy_only_subject_outcome'::jsonb =
+    '{"status":"auth_required"}'::jsonb
+  as pr_c_legacy_only_subject_denied
+\gset
+
+\if :pr_c_legacy_only_subject_denied
+\else
+  \echo 'PR C accepted a legacy subject without a matching claims subject'
+  \quit 1
+\endif
+
+reset request.jwt.claim.sub;
+set request.jwt.claim =
+  '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":false,"session_id":"11111111-1111-4111-8111-111111111111"}';
+set request.jwt.claims =
+  '{"sub":"74d2da4e-5947-49ef-a24d-659c5e95f08d","is_anonymous":false,"session_id":"22222222-2222-4222-8222-222222222222"}';
+
+select public.vlx_account_learning_apply(
+  'pr-c-singular-claims-precedence',
+  'vlx-pr-c-integration-capability-0000000000000001',
+  '1111111111111111111111111111111111111111',
+  :'pr_c_valid_saved_at'::timestamptz,
+  'prc-event-singular-claims-precedence',
+  'browser-session-singular-claims-precedence',
+  :'pr_c_valid_created_at'::timestamptz,
+  5001
+) as singular_claims_precedence_outcome
+\gset
+
+select
+  :'singular_claims_precedence_outcome'::jsonb =
+    '{"status":"auth_required"}'::jsonb
+  as pr_c_singular_claims_precedence_denied
+\gset
+
+\if :pr_c_singular_claims_precedence_denied
+\else
+  \echo 'PR C ignored a disagreeing singular claims payload'
+  \quit 1
+\endif
+
+reset request.jwt.claim;
+set request.jwt.claims =
+  '{"sub":"6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b","is_anonymous":true,"session_id":"11111111-1111-4111-8111-111111111111"}';
+
+select public.vlx_account_learning_apply(
+  'pr-c-anonymous-identity',
+  'vlx-pr-c-integration-capability-0000000000000001',
+  '1111111111111111111111111111111111111111',
+  :'pr_c_valid_saved_at'::timestamptz,
+  'prc-event-anonymous-identity',
+  'browser-session-anonymous-identity',
+  :'pr_c_valid_created_at'::timestamptz,
+  3000
+) as anonymous_identity_outcome
+\gset
+
+select
+  :'anonymous_identity_outcome'::jsonb =
+    '{"status":"auth_required"}'::jsonb
+  as pr_c_anonymous_identity_denied
+\gset
+
+\if :pr_c_anonymous_identity_denied
+\else
+  \echo 'PR C accepted an anonymous request identity'
   \quit 1
 \endif
 

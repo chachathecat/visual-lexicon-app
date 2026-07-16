@@ -317,6 +317,7 @@ jobs:
               -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_up.sql \
               -f src/lib/account-persistence/supabase-staging/sql/002_account_learning_apply_up.sql \
               -f src/lib/account-persistence/supabase-staging/sql/003_account_learning_auth_rls_initplan_up.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/004_account_learning_hosted_grantor_compat_up.sql \
               -f tests/postgres/account-owned-learning-persistence/050_pr_c_default_disabled_assertions.sql \
               -f tests/postgres/account-owned-learning-persistence/055_pr_c_auth_rls_initplan_assertions.sql \
               -f tests/postgres/account-owned-learning-persistence/060_pr_c_apply_assertions.sql \
@@ -328,6 +329,111 @@ jobs:
               -f tests/postgres/account-owned-learning-persistence/090_pr_c_disposable_teardown_assertions.sql \
               -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_down.sql \
               -f tests/postgres/account-owned-learning-persistence/020_rollback_assertions.sql
+
+  account-persistence-pr-c-hosted-operator:
+    name: Account Persistence Hosted Operator PostgreSQL 17 Gate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: vlx_bootstrap
+          POSTGRES_PASSWORD: vlx_bootstrap
+          POSTGRES_DB: vlx_pr_c_hosted_operator
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vlx_bootstrap -d vlx_pr_c_hosted_operator"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: vlx_pr_c_hosted_operator
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+
+      - name: Bootstrap split hosted roles and auth ownership
+        env:
+          PGUSER: vlx_bootstrap
+          PGPASSWORD: vlx_bootstrap
+        run: >-
+          psql -v ON_ERROR_STOP=1
+          -f tests/postgres/account-owned-learning-persistence/hosted-operator/000_bootstrap.sql
+
+      - name: Reproduce non-delegable hosted auth privileges
+        run: >-
+          psql -v ON_ERROR_STOP=1
+          -f tests/postgres/account-owned-learning-persistence/hosted-operator/010_operator_preflight.sql
+
+      - name: PostgreSQL hosted migrations and live wrapper ACL repair
+        run: |
+          PGOPTIONS="-c vlx.account_persistence_target=staging" \
+            psql -v ON_ERROR_STOP=1 \
+              -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_up.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/002_account_learning_apply_up.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/003_account_learning_auth_rls_initplan_up.sql \
+              -f tests/postgres/account-owned-learning-persistence/hosted-operator/015_wrapper_prestate.sql \
+              -f src/lib/account-persistence/supabase-staging/sql/004_account_learning_hosted_grantor_compat_up.sql
+
+      - name: PostgreSQL wrong operator fails closed
+        env:
+          PGUSER: vlx_wrong_operator
+          PGPASSWORD: vlx_wrong_operator
+        run: |
+          psql -v ON_ERROR_STOP=1 \
+            -f tests/postgres/account-owned-learning-persistence/hosted-operator/012_wrong_operator_session.sql
+
+          if PGOPTIONS="-c vlx.account_persistence_target=staging -c vlx.account_persistence_pr_c_write_capability_digest=sha256:89228d479955b4faa37880d337d82301a3d5e1333a6445f283f3bed844c8d518 -c vlx.account_persistence_pr_c_deployment_sha=1111111111111111111111111111111111111111 -c vlx.account_persistence_pr_c_approved_owner_account_id=6f3a6f4e-a0c8-4c6e-8e62-94cb1c922b6b" \
+            psql -v ON_ERROR_STOP=1 \
+              -f src/lib/account-persistence/supabase-staging/sql/002_account_learning_apply_enable.sql \
+              > wrong-operator-enable.log 2>&1; then
+            echo "Enable unexpectedly accepted the wrong database operator."
+            exit 1
+          fi
+
+          if ! grep -Fq -- \
+            "VLX account learning apply activation requires the postgres operator" \
+            wrong-operator-enable.log; then
+            cat wrong-operator-enable.log
+            exit 1
+          fi
+
+          if PGOPTIONS="-c vlx.account_persistence_target=staging" \
+            psql -v ON_ERROR_STOP=1 \
+              -f src/lib/account-persistence/supabase-staging/sql/002_account_learning_apply_operational_rollback.sql \
+              > wrong-operator-rollback.log 2>&1; then
+            echo "Rollback unexpectedly accepted the wrong database operator."
+            exit 1
+          fi
+
+          if ! grep -Fq -- \
+            "VLX account learning apply rollback requires the postgres operator" \
+            wrong-operator-rollback.log; then
+            cat wrong-operator-rollback.log
+            exit 1
+          fi
+
+      - name: PostgreSQL hosted apply, replay, conflict, and rollback
+        run: |
+          PGOPTIONS="-c vlx.account_persistence_target=staging" \
+            psql -v ON_ERROR_STOP=1 \
+              -f tests/postgres/account-owned-learning-persistence/hosted-operator/020_migration_preflight.sql \
+              -f tests/postgres/account-owned-learning-persistence/hosted-operator/030_apply_assertions.sql \
+              -f tests/postgres/account-owned-learning-persistence/hosted-operator/040_rollback_assertions.sql
 
   account-persistence-pr-c-concurrency:
     name: Account Persistence PostgreSQL Concurrency Gate

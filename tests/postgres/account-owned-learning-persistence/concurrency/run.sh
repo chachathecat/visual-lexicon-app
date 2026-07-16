@@ -155,6 +155,7 @@ PGOPTIONS="-c vlx.account_persistence_target=staging" \
     -f src/lib/account-persistence/supabase-staging/sql/001_account_learning_evidence_up.sql \
     -f src/lib/account-persistence/supabase-staging/sql/002_account_learning_apply_up.sql \
     -f src/lib/account-persistence/supabase-staging/sql/003_account_learning_auth_rls_initplan_up.sql \
+    -f src/lib/account-persistence/supabase-staging/sql/004_account_learning_hosted_grantor_compat_up.sql \
     -f tests/postgres/account-owned-learning-persistence/050_pr_c_default_disabled_assertions.sql \
     -f tests/postgres/account-owned-learning-persistence/055_pr_c_auth_rls_initplan_assertions.sql
 

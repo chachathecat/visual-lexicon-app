@@ -77,12 +77,18 @@ The sequence is:
    `(select auth.jwt() -> 'is_anonymous')` to
    `((select auth.jwt()) -> 'is_anonymous')`; policy roles, commands,
    owner-account checks, and exact JSON-boolean denial semantics are unchanged.
-3. Run `050_pr_c_default_disabled_assertions.sql`, then
+3. Apply `004_account_learning_hosted_grantor_compat_up.sql`. It leaves the
+   database disabled, removes the writer's dependency on the managed `auth`
+   schema through one private `SECURITY INVOKER` request-identity helper, and
+   gives the hosted `postgres` operator only the exact wrapper grant option it
+   needs to toggle `authenticated` execution. `PUBLIC`, `anon`, and
+   `service_role` retain no wrapper execution.
+4. Run `050_pr_c_default_disabled_assertions.sql`, then
    `055_pr_c_auth_rls_initplan_assertions.sql`, before activation.
-4. Supply the capability digest, exact deployment SHA, and approved owner to
+5. Supply the capability digest, exact deployment SHA, and approved owner to
    `002_account_learning_apply_enable.sql` in a private operator session.
-5. Run the live golden flow.
-6. Immediately run `002_account_learning_apply_operational_rollback.sql`.
+6. Run the live golden flow.
+7. Immediately run `002_account_learning_apply_operational_rollback.sql`.
    This disables and revokes writes while preserving the one saved word, one
    event, and one receipt as evidence.
 
@@ -92,10 +98,21 @@ and aborts on a missing, reassigned, or otherwise changed target. It is an
 additive `ALTER POLICY` migration; never rewrite the historical `001` or `002`
 migration to obtain this advisor hardening.
 
+Migration `004` is the additive hosted-Supabase repair for the already-applied
+`002`/`003` objects. Hosted `postgres` is intentionally not a superuser and
+cannot re-grant access to the managed `auth` schema or a writer-owned function.
+The repair therefore changes only the six writer policies and the private
+writer implementation to consume a minimal request identity, while preserving
+the two authenticated read policies. It uses a transaction-scoped, explicitly
+grantor-scoped writer membership only for owner-required DDL, removes that edge
+before commit, and aborts on source, ACL, policy, owner, or disabled-state
+drift.
+
 The fresh PostgreSQL CI sequence likewise applies `003` immediately after
-`002`, then runs `050_pr_c_default_disabled_assertions.sql` and
+`002`, applies `004`, then runs `050_pr_c_default_disabled_assertions.sql` and
 `055_pr_c_auth_rls_initplan_assertions.sql` before the activating `060`
-fixture. The concurrency gate uses the same ordering.
+fixture. A separate non-superuser, split-owner PostgreSQL gate reproduces the
+hosted grantor model. The concurrency gate uses the same migration ordering.
 
 The destructive `080_pr_c_disposable_teardown.sql` is CI-fixture-only and
 requires an additional disposable-test guard. It must never run against the
@@ -168,7 +185,8 @@ Expected evidence:
 Do not merge until all are true:
 
 - typecheck, lint, production build, focused PR C tests, full regression suite,
-  and PostgreSQL CI are green on the final SHA;
+  and both superuser-compatibility and hosted-non-superuser PostgreSQL CI are
+  green on the final SHA;
 - Supabase security and performance advisors have been re-run after DDL;
 - live RLS/grant/session-binding queries pass on isolated staging;
 - the exact Preview deployment is Ready and the two-context golden flow passes;

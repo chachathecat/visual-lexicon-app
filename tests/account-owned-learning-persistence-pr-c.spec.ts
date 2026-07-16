@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { expect, test } from "@playwright/test";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -152,6 +155,48 @@ function expectSecurityHeaders(response: Response) {
 }
 
 test.describe("account-owned learning persistence PR C", () => {
+  test("activation SQL pins the hosted identity boundary and scopes its post-grant handle", () => {
+    const sqlRoot = join(
+      process.cwd(),
+      "src",
+      "lib",
+      "account-persistence",
+      "supabase-staging",
+      "sql"
+    );
+    const enableSql = readFileSync(
+      join(sqlRoot, "002_account_learning_apply_enable.sql"),
+      "utf8"
+    );
+    const rollbackSql = readFileSync(
+      join(sqlRoot, "002_account_learning_apply_operational_rollback.sql"),
+      "utf8"
+    );
+
+    for (const sql of [enableSql, rollbackSql]) {
+      expect(sql).toContain("octet_length(helper.prosrc) = 2450");
+      expect(sql).toContain(
+        "f25c2dad95890745c3f0fbc3807e7a415f48829425a8660f08c2163a88967267"
+      );
+      expect(sql).toContain("octet_length(internal.prosrc) = 14817");
+      expect(sql).toContain(
+        "f3f25dc5a8278862e356f2c93d130589674942d8b6fc50963b2d8475b0c838fd"
+      );
+    }
+
+    const wrapperGrantEnd = enableSql.indexOf(
+      "to authenticated\ngranted by postgres;"
+    );
+    expect(wrapperGrantEnd).toBeGreaterThan(-1);
+    const postGrantGuard = enableSql.slice(wrapperGrantEnd);
+    expect(postGrantGuard).toContain(
+      "declare\n  request_identity_helper regprocedure :="
+    );
+    expect(
+      postGrantGuard.match(/request_identity_helper regprocedure :=/g)
+    ).toHaveLength(1);
+  });
+
   test("actual apply and hydrate exports fail closed without staging activation", async () => {
     const [apply, hydrate] = await Promise.all([
       applyRoute.POST(applyRequest()),

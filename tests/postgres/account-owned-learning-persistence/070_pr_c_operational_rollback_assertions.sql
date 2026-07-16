@@ -76,6 +76,27 @@ select
     'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)',
     'EXECUTE'
   ) and
+  not exists (
+    select 1
+    from pg_roles as app_role
+    where app_role.rolname = 'service_role'
+      and has_function_privilege(
+        app_role.oid,
+        'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure,
+        'EXECUTE'
+      )
+  ) and
+  not exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee = 0
+      and acl.privilege_type = 'EXECUTE'
+  ) and
   not has_function_privilege(
     'authenticated',
     'vlx_account_persistence_private.vlx_account_learning_apply_internal(text,text,text,timestamptz,text,text,timestamptz,integer)',
@@ -118,6 +139,11 @@ select
     'vlx_account_persistence_private.account_learning_apply_receipts',
     'INSERT'
   ) and
+  not has_schema_privilege(
+    'vlx_account_learning_writer',
+    'auth',
+    'USAGE'
+  ) and
   not has_column_privilege(
     'vlx_account_learning_writer',
     'auth.sessions',
@@ -139,6 +165,21 @@ select
     'vlx_account_learning_writer',
     'vlx_account_persistence_private.vlx_account_learning_control_snapshot()',
     'EXECUTE'
+  ) and
+  not has_function_privilege(
+    'vlx_account_learning_writer',
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()',
+    'EXECUTE'
+  ) and
+  not exists (
+    select 1
+    from pg_roles as app_role
+    where app_role.rolname = 'service_role'
+      and has_function_privilege(
+        app_role.oid,
+        'vlx_account_persistence_private.vlx_account_learning_request_identity()'::regprocedure,
+        'EXECUTE'
+      )
   ) and
   not has_column_privilege(
     'vlx_account_learning_writer',
@@ -167,6 +208,58 @@ select
       )
     )
   ) > 0 and
+  exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee = 'postgres'::regrole
+      and acl.grantor = 'vlx_account_learning_writer'::regrole
+      and acl.privilege_type = 'EXECUTE'
+      and acl.is_grantable
+  ) and
+  not exists (
+    select 1
+    from pg_proc as wrapper
+    cross join lateral aclexplode(
+      coalesce(wrapper.proacl, acldefault('f', wrapper.proowner))
+    ) as acl
+    where wrapper.oid =
+      'public.vlx_account_learning_apply(text,text,text,timestamptz,text,text,timestamptz,integer)'::regprocedure
+      and acl.grantee <> wrapper.proowner
+      and not (
+        acl.grantee = 'postgres'::regrole and
+        acl.grantor = 'vlx_account_learning_writer'::regrole and
+        acl.privilege_type = 'EXECUTE' and
+        acl.is_grantable
+      )
+  ) and
+  (
+    (
+      (select rolsuper from pg_roles where rolname = 'postgres') and
+      (
+        select count(*) = 0
+        from pg_auth_members as membership
+        where membership.roleid = 'vlx_account_learning_writer'::regrole
+      )
+    ) or (
+      not (select rolsuper from pg_roles where rolname = 'postgres') and
+      (
+        select count(*) = 1 and
+          bool_and(
+            membership.member = 'postgres'::regrole and
+            membership.admin_option and
+            not membership.inherit_option and
+            not membership.set_option
+          )
+        from pg_auth_members as membership
+        where membership.roleid = 'vlx_account_learning_writer'::regrole
+      )
+    )
+  ) and
   exists (
     select 1
     from pg_constraint

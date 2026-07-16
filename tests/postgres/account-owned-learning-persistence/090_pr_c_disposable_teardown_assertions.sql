@@ -12,6 +12,9 @@ select
   to_regprocedure(
     'vlx_account_persistence_private.vlx_account_learning_session_is_live(uuid,uuid)'
   ) is null and
+  to_regprocedure(
+    'vlx_account_persistence_private.vlx_account_learning_request_identity()'
+  ) is null and
   to_regclass('public.account_saved_words') is not null and
   to_regclass('public.account_review_events') is not null and
   (

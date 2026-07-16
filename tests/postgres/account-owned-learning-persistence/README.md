@@ -27,12 +27,17 @@ The additive PR C fixtures also prove:
 - `003` is staging-guarded and idempotent, accepts only the exact legacy or
   already-hardened policy shape, and fails closed rather than adopting a
   missing, reassigned, or altered policy. It does not rewrite `001` or `002`;
+- migration `004` requires the database to remain disabled, normalizes only
+  request owner/session identity through a private stable `SECURITY INVOKER`
+  helper, removes direct managed-`auth` resolution from all six writer
+  policies and the internal apply function, and delegates only the exact
+  public-wrapper grant option to hosted `postgres`;
 - the private control/receipt tables are forced-RLS and have no app-role table
   grants;
 - the writer is `NOLOGIN NOINHERIT NOBYPASSRLS`, receives zero direct
-  `auth.sessions` or apply-control table access, and can only execute the two
-  narrowly scoped `postgres`-owned control-snapshot/live-session helpers while
-  activated;
+  `auth.sessions` or apply-control table access, and can only execute the three
+  narrowly scoped `postgres`-owned request-identity, control-snapshot, and
+  live-session helpers while activated;
 - the writer-owned public definer wrapper is the sole authenticated grant;
   neither app role receives private-schema usage or private-function execution;
 - missing, malformed, cross-account, and deleted JWT sessions fail closed;
@@ -64,14 +69,15 @@ case intentionally deletes the second fixture user. The sequence is:
 2. `001_account_learning_evidence_up.sql`
 3. `002_account_learning_apply_up.sql`
 4. `003_account_learning_auth_rls_initplan_up.sql`
-5. `050_pr_c_default_disabled_assertions.sql`
-6. `055_pr_c_auth_rls_initplan_assertions.sql`
-7. `060_pr_c_apply_assertions.sql` (activates with fixture-only controls)
-8. `070_pr_c_operational_rollback_assertions.sql`
-9. `080_pr_c_disposable_teardown.sql` with both staging and disposable guards
-10. `090_pr_c_disposable_teardown_assertions.sql`
-11. `001_account_learning_evidence_down.sql`
-12. `020_rollback_assertions.sql`
+5. `004_account_learning_hosted_grantor_compat_up.sql`
+6. `050_pr_c_default_disabled_assertions.sql`
+7. `055_pr_c_auth_rls_initplan_assertions.sql`
+8. `060_pr_c_apply_assertions.sql` (activates with fixture-only controls)
+9. `070_pr_c_operational_rollback_assertions.sql`
+10. `080_pr_c_disposable_teardown.sql` with both staging and disposable guards
+11. `090_pr_c_disposable_teardown_assertions.sql`
+12. `001_account_learning_evidence_down.sql`
+13. `020_rollback_assertions.sql`
 
 Never run `080_pr_c_disposable_teardown.sql` against a live project. The
 operational rollback is the only PR C rollback intended for isolated staging.

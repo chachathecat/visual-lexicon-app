@@ -2,6 +2,7 @@
 
 create role anon nologin;
 create role authenticated nologin;
+create role service_role nologin;
 
 create schema auth;
 
@@ -23,6 +24,7 @@ language sql
 stable
 as $$
   select coalesce(
+    nullif(current_setting('request.jwt.claim', true), ''),
     nullif(current_setting('request.jwt.claims', true), ''),
     '{}'
   )::jsonb
@@ -33,7 +35,10 @@ returns uuid
 language sql
 stable
 as $$
-  select nullif(auth.jwt() ->> 'sub', '')::uuid
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'
+  )::uuid
 $$;
 
 grant usage on schema auth to authenticated;
