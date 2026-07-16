@@ -126,11 +126,23 @@ uncommitted, local Playwright storage-state file and never prints its cookies.
 That auth file must live outside the repository or under the ignored
 `.playwright-auth/` directory; the test rejects any other in-repository path.
 It must run against the exact Preview URL with two independent browser
-contexts carrying the same approved account session. An explicit
+contexts carrying the same approved account session plus one distinct,
+permanent cross-account session. Both cookie-only state files must contain an
+actual Supabase auth cookie, must differ without printing either value, and
+must live outside the repository or under `.playwright-auth/`. They may contain
+only cookies for the exact Preview hostname; unrelated identity-provider,
+billing, and other browsing cookies are rejected. An explicit
 `VLX_PR_C_GOLDEN_TARGET=isolated_track_b_staging_preview` attestation is
 required; a partial configuration, non-HTTPS URL, credential-bearing URL, or
 hostname outside the dedicated staging Vercel project fails before navigation.
 With no golden variables configured, the test is collected and safely skipped.
+The live suite pins zero retries and has an explicit 120-second timeout,
+including browser cleanup. Every created context is registered immediately;
+cleanup uses settled results with a 10-second per-context deadline and keeps
+the flow failure primary while appending any cleanup failure summary. This
+keeps cleanup from hiding the original failure. It also keeps slow
+protected-Preview round trips from consuming Playwright's 30-second default
+while preserving the one-shot rule.
 The operator also supplies one stable non-secret run UUID and its initial UTC
 saved-at timestamp, plus the final checkout SHA and immutable Vercel deployment
 ID. The test compares the expected SHA to local `git rev-parse HEAD`, then
@@ -143,7 +155,9 @@ commit, do not blindly rerun the normal golden command: its first assertion
 intentionally requires `committed` and will stop on `replayed`. Retain the same
 values for controlled DB/replay inspection, collect the existing `1/1/1`
 receipt evidence, and follow rollback recovery. A fresh authoritative golden
-run requires a clean dedicated staging fixture.
+run requires a new data-less dedicated Supabase staging project/database. The
+existing halted staging evidence must not be deleted, reset, rebound, or used
+as a successful replay baseline.
 
 The live command receives these only from the local operator environment:
 
@@ -151,6 +165,7 @@ The live command receives these only from the local operator environment:
 VLX_PR_C_GOLDEN_TARGET=isolated_track_b_staging_preview \
 VLX_PR_C_GOLDEN_BASE_URL=<exact-preview-origin> \
 VLX_PR_C_GOLDEN_STORAGE_STATE=<uncommitted-cookie-state-path> \
+VLX_PR_C_GOLDEN_DENIED_STORAGE_STATE=<distinct-permanent-account-cookie-state-path> \
 VLX_PR_C_GOLDEN_RUN_ID=<stable-run-uuid> \
 VLX_PR_C_GOLDEN_SAVED_AT=<initial-current-utc-iso-timestamp> \
 VLX_PR_C_GOLDEN_EXPECTED_SHA=<git-rev-parse-head> \
@@ -160,24 +175,27 @@ npm run test:account-learning:pr-c:golden
 
 Expected evidence:
 
-1. Browser A read-only preflight: HTTP 200, exact final SHA/deployment-ID
+1. Before any write, the distinct permanent account returns digest HTTP 200
+   with counts `0/0`, receives a hidden operator-page HTTP 404, and receives
+   exact HTTP 401 `AUTH_REQUIRED` from both apply and hydrate. This proves a
+   valid cross-account session is denied before storage access.
+2. Browser A read-only preflight: HTTP 200, exact final SHA/deployment-ID
    attestation, and baseline counts `0/0`. No mutation is attempted before this
    passes.
-2. Browser A apply: HTTP 200, `committed`, counts `1/1/0/1`.
-3. Browser A same-key replay: HTTP 200, `replayed`, no mutation.
-4. Browser A same-key changed fingerprint: HTTP 409
+3. Browser A apply: HTTP 200, `committed`, counts `1/1/0/1`.
+4. Browser A same-key replay: HTTP 200, `replayed`, no mutation.
+5. Browser A same-key changed fingerprint: HTTP 409
    `IDEMPOTENCY_CONFLICT`.
-5. Browser A caller-supplied mastery: HTTP 422
+6. Browser A caller-supplied mastery: HTTP 422
    `FAKE_MASTERY_REJECTED`, before persistence.
-6. Separate cross-account proof, not Browser B: the route boundary performs
-   zero storage adapter calls for an unapproved account; disposable SQL and
-   live Track B DB/RLS checks prove RPC denial and zero direct-table rows.
 7. Clean same-account Browser B: explicit hydration produces exactly one saved
    word, one event, `Learning`/box 1, and the exact replay-derived daily-stat
    fields. Pack, plan, and upgrade-interest sentinels remain byte-identical.
 8. A controlled same-page hydration replay is a byte-identical zero-write
    no-op. A pre-existing or externally changed Browser B baseline fails closed.
-9. Operational rollback revokes app and writer mutation privileges, blocks new
+9. After Browser A commits, the distinct account digest remains `0/0`, proving
+   live owner-read isolation while same-owner hydration is `1/1`.
+10. Operational rollback revokes app and writer mutation privileges, blocks new
    calls, and preserves database counts `1/1/1`.
 
 ## Merge gate
@@ -189,7 +207,7 @@ Do not merge until all are true:
   green on the final SHA;
 - Supabase security and performance advisors have been re-run after DDL;
 - live RLS/grant/session-binding queries pass on isolated staging;
-- the exact Preview deployment is Ready and the two-context golden flow passes;
+- the exact Preview deployment is Ready and the three-context golden flow passes;
 - the application write kill switch and database write gate are off afterward;
 - post-rollback counts remain exactly one saved word, one event, one receipt;
 - the latest PR review and required GitHub checks contain no blocker.

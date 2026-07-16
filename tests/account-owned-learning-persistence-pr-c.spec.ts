@@ -155,6 +155,26 @@ function expectSecurityHeaders(response: Response) {
 }
 
 test.describe("account-owned learning persistence PR C", () => {
+  test("golden runner has an explicit one-shot live timeout without retries", () => {
+    const goldenSpec = readFileSync(
+      join(
+        process.cwd(),
+        "tests",
+        "account-persistence-staging-golden.e2e.spec.ts"
+      ),
+      "utf8"
+    );
+
+    expect(goldenSpec).toContain(
+      "test.describe.configure({ retries: 0, timeout: 120_000 });"
+    );
+    expect(goldenSpec).toContain("VLX_PR_C_GOLDEN_DENIED_STORAGE_STATE");
+    expect(goldenSpec).toContain("Promise.allSettled(");
+    expect(goldenSpec).toContain("closeContextWithDeadline(");
+    expect(goldenSpec).toContain("Golden cleanup failures:");
+    expect(goldenSpec).toContain('error: { code: "AUTH_REQUIRED" }');
+  });
+
   test("activation SQL pins the hosted identity boundary and scopes its post-grant handle", () => {
     const sqlRoot = join(
       process.cwd(),

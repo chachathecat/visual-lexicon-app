@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 
@@ -8,7 +9,13 @@ import {
   type BrowserContext,
 } from "@playwright/test";
 
-import { VLX_ACCOUNT_LEARNING_GOLDEN_SEED_SESSION_KEY } from "../src/lib/account-persistence/staging-vertical-slice/contracts";
+import {
+  VLX_ACCOUNT_LEARNING_CANONICAL_REVIEW_EVENT,
+  VLX_ACCOUNT_LEARNING_CANONICAL_SAVED_WORD,
+  VLX_ACCOUNT_LEARNING_GOLDEN_SEED_SESSION_KEY,
+  VLX_ACCOUNT_LEARNING_VERTICAL_SLICE_FIXTURE,
+  type VlxAccountLearningApplyInput,
+} from "../src/lib/account-persistence/staging-vertical-slice/contracts";
 import {
   VLX_ACCOUNT_LEARNING_DEPLOYMENT_ID_HEADER,
   VLX_ACCOUNT_LEARNING_DEPLOYMENT_SHA_HEADER,
@@ -16,6 +23,8 @@ import {
 
 const goldenBaseUrl = process.env.VLX_PR_C_GOLDEN_BASE_URL;
 const goldenStorageStatePath = process.env.VLX_PR_C_GOLDEN_STORAGE_STATE;
+const goldenDeniedStorageStatePath =
+  process.env.VLX_PR_C_GOLDEN_DENIED_STORAGE_STATE;
 const goldenTarget = process.env.VLX_PR_C_GOLDEN_TARGET;
 const goldenRunId = process.env.VLX_PR_C_GOLDEN_RUN_ID;
 const goldenSavedAt = process.env.VLX_PR_C_GOLDEN_SAVED_AT;
@@ -25,6 +34,7 @@ const goldenExpectedDeploymentId =
 const goldenConfigurationPresent = Boolean(
   goldenBaseUrl ||
     goldenStorageStatePath ||
+    goldenDeniedStorageStatePath ||
     goldenTarget ||
     goldenRunId ||
     goldenSavedAt ||
@@ -34,6 +44,7 @@ const goldenConfigurationPresent = Boolean(
 const goldenConfigurationComplete = Boolean(
   goldenBaseUrl &&
     goldenStorageStatePath &&
+    goldenDeniedStorageStatePath &&
     goldenTarget === "isolated_track_b_staging_preview" &&
     goldenRunId &&
     goldenSavedAt &&
@@ -44,6 +55,9 @@ const goldenRunIdPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const gitCommitShaPattern = /^[0-9a-f]{40}$/;
 const vercelDeploymentIdPattern = /^dpl_[A-Za-z0-9]{20,64}$/;
+const goldenTestTitle =
+  "cross-account denial, one apply, replay, 409, fake-mastery denial, and independent Browser B hydration";
+const goldenContextCleanupTimeoutMs = 10_000;
 
 const learningKeys = [
   "vlx_saved_words_v1",
@@ -91,13 +105,15 @@ function isStorageCookie(value: unknown): value is StorageState["cookies"][numbe
   );
 }
 
-function readCookieOnlyStorageState(): StorageState {
-  if (!goldenStorageStatePath) {
+function readCookieOnlyStorageState(
+  storageStatePath: string | undefined
+): StorageState {
+  if (!storageStatePath) {
     throw new Error("Golden storage-state path is not configured.");
   }
 
   const parsed = JSON.parse(
-    readFileSync(goldenStorageStatePath, "utf8")
+    readFileSync(storageStatePath, "utf8")
   ) as unknown;
 
   if (
@@ -105,15 +121,125 @@ function readCookieOnlyStorageState(): StorageState {
     typeof parsed !== "object" ||
     Array.isArray(parsed) ||
     !Array.isArray((parsed as { cookies?: unknown }).cookies) ||
-    !(parsed as { cookies: unknown[] }).cookies.every(isStorageCookie)
+    !(parsed as { cookies: unknown[] }).cookies.every(isStorageCookie) ||
+    !Array.isArray((parsed as { origins?: unknown }).origins) ||
+    (parsed as { origins: unknown[] }).origins.length > 0
   ) {
     throw new Error("Golden storage state is malformed.");
   }
 
+  const expectedHostname = new URL(goldenBaseUrl as string).hostname;
+  const cookies = (parsed as { cookies: StorageState["cookies"] }).cookies;
+  if (
+    cookies.some(
+      (cookie) => cookie.domain.replace(/^\./, "") !== expectedHostname
+    )
+  ) {
+    throw new Error(
+      "Golden storage state must contain only exact Preview-host cookies."
+    );
+  }
+
   return {
-    cookies: (parsed as { cookies: StorageState["cookies"] }).cookies,
+    cookies,
     origins: [],
   };
+}
+
+function readSupabaseAuthCookieFingerprint(storageState: StorageState) {
+  const authCookies = storageState.cookies
+    .filter((cookie) => /^sb-[a-z0-9]+-auth-token(?:\.\d+)?$/.test(cookie.name))
+    .map((cookie) => `${cookie.name}:${cookie.value}`)
+    .sort();
+
+  return {
+    configured: authCookies.length > 0,
+    fingerprint:
+      authCookies.length > 0
+        ? createHash("sha256").update(authCookies.join("|")).digest("hex")
+        : null,
+  };
+}
+
+function createGoldenApplyInput(): VlxAccountLearningApplyInput {
+  const savedAt = new Date(goldenSavedAt as string);
+  const createdAt = new Date(savedAt.getTime() + 1_000);
+
+  return {
+    schemaVersion: 1,
+    fixture: VLX_ACCOUNT_LEARNING_VERTICAL_SLICE_FIXTURE,
+    savedWord: {
+      ...VLX_ACCOUNT_LEARNING_CANONICAL_SAVED_WORD,
+      savedAt: savedAt.toISOString(),
+    },
+    reviewEvent: {
+      eventId: `pr-c-event-${goldenRunId}`,
+      sessionId: `pr-c-browser-${goldenRunId}`,
+      ...VLX_ACCOUNT_LEARNING_CANONICAL_REVIEW_EVENT,
+      responseMs: 3_000,
+      createdAt: createdAt.toISOString(),
+    },
+  };
+}
+
+function safeFailureSummary(error: unknown) {
+  if (!(error instanceof Error)) return "Non-Error failure";
+  return `${error.name}: ${error.message}`.slice(0, 1_000);
+}
+
+async function closeContextWithDeadline(context: BrowserContext, index: number) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      context.close(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `Browser context ${index + 1} cleanup exceeded ${goldenContextCleanupTimeoutMs}ms.`
+              )
+            ),
+          goldenContextCleanupTimeoutMs
+        );
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+async function closeContextsWithoutMaskingFlowFailure(
+  contexts: BrowserContext[],
+  flowFailure: unknown
+) {
+  const closeResults = await Promise.allSettled(
+    contexts.map((context, index) => closeContextWithDeadline(context, index))
+  );
+  const cleanupFailures = closeResults.flatMap((result) =>
+    result.status === "rejected" ? [result.reason] : []
+  );
+
+  if (flowFailure !== null) {
+    if (flowFailure instanceof Error && cleanupFailures.length > 0) {
+      const cleanupSummary = cleanupFailures
+        .map(safeFailureSummary)
+        .join(" | ");
+      flowFailure.message += `\nGolden cleanup failures: ${cleanupSummary}`;
+      if (flowFailure.stack) {
+        flowFailure.stack += `\nGolden cleanup failures: ${cleanupSummary}`;
+      }
+    }
+    throw flowFailure;
+  }
+
+  if (cleanupFailures.length > 0) {
+    throw new Error(
+      `Golden cleanup failures: ${cleanupFailures
+        .map(safeFailureSummary)
+        .join(" | ")}`
+    );
+  }
 }
 
 async function installCleanBrowserBaseline(context: BrowserContext) {
@@ -151,6 +277,8 @@ test.skip(
 );
 
 test.describe("Track B PR C live staging golden flow", () => {
+  test.describe.configure({ retries: 0, timeout: 120_000 });
+
   test.beforeAll(() => {
     expect(goldenConfigurationComplete).toBe(true);
     const target = new URL(goldenBaseUrl as string);
@@ -173,33 +301,60 @@ test.describe("Track B PR C live staging golden flow", () => {
     expect(checkoutSha).toBe(goldenExpectedSha);
 
     const repositoryRoot = realpathSync(process.cwd());
-    const storageStatePath = realpathSync(
-      resolve(goldenStorageStatePath as string)
+    const storageStatePaths = [
+      goldenStorageStatePath as string,
+      goldenDeniedStorageStatePath as string,
+    ].map((storageStatePath) => realpathSync(resolve(storageStatePath)));
+
+    for (const storageStatePath of storageStatePaths) {
+      const repositoryRelativePath = relative(repositoryRoot, storageStatePath);
+      const outsideRepository =
+        repositoryRelativePath === ".." ||
+        repositoryRelativePath.startsWith(`..${sep}`) ||
+        isAbsolute(repositoryRelativePath);
+      const insideIgnoredAuthDirectory =
+        repositoryRelativePath.startsWith(`.playwright-auth${sep}`);
+      expect(outsideRepository || insideIgnoredAuthDirectory).toBe(true);
+    }
+
+    expect(storageStatePaths[0] !== storageStatePaths[1]).toBe(true);
+    const ownerAuthCookie = readSupabaseAuthCookieFingerprint(
+      readCookieOnlyStorageState(goldenStorageStatePath)
     );
-    const repositoryRelativePath = relative(repositoryRoot, storageStatePath);
-    const outsideRepository =
-      repositoryRelativePath === ".." ||
-      repositoryRelativePath.startsWith(`..${sep}`) ||
-      isAbsolute(repositoryRelativePath);
-    const insideIgnoredAuthDirectory =
-      repositoryRelativePath.startsWith(`.playwright-auth${sep}`);
-    expect(outsideRepository || insideIgnoredAuthDirectory).toBe(true);
+    const deniedAuthCookie = readSupabaseAuthCookieFingerprint(
+      readCookieOnlyStorageState(goldenDeniedStorageStatePath)
+    );
+    expect(ownerAuthCookie.configured).toBe(true);
+    expect(deniedAuthCookie.configured).toBe(true);
+    expect(ownerAuthCookie.fingerprint !== deniedAuthCookie.fingerprint).toBe(
+      true
+    );
   });
 
-  test("one apply, replay, 409, fake-mastery denial, and independent Browser B hydration", async ({
-    browser,
-  }) => {
-    const storageState = readCookieOnlyStorageState();
-    const browserA = await browser.newContext({
-      baseURL: goldenBaseUrl,
-      storageState,
-    });
-    const browserB = await browser.newContext({
-      baseURL: goldenBaseUrl,
-      storageState,
-    });
-
+  test(goldenTestTitle, async ({ browser }) => {
+    const storageState = readCookieOnlyStorageState(goldenStorageStatePath);
+    const deniedStorageState = readCookieOnlyStorageState(
+      goldenDeniedStorageStatePath
+    );
+    const contexts: BrowserContext[] = [];
+    let flowFailure: unknown = null;
     try {
+      const browserA = await browser.newContext({
+        baseURL: goldenBaseUrl,
+        storageState,
+      });
+      contexts.push(browserA);
+      const browserB = await browser.newContext({
+        baseURL: goldenBaseUrl,
+        storageState,
+      });
+      contexts.push(browserB);
+      const browserDenied = await browser.newContext({
+        baseURL: goldenBaseUrl,
+        storageState: deniedStorageState,
+      });
+      contexts.push(browserDenied);
+
       await browserA.addInitScript(
         ({ key, runId, savedAt }) => {
           window.sessionStorage.setItem(
@@ -214,6 +369,49 @@ test.describe("Track B PR C live staging golden flow", () => {
         }
       );
       await installCleanBrowserBaseline(browserB);
+
+      const deniedPage = await browserDenied.newPage();
+      const deniedDigestBefore = await deniedPage.request.get(
+        new URL("/api/account/sync/digest", goldenBaseUrl).toString()
+      );
+      expect(deniedDigestBefore.status()).toBe(200);
+      expect(await deniedDigestBefore.json()).toMatchObject({
+        route: "digest",
+        readOnly: true,
+        bounded: true,
+        counts: { savedWords: 0, reviewEvents: 0 },
+        complete: { savedWords: true, reviewEvents: true },
+        mutatesServer: false,
+        mutatesBrowser: false,
+        grantsPaidEntitlement: false,
+      });
+      const deniedOperatorPage = await deniedPage.goto(
+        "/staging/account-learning"
+      );
+      expect(deniedOperatorPage?.status()).toBe(404);
+
+      const deniedApplyResponse = await deniedPage.request.post(
+        new URL("/api/account/sync/apply", goldenBaseUrl).toString(),
+        {
+          data: createGoldenApplyInput(),
+          headers: {
+            "Idempotency-Key": `pr-c-denied-${goldenRunId}`,
+            Origin: new URL(goldenBaseUrl as string).origin,
+          },
+        }
+      );
+      expect(deniedApplyResponse.status()).toBe(401);
+      expect(await deniedApplyResponse.json()).toEqual({
+        error: { code: "AUTH_REQUIRED" },
+      });
+
+      const deniedHydrateResponse = await deniedPage.request.get(
+        new URL("/api/account/sync/hydrate", goldenBaseUrl).toString()
+      );
+      expect(deniedHydrateResponse.status()).toBe(401);
+      expect(await deniedHydrateResponse.json()).toEqual({
+        error: { code: "AUTH_REQUIRED" },
+      });
 
       const pageA = await browserA.newPage();
       await pageA.goto("/staging/account-learning");
@@ -436,8 +634,25 @@ test.describe("Track B PR C live staging golden flow", () => {
       expect(afterReplay.pack).toBe(packSentinel);
       expect(afterReplay.plan).toBe(planSentinel);
       expect(afterReplay.upgradeInterest).toBe(upgradeInterestSentinel);
-    } finally {
-      await Promise.all([browserA.close(), browserB.close()]);
+
+      const deniedDigestAfter = await deniedPage.request.get(
+        new URL("/api/account/sync/digest", goldenBaseUrl).toString()
+      );
+      expect(deniedDigestAfter.status()).toBe(200);
+      expect(await deniedDigestAfter.json()).toMatchObject({
+        route: "digest",
+        readOnly: true,
+        bounded: true,
+        counts: { savedWords: 0, reviewEvents: 0 },
+        complete: { savedWords: true, reviewEvents: true },
+        mutatesServer: false,
+        mutatesBrowser: false,
+        grantsPaidEntitlement: false,
+      });
+    } catch (error) {
+      flowFailure = error;
     }
+
+    await closeContextsWithoutMaskingFlowFailure(contexts, flowFailure);
   });
 });
